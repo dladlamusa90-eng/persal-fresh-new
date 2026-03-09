@@ -1,0 +1,71 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum LoanStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PAID
+}
+
+enum BankAccountType {
+  CHEQUE
+  SAVINGS
+  TRANSMISSION
+}
+
+model User {
+  id           String   @id @default(uuid())
+  fullName     String
+  email        String   @unique
+  persalNumber String?  @unique
+  phone        String?
+  idNumber     String?
+  bankName     String?
+  accountNumber String?
+  accountType  BankAccountType?
+  branchCode   String?
+  profileImage String?
+  points       Int      @default(0)
+  password      String
+  role          Role     @default(USER)
+  isBurned      Boolean  @default(false)
+  burnedAt      DateTime?
+  loans         Loan[]
+  createdAt     DateTime @default(now())
+
+  @@index([role])
+  @@index([isBurned])
+  @@index([createdAt])
+}
+
+model Loan {
+  id        String     @id @default(cuid())
+  amount    Float
+  termDays  Int
+  status    LoanStatus
+  rejectionReason String?
+  debitMandateAccepted Boolean @default(false)
+  debitMandateAcceptedAt DateTime?
+  debitMandateReference String?
+  disbursementSentAt DateTime?
+  disbursementReference String?
+  disbursementMode String?
+  userId    String
+  user      User       @relation(fields: [userId], references: [id])
+  createdAt DateTime   @default(now())
+
+  @@index([status])
+  @@index([userId, status])
+  @@index([createdAt])
+}
