@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
+import { Lightbulb } from "lucide-react";
 
 export default function DashboardHomePage() {
   const maxLoan = 5000;
@@ -9,6 +10,7 @@ export default function DashboardHomePage() {
   const [selectedDays, setSelectedDays] = useState(60);
   const [error, setError] = useState("");
   const [showFeeBreakdown, setShowFeeBreakdown] = useState(false);
+  const [showLoanDocuments, setShowLoanDocuments] = useState(false);
   const repayDateInputRef = useRef<HTMLInputElement | null>(null);
 
   function updateDesiredLoan(value: number) {
@@ -75,18 +77,33 @@ export default function DashboardHomePage() {
             <Link href="/dashboard" className="block text-persal-blue font-semibold border-b-2 border-persal-blue pb-1 w-fit">
               Loan summary
             </Link>
-            <Link href="/dashboard/lending/statement" className="block text-gray-600 hover:text-persal-blue transition">
-              Loan documents
-            </Link>
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={() => setShowLoanDocuments((prev) => !prev)}
+                className="text-gray-700 font-medium mb-2 hover:text-persal-blue transition"
+              >
+                Loan documents
+              </button>
+              {showLoanDocuments && (
+                <div className="pl-3 space-y-1.5">
+                  <Link href="/dashboard/lending/active-loan" className="block text-gray-600 hover:text-persal-blue transition">Active Loan</Link>
+                  <Link href="/dashboard/lending/application-status" className="block text-gray-600 hover:text-persal-blue transition">Status</Link>
+                  <Link href="/dashboard/lending/schedule" className="block text-gray-600 hover:text-persal-blue transition">Schedule</Link>
+                  <Link href="/dashboard/lending/statement" className="block text-gray-600 hover:text-persal-blue transition">Statement</Link>
+                  <Link href="/dashboard/lending/history" className="block text-gray-600 hover:text-persal-blue transition">Loan History</Link>
+                </div>
+              )}
+            </div>
           </nav>
         </aside>
 
         <div className="pb-8">
-          <h1 className="text-4xl md:text-[42px] text-gray-800 font-medium mb-4">Hi Musa</h1>
+          <h1 className="text-4xl md:text-[42px] text-gray-800 font-normal mb-4">Hi Musa</h1>
 
           <div className="mb-4">
             <div className="w-full rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700 text-lg md:text-base flex items-center justify-center gap-2">
-              <span className="text-persal-blue">💡</span>
+              <Lightbulb size={18} className="text-persal-blue" />
               <span>You can apply for up to <b>R 5000</b></span>
               <a href="#" className="text-persal-blue hover:underline">Discover how to get more</a>
             </div>

@@ -43,15 +43,14 @@ const DropdownMenuItem = ({ href, children }: { href: string; children: React.Re
 };
 
 const dashboardMenu = [
-  { name: "Apply", href: "/dashboard/lending/apply" },
-  { name: "Loan Management", subMenu: [
+  { name: "Loan Documents", subMenu: [
     { name: "Active Loan", href: "/dashboard/lending/active-loan" },
     { name: "Status", href: "/dashboard/lending/application-status" },
     { name: "Schedule", href: "/dashboard/lending/schedule" },
     { name: "Statement", href: "/dashboard/lending/statement" },
     { name: "Loan History", href: "/dashboard/lending/history" },
   ] },
-  { name: "Profile", href: "/dashboard/profile" },
+  { name: "My Details", href: "/dashboard/profile" },
   { name: "Contact Us", href: "/dashboard/support" },
 ];
 
@@ -196,7 +195,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       </DropdownMenu>
                     ) : (
                       <li key={item.href} className="flex items-center h-[56px]">
-                        <Link href={item.href} className="px-4 h-[56px] flex items-center rounded text-sm font-medium text-persal-dark hover:bg-blue-50 hover:text-persal-blue transition" style={{lineHeight: '1.2'}}>
+                        <Link
+                          href={item.href}
+                          className={`px-4 h-[34px] flex items-center rounded-md text-sm font-medium transition ${
+                            isActivePath(item.href)
+                              ? "bg-gray-100 text-persal-blue"
+                              : "text-persal-dark hover:bg-blue-50 hover:text-persal-blue"
+                          }`}
+                          style={{ lineHeight: "1.2" }}
+                        >
                           {item.name}
                         </Link>
                       </li>

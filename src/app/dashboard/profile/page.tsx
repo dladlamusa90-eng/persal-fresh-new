@@ -1,6 +1,6 @@
 "use client";
 import React, { ChangeEvent, useEffect, useMemo, useState } from "react";
-import { Trophy } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { DashboardProfile, defaultDashboardProfile, getProfileInitial } from "@/app/dashboard/profile/profileData";
 import {
   SOUTH_AFRICAN_BANK_NAMES,
@@ -21,6 +21,7 @@ function isValidEmail(email: string) {
 }
 
 export default function ProfilePage() {
+  const [activeSection, setActiveSection] = useState<"profile" | "employment" | "banking">("profile");
   const [profile, setProfile] = useState<DashboardProfile>(defaultDashboardProfile);
   const [initialProfile, setInitialProfile] = useState<DashboardProfile>(defaultDashboardProfile);
   const [points, setPoints] = useState(0);
@@ -34,6 +35,7 @@ export default function ProfilePage() {
   const [cropX, setCropX] = useState(0);
   const [cropY, setCropY] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [receivesCommunication, setReceivesCommunication] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -313,163 +315,198 @@ export default function ProfilePage() {
     setIsEditing(false);
   }
 
+  function handlePreferencesUpdate(e: React.FormEvent) {
+    e.preventDefault();
+    setSavedMessage("Communication preferences updated.");
+    setErrorMessage("");
+  }
+
   if (loading) return <div className="text-center py-8">Loading profile...</div>;
 
+  const firstName = (profile.fullName || "Musa").split(" ")[0];
+
   return (
-    <section className="max-w-4xl mx-auto py-6 md:py-12 flex flex-col gap-6 md:gap-8">
-      <form onSubmit={handleSave} className="bg-white rounded-2xl shadow-xl border border-gray-200 p-4 md:p-8 flex flex-col gap-6">
-        <h2 className="text-xl md:text-2xl font-bold text-persal-blue">Profile Details</h2>
-
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-yellow-100 border border-yellow-300 flex items-center justify-center">
-              <Trophy size={18} className="text-yellow-600" />
-            </div>
-            <div>
-              <p className="text-xs text-yellow-700 font-medium">Your Points</p>
-              <p className="text-base font-bold text-yellow-800">Loyalty Score</p>
-            </div>
-          </div>
-          <span className="text-2xl font-bold text-yellow-700">{points}</span>
-        </div>
-
-        <div className="flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6">
-          <div className="h-20 w-20 md:h-24 md:w-24 rounded-full overflow-hidden border border-gray-200 bg-gray-100 flex items-center justify-center text-2xl font-bold text-persal-dark">
-            {profile.profileImage ? (
-              <img src={profile.profileImage} alt="Profile" className="h-full w-full object-cover" />
-            ) : (
-              profileInitial
-            )}
-          </div>
-          <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-            <label className="px-4 py-2 rounded-lg bg-persal-blue text-white text-sm font-semibold cursor-pointer text-center">
-              Upload Picture
-              <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={!isEditing} />
-            </label>
+    <section className="max-w-6xl mx-auto py-6 md:py-12">
+      <div className="grid grid-cols-1 md:grid-cols-[190px_1fr] gap-8">
+        <aside className="pt-3">
+          <nav className="space-y-4 text-base">
             <button
               type="button"
-              onClick={removePhoto}
-              disabled={!isEditing}
-              className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
+              onClick={() => setActiveSection("profile")}
+              className={`block pb-1 w-fit transition ${activeSection === "profile" ? "text-persal-blue font-medium border-b-2 border-persal-blue" : "text-gray-600 hover:text-persal-blue"}`}
             >
-              Remove Picture
+              My profile
             </button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Full Name</label>
-            <input
-              type="text"
-              value={profile.fullName}
-              onChange={(e) => updateField("fullName", e.target.value)}
-              disabled={!isEditing}
-              className="w-full border rounded-lg p-3 disabled:bg-gray-100 disabled:text-gray-500"
-            />
-          </div>
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Email</label>
-            <input
-              type="email"
-              value={profile.email}
-              onChange={(e) => updateField("email", e.target.value)}
-              disabled={!isEditing}
-              className="w-full border rounded-lg p-3 disabled:bg-gray-100 disabled:text-gray-500"
-            />
-          </div>
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Phone Number</label>
-            <input
-              type="text"
-              value={profile.phone}
-              onChange={(e) => updateField("phone", e.target.value)}
-              disabled={!isEditing}
-              className="w-full border rounded-lg p-3 disabled:bg-gray-100 disabled:text-gray-500"
-            />
-          </div>
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">ID Number</label>
-            <input
-              type="text"
-              value={profile.idNumber}
-              onChange={(e) => updateField("idNumber", e.target.value)}
-              disabled={!isEditing}
-              className="w-full border rounded-lg p-3 disabled:bg-gray-100 disabled:text-gray-500"
-            />
-          </div>
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Persal Number</label>
-            <input
-              type="text"
-              value={profile.persalNumber}
-              onChange={(e) => updateField("persalNumber", e.target.value)}
-              disabled={!isEditing}
-              className="w-full border rounded-lg p-3 disabled:bg-gray-100 disabled:text-gray-500"
-            />
-          </div>
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Bank Name</label>
-            <select
-              value={profile.bankName}
-              onChange={(e) => updateField("bankName", e.target.value)}
-              disabled={!isEditing}
-              className="w-full border rounded-lg p-3 bg-white disabled:bg-gray-100 disabled:text-gray-500"
-            >
-              <option value="" disabled>
-                Select Bank Name
-              </option>
-              {SOUTH_AFRICAN_BANK_NAMES.map((bankName) => (
-                <option key={bankName} value={bankName}>
-                  {bankName}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="md:col-span-2">
-            <label className="block text-xs text-gray-500 mb-1">Account Number</label>
-            <input
-              type="text"
-              value={profile.accountNumber}
-              onChange={(e) => updateField("accountNumber", e.target.value)}
-              disabled={!isEditing}
-              className="w-full border rounded-lg p-3 disabled:bg-gray-100 disabled:text-gray-500"
-            />
-          </div>
-        </div>
-
-        <div className="flex flex-col md:flex-row md:items-center gap-3">
-          {!isEditing ? (
             <button
               type="button"
-              onClick={handleEditDetails}
-              className="w-full md:w-auto px-6 py-3 bg-persal-blue text-white rounded-xl font-semibold hover:bg-persal-dark transition"
+              onClick={() => setActiveSection("employment")}
+              className={`block pb-1 w-fit transition ${activeSection === "employment" ? "text-persal-blue font-medium border-b-2 border-persal-blue" : "text-gray-600 hover:text-persal-blue"}`}
             >
-              Update Details
+              Employment details
             </button>
-          ) : (
+            <button
+              type="button"
+              onClick={() => setActiveSection("banking")}
+              className={`block pb-1 w-fit transition ${activeSection === "banking" ? "text-persal-blue font-medium border-b-2 border-persal-blue" : "text-gray-600 hover:text-persal-blue"}`}
+            >
+              My banking details
+            </button>
+          </nav>
+        </aside>
+
+        <div>
+          <h1 className="text-4xl md:text-[42px] text-gray-800 font-normal mb-8">Hi {firstName}</h1>
+
+          {activeSection === "profile" && (
             <>
+          <div className="space-y-7">
+            <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
+              <div className="text-gray-700">Name</div>
+              <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{profile.fullName || "Musa Dladla"}</div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
+              <div className="text-gray-700">Email</div>
+              <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{profile.email || "sinenhlanhlamusa9@gmail.com"}</div>
+            </div>
+            <div className="md:pl-[236px]"><a href="#" className="text-persal-blue hover:underline">Change your email</a></div>
+
+            <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
+              <div className="text-gray-700">Cell phone number</div>
+              <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{profile.phone || "0606039964"}</div>
+            </div>
+            <div className="md:pl-[236px]"><a href="#" className="text-persal-blue hover:underline">Change your cell phone number</a></div>
+
+            <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
+              <div className="text-gray-700">Current Address</div>
+              <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">329 Hlalinakahle Ext 3, Emalahleni, 1045, Emalahleni</div>
+            </div>
+            <div className="md:pl-[236px]"><a href="#" className="text-persal-blue hover:underline">Change your address</a></div>
+
+            <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
+              <div className="text-gray-700">Password</div>
+              <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">••••••••••••</div>
+            </div>
+            <div className="md:pl-[236px]"><a href="#" className="text-persal-blue hover:underline">Change your password</a></div>
+
+            <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
+              <div className="text-gray-700">Preferences</div>
+              <div className="text-gray-700">Not happy to receive communication from Wonga</div>
+            </div>
+            <div className="md:pl-[236px]"><a href="#communication-preferences" className="text-persal-blue hover:underline">Change your preferences</a></div>
+          </div>
+
+          <form id="communication-preferences" onSubmit={handlePreferencesUpdate} className="mt-12 border-t border-gray-200 pt-8">
+            <h2 className="text-2xl md:text-3xl text-gray-700">Please update your communication preference below.</h2>
+            <p className="mt-4 text-gray-600 text-lg">Your current communication preference is indicated below.</p>
+
+            <div className="mt-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <p className="text-gray-600 text-lg">I am happy to receive updates and other communications from Wonga via email and sms.</p>
+              <div className="flex items-center gap-5 text-gray-700">
+                <label className="inline-flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="communicationPreference"
+                    checked={receivesCommunication}
+                    onChange={() => setReceivesCommunication(true)}
+                    className="h-5 w-5"
+                  />
+                  <span>Yes</span>
+                </label>
+                <label className="inline-flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="communicationPreference"
+                    checked={!receivesCommunication}
+                    onChange={() => setReceivesCommunication(false)}
+                    className="h-5 w-5"
+                  />
+                  <span>No</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="mt-12 flex items-center justify-between">
+              <a href="#" className="text-persal-blue hover:underline">Cancel</a>
               <button
                 type="submit"
-                disabled={isSaving}
-                className="w-full md:w-auto px-6 py-3 bg-persal-blue text-white rounded-xl font-semibold hover:bg-persal-dark transition disabled:opacity-60 disabled:cursor-not-allowed"
+                className="bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl px-10 py-3 min-w-[220px] transition"
               >
-                {isSaving ? "Saving..." : "Save Profile"}
+                Update
               </button>
-              <button
-                type="button"
-                onClick={handleCancelEdit}
-                disabled={isSaving}
-                className="w-full md:w-auto px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                Cancel
-              </button>
+            </div>
+          </form>
+
+          {savedMessage && <div className="mt-4 text-sm font-medium text-green-700">{savedMessage}</div>}
+          {errorMessage && <div className="mt-2 text-sm font-medium text-red-600">{errorMessage}</div>}
             </>
           )}
-          {savedMessage && <span className="text-sm font-medium text-green-700">{savedMessage}</span>}
-          {errorMessage && <span className="text-sm font-medium text-red-600">{errorMessage}</span>}
+
+          {activeSection === "employment" && (
+            <div className="space-y-7">
+              <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
+                <div className="text-gray-700">Employment status</div>
+                <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700 flex items-center justify-between">
+                  <span>Self-employed</span>
+                  <ChevronDown className="text-persal-blue" size={22} />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
+                <div className="text-gray-700">Gross monthly income (before tax &amp; deductions)</div>
+                <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">R 7500</div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
+                <div className="text-gray-700">Net monthly income (after tax &amp; deductions)</div>
+                <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">R 6000</div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
+                <div className="text-gray-700">Frequency of income</div>
+                <div className="rounded-xl bg-white border border-gray-200 px-5 py-3 text-gray-700 flex items-center justify-between">
+                  <span>Monthly</span>
+                  <ChevronDown className="text-persal-blue" size={22} />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
+                <div className="text-gray-700">Salary day</div>
+                <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">25</div>
+              </div>
+
+              <div className="md:pl-[236px]"><a href="#" className="text-persal-blue hover:underline">Change your employment details</a></div>
+            </div>
+          )}
+
+          {activeSection === "banking" && (
+            <div className="space-y-7">
+              <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
+                <div className="text-gray-700">Bank name</div>
+                <div className="rounded-xl bg-white border border-gray-200 px-5 py-3 text-gray-700 flex items-center justify-between">
+                  <span>{profile.bankName || "Capitec"}</span>
+                  <ChevronDown className="text-persal-blue" size={22} />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
+                <div className="text-gray-700">Account number</div>
+                <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{profile.accountNumber || "1729841846"}</div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
+                <div className="text-gray-700">Account type</div>
+                <div className="rounded-xl bg-white border border-gray-200 px-5 py-3 text-gray-700 flex items-center justify-between">
+                  <span>Savings account</span>
+                  <ChevronDown className="text-persal-blue" size={22} />
+                </div>
+              </div>
+
+              <div className="md:pl-[236px]"><a href="#" className="text-persal-blue hover:underline">Change your banking details</a></div>
+            </div>
+          )}
         </div>
-      </form>
+      </div>
 
       {cropOpen && cropSource && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
