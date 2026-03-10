@@ -1,7 +1,10 @@
 "use client";
 import React from "react";
+import { useRouter } from "next/navigation";
 
 export default function ApplyPage() {
+  const router = useRouter();
+
   return (
     <div className="max-w-lg mx-auto bg-white rounded-2xl shadow p-8 border border-gray-200">
       <h2 className="text-xl font-bold text-persal-blue mb-6">Apply for Loan</h2>
@@ -23,7 +26,13 @@ export default function ApplyPage() {
         </select>
         <p className="text-xs text-gray-500 mt-2">Money is withdrawn once, at the end of your selected period.</p>
       </div>
-      <button className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-3 font-semibold text-lg shadow transition w-full">Apply</button>
+      <button
+        type="button"
+        onClick={() => router.push("/auth/login")}
+        className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-3 font-semibold text-lg shadow transition w-full"
+      >
+        Apply
+      </button>
     </div>
   );
 }

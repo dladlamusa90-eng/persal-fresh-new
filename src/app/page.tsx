@@ -153,21 +153,21 @@ export default function Home() {
       <div className="relative z-10">
       {/* Top Bar (urgent message) */}
       {showTopAd && (
-        <div className="w-full bg-persal-dark text-blue-100 py-2 px-4 font-semibold text-xs md:text-sm tracking-wide" role="region" aria-label="Promotional banner">
-          <div className="max-w-5xl mx-auto flex items-center justify-between gap-3">
+        <div className="relative w-full bg-persal-dark text-blue-100 py-2 px-4 font-semibold text-xs md:text-sm tracking-wide" role="region" aria-label="Promotional banner">
+          <div className="max-w-5xl mx-auto flex items-center justify-center gap-3">
             <div className="text-center flex-1">
               Need cash today?<br className="hidden md:block" />
               <span className="font-normal">Complete your application today and get cash in your account in under 1 hour!</span>
             </div>
-            <button
-              type="button"
-              onClick={() => setShowTopAd(false)}
-              className="shrink-0 w-7 h-7 rounded-full border border-blue-200/60 text-blue-100 hover:bg-blue-100/10 transition leading-none"
-              aria-label="Close promotional banner"
-            >
-              ×
-            </button>
           </div>
+          <button
+            type="button"
+            onClick={() => setShowTopAd(false)}
+            className="absolute top-1 right-2 md:right-4 w-7 h-7 rounded-full border border-blue-200/60 text-blue-100 hover:bg-blue-100/10 transition leading-none"
+            aria-label="Close promotional banner"
+          >
+            ×
+          </button>
         </div>
       )}
       <div className="min-h-screen flex flex-col bg-transparent relative z-10">
@@ -179,7 +179,7 @@ export default function Home() {
             </a>
             <nav className="flex gap-4 items-center">
               <a href="/auth/login" className="text-persal-dark font-medium px-4 py-2 rounded hover:bg-blue-50 transition">Login</a>
-              <a href="/auth/signup" className="bg-persal-blue text-white font-semibold px-4 py-2 rounded shadow hover:bg-persal-dark transition">Apply</a>
+              <a href="/auth/login" className="bg-persal-blue text-white font-semibold px-4 py-2 rounded shadow hover:bg-persal-dark transition">Apply</a>
             </nav>
           </div>
         </header>
@@ -427,7 +427,7 @@ export default function Home() {
                     </div>
                     <div className="text-center md:text-right">
                       <Link
-                        href={!error && desiredLoan >= 100 && desiredLoan <= maxLoan ? "/auth/signup" : "#"}
+                        href={!error && desiredLoan >= 100 && desiredLoan <= maxLoan ? "/auth/login" : "#"}
                         className={`inline-block px-4 py-2 rounded-lg font-semibold text-base transition text-center ${!error && desiredLoan >= 100 && desiredLoan <= maxLoan ? 'bg-orange-500 text-white hover:bg-orange-600 cursor-pointer' : 'bg-gray-300 text-gray-400 cursor-not-allowed pointer-events-none'}`}
                       >
                         Apply Now
@@ -522,7 +522,7 @@ export default function Home() {
             }, {
               img: "/how-step2.png",
               alt: "Apply Online",
-              link: "/auth/signup",
+              link: "/auth/login",
               text: "Apply Online",
               desc: "Complete your application securely online in minutes."
             }, {
@@ -595,7 +595,7 @@ export default function Home() {
           <section className="flex-1 bg-persal-blue rounded-t-2xl md:rounded-l-2xl md:rounded-tr-none shadow p-8 flex flex-col items-start justify-center">
             <h2 className="text-2xl font-bold text-white mb-3">Ready to get started?</h2>
             <p className="text-blue-100 mb-5">Apply for your Persal payroll loan today and experience fast, fair, and stress-free borrowing.</p>
-            <a href="/auth/signup" className="inline-block bg-white text-persal-blue font-semibold px-6 py-3 rounded-lg shadow hover:bg-blue-50 transition">Apply Now</a>
+            <a href="/auth/login" className="inline-block bg-white text-persal-blue font-semibold px-6 py-3 rounded-lg shadow hover:bg-blue-50 transition">Apply Now</a>
           </section>
           <div className="flex-1 flex items-stretch">
             {/* Sliding image carousel */}
@@ -634,7 +634,7 @@ export default function Home() {
               <a href="/app/about" className="hover:underline">About</a>
               <a href="/app/how-it-works" className="hover:underline">How It Works</a>
               <a href="/auth/login" className="hover:underline">Login</a>
-              <a href="/auth/signup" className="hover:underline">Apply</a>
+              <a href="/auth/login" className="hover:underline">Apply</a>
               <a href="mailto:support@persal.co.za" className="hover:underline">Contact</a>
             </nav>
           </div>

@@ -173,7 +173,7 @@ export default function EligibilityPage() {
       )}
       <div className="flex justify-end mt-8">
         <a
-          href={calculated && !error ? `/dashboard/lending/apply?salary=${salary}&disposable=${disposable}&loan=${desiredLoan}&term=${term}` : undefined}
+          href={calculated && !error ? "/auth/login" : undefined}
           className={`px-8 py-3 rounded-xl font-semibold text-lg transition 
             ${calculated && !error ? "bg-blue-700 text-white hover:bg-blue-800 cursor-pointer" : "bg-gray-300 text-gray-400 cursor-not-allowed"}`}
           tabIndex={calculated && !error ? 0 : -1}
