@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -8,9 +8,44 @@ export default function ChatWidget() {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isHiddenByFooter, setIsHiddenByFooter] = useState(false);
+  const widgetRef = useRef<HTMLDivElement | null>(null);
   const [messages, setMessages] = useState<Msg[]>([
     { role: "assistant", content: "Hi! How can I help you?" },
   ]);
+
+  useEffect(() => {
+    function updateOverlapState() {
+      const widget = widgetRef.current;
+      const footerTarget = document.getElementById("join-our-community");
+
+      if (!widget || !footerTarget) {
+        setIsHiddenByFooter(false);
+        return;
+      }
+
+      const widgetRect = widget.getBoundingClientRect();
+      const footerRect = footerTarget.getBoundingClientRect();
+
+      const overlaps = !(
+        widgetRect.right < footerRect.left ||
+        widgetRect.left > footerRect.right ||
+        widgetRect.bottom < footerRect.top ||
+        widgetRect.top > footerRect.bottom
+      );
+
+      setIsHiddenByFooter(overlaps);
+    }
+
+    updateOverlapState();
+    window.addEventListener("scroll", updateOverlapState, { passive: true });
+    window.addEventListener("resize", updateOverlapState);
+
+    return () => {
+      window.removeEventListener("scroll", updateOverlapState);
+      window.removeEventListener("resize", updateOverlapState);
+    };
+  }, []);
 
   async function send() {
     const value = text.trim();
@@ -37,7 +72,10 @@ export default function ChatWidget() {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-50">
+    <div
+      ref={widgetRef}
+      className={`fixed bottom-4 right-4 z-50 transition-opacity duration-200 ${isHiddenByFooter ? "opacity-0 pointer-events-none" : "opacity-100"}`}
+    >
       {!open ? (
         <button
           onClick={() => setOpen(true)}

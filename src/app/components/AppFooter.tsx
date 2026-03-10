@@ -22,7 +22,7 @@ export default function AppFooter({ isAuthenticated = false }: AppFooterProps) {
           <a href="mailto:support@persal.co.za" className="hover:underline">Contact</a>
         </nav>
 
-        <div className="flex flex-col items-center md:items-end">
+        <div id="join-our-community" className="flex flex-col items-center md:items-end">
           <span className="text-white font-semibold mb-2">Join our community</span>
           <form className="w-full md:w-auto flex items-center gap-2 mb-3" action="#" method="post">
             <input
