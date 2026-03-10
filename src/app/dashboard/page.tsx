@@ -110,7 +110,7 @@ export default function DashboardHomePage() {
                 <div className="p-4 md:p-5 border-b border-white/20">
                   <h3 className="text-orange-300 font-semibold text-lg mb-2">What you can get</h3>
                   <p className="text-white/95 leading-relaxed text-sm md:text-base font-semibold break-words">
-                    New customers can apply for up to R5000 with 3 months to repay.
+                    New customers can apply for up to <b>R2500</b>, while existing customers can apply for up to <b>R5000</b>, with up to 3 months to repay.
                   </p>
                 </div>
                 <div className="p-4 md:p-5 border-b border-white/20 bg-blue-900/25">
@@ -127,6 +127,14 @@ export default function DashboardHomePage() {
                         <rect x="3" y="5" width="18" height="14" rx="2" /><circle cx="8" cy="12" r="2" /><line x1="13" y1="10" x2="18" y2="10" /><line x1="13" y1="14" x2="18" y2="14" />
                       </svg>
                       <span>SA ID number</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-blue-200 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="5" width="18" height="14" rx="2" />
+                        <line x1="7" y1="10" x2="17" y2="10" />
+                        <line x1="7" y1="14" x2="13" y2="14" />
+                      </svg>
+                      <span>Persal number</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <svg className="w-4 h-4 text-blue-200 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -174,7 +182,7 @@ export default function DashboardHomePage() {
                     </div>
                   </div>
 
-                  <div className="mt-6 space-y-6">
+                  <div className="mt-16 space-y-6">
                     <div>
                       <div className="text-lg md:text-xl text-gray-700 mb-2">How much do you need?</div>
                       <div className="flex items-center gap-3 md:gap-4">
