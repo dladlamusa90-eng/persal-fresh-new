@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSession, signIn } from "next-auth/react";
 import { ChevronLeft, Eye, EyeOff } from "lucide-react";
+import AppFooter from "@/app/components/AppFooter";
 
 type LoginTab = "id" | "email";
 
@@ -78,6 +79,7 @@ export default function LoginPage() {
   }
 
   return (
+    <>
     <section className="relative min-h-screen bg-neutral-100 overflow-hidden">
       <div className="relative z-10 min-h-screen flex flex-col">
         <header className="w-full flex items-center justify-between py-2 px-4 md:px-8 mb-2 bg-white shadow-none">
@@ -280,5 +282,7 @@ export default function LoginPage() {
         </div>
       </div>
     </section>
+    <AppFooter />
+    </>
   );
 }

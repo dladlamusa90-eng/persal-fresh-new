@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronDown, Eye, EyeOff } from "lucide-react";
+import AppFooter from "@/app/components/AppFooter";
 import {
   SOUTH_AFRICAN_BANK_NAMES,
   getBankAccountConstraintLabel,
@@ -102,6 +103,7 @@ export default function SignupPage() {
   }
 
   return (
+    <>
     <section className="relative min-h-screen flex items-center justify-center bg-neutral-100 px-4 md:px-0 py-8 overflow-hidden">
       <div className="relative z-10 w-full flex items-center justify-center">
         <form onSubmit={handleSignup} className="w-full max-w-md bg-white rounded-2xl p-6 md:p-8 shadow flex flex-col gap-4 md:gap-6">
@@ -195,5 +197,7 @@ export default function SignupPage() {
         </form>
       </div>
     </section>
+    <AppFooter />
+    </>
   );
 }

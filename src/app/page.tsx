@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import React, { useState, useEffect, useRef } from "react";
+import AppFooter from "@/app/components/AppFooter";
 
 function CarouselCTA() {
   const images = [
@@ -623,22 +624,7 @@ export default function Home() {
           </form>
         </section>
 
-        {/* Footer Section */}
-        <footer className="w-full bg-persal-dark text-blue-100 py-8 mt-12">
-          <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 px-4">
-            <div className="flex flex-col items-center md:items-start">
-              <span className="font-bold text-lg mb-2">Persal</span>
-              <span className="text-xs">&copy; {new Date().getFullYear()} Persal. All rights reserved.</span>
-            </div>
-            <nav className="flex flex-col md:flex-row gap-3 md:gap-6 text-sm items-center">
-              <a href="/app/about" className="hover:underline">About</a>
-              <a href="/app/how-it-works" className="hover:underline">How It Works</a>
-              <a href="/auth/login" className="hover:underline">Login</a>
-              <a href="/auth/login" className="hover:underline">Apply</a>
-              <a href="mailto:support@persal.co.za" className="hover:underline">Contact</a>
-            </nav>
-          </div>
-        </footer>
+        <AppFooter />
       </div>
     </div>
   </>

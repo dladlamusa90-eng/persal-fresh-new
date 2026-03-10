@@ -79,7 +79,7 @@ export default function DashboardHomePage() {
               onClick={() => setActiveMyLoanSection("summary")}
               className={`block pb-1 w-fit transition ${activeMyLoanSection === "summary" ? "text-persal-blue font-semibold border-b-2 border-persal-blue" : "text-gray-700 hover:text-persal-blue"}`}
             >
-              My loan
+              Loan summary
             </button>
             <button
               type="button"

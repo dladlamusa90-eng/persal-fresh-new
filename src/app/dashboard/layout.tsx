@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import ChatWidget from "@/app/components/ChatWidget";
 import LoanStatusBadge from "@/app/components/LoanStatusBadge";
+import AppFooter from "@/app/components/AppFooter";
 
 function getProfileInitial(fullName: string) {
   const initial = fullName.trim().charAt(0);
@@ -161,7 +162,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       className={`block px-3 py-2 rounded text-sm font-medium transition w-full ${
                         isActivePath(item.href)
                           ? "bg-blue-100 text-persal-blue"
-                          : "text-persal-dark hover:bg-blue-50 hover:text-persal-blue"
+                          : "text-black hover:bg-blue-50 hover:text-black"
                       }`}
                     >
                       {item.name}
@@ -179,7 +180,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
             <nav className="hidden md:flex w-full border-b border-gray-200 bg-white px-8 items-center justify-between">
               <div className="flex items-center gap-6 h-[48px]">
-                <img src="/logo.png" alt="Persal Logo" className="h-[42px] w-auto object-contain" style={{ height: '42px' }} />
+                <Link href="/dashboard" aria-label="Go to My Loan">
+                  <img src="/logo.png" alt="Persal Logo" className="h-[42px] w-auto object-contain" style={{ height: '42px' }} />
+                </Link>
               </div>
               <div className="flex items-center gap-4">
                 <ul className="flex gap-4 items-center h-[56px]">
@@ -198,8 +201,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                           href={item.href}
                           className={`px-4 h-[34px] flex items-center rounded-md text-sm font-medium transition ${
                             isActivePath(item.href)
-                              ? "bg-gray-100 text-persal-blue"
-                              : "text-persal-dark hover:bg-blue-50 hover:text-persal-blue"
+                              ? "bg-blue-100 text-persal-blue"
+                              : "text-black hover:bg-blue-50 hover:text-black"
                           }`}
                           style={{ lineHeight: "1.2" }}
                         >
@@ -232,6 +235,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           )}
         </main>
+        <AppFooter isAuthenticated />
         <ChatWidget />
       </div>
     </div>
