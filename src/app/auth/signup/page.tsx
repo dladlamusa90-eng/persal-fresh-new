@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronDown, Eye, EyeOff } from "lucide-react";
@@ -26,63 +26,6 @@ export default function SignupPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
-
-  useEffect(() => {
-    const canvas = document.getElementById("auth-bg-balls-canvas") as HTMLCanvasElement | null;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let width = window.innerWidth;
-    let height = window.innerHeight;
-    canvas.width = width;
-    canvas.height = height;
-
-    const balls = Array.from({ length: 18 }).map(() => ({
-      x: Math.random() * width,
-      y: Math.random() * height,
-      r: 18 + Math.random() * 18,
-      dx: (Math.random() - 0.5) * 0.7,
-      dy: (Math.random() - 0.5) * 0.7,
-      color: `hsl(210, 80%, ${60 + Math.random() * 20}%)`,
-    }));
-
-    let running = true;
-    function animate() {
-      if (!running) return;
-      ctx.clearRect(0, 0, width, height);
-      for (const b of balls) {
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, b.r, 0, 2 * Math.PI);
-        ctx.fillStyle = b.color;
-        ctx.globalAlpha = 0.18;
-        ctx.fill();
-        ctx.globalAlpha = 1;
-        b.x += b.dx;
-        b.y += b.dy;
-        if (b.x < -b.r) b.x = width + b.r;
-        if (b.x > width + b.r) b.x = -b.r;
-        if (b.y < -b.r) b.y = height + b.r;
-        if (b.y > height + b.r) b.y = -b.r;
-      }
-      requestAnimationFrame(animate);
-    }
-
-    const handleResize = () => {
-      width = window.innerWidth;
-      height = window.innerHeight;
-      canvas.width = width;
-      canvas.height = height;
-    };
-
-    window.addEventListener("resize", handleResize);
-    animate();
-
-    return () => {
-      running = false;
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
 
   function handleSignup(e: React.FormEvent) {
     e.preventDefault();
@@ -160,7 +103,6 @@ export default function SignupPage() {
 
   return (
     <section className="relative min-h-screen flex items-center justify-center bg-neutral-100 px-4 md:px-0 py-8 overflow-hidden">
-      <canvas id="auth-bg-balls-canvas" className="fixed inset-0 w-full h-full z-0 pointer-events-none" style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh" }} />
       <div className="relative z-10 w-full flex items-center justify-center">
         <form onSubmit={handleSignup} className="w-full max-w-md bg-white rounded-2xl p-6 md:p-8 shadow flex flex-col gap-4 md:gap-6">
           <h2 className="text-xl md:text-2xl font-bold mb-2 text-center">Sign Up</h2>

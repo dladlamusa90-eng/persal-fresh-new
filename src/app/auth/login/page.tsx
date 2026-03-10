@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSession, signIn } from "next-auth/react";
 import { ChevronLeft, Eye, EyeOff } from "lucide-react";
@@ -18,63 +18,6 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
-
-  useEffect(() => {
-    const canvas = document.getElementById("auth-bg-balls-canvas") as HTMLCanvasElement | null;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let width = window.innerWidth;
-    let height = window.innerHeight;
-    canvas.width = width;
-    canvas.height = height;
-
-    const balls = Array.from({ length: 18 }).map(() => ({
-      x: Math.random() * width,
-      y: Math.random() * height,
-      r: 18 + Math.random() * 18,
-      dx: (Math.random() - 0.5) * 0.7,
-      dy: (Math.random() - 0.5) * 0.7,
-      color: `hsl(210, 80%, ${60 + Math.random() * 20}%)`,
-    }));
-
-    let running = true;
-    function animate() {
-      if (!running) return;
-      ctx.clearRect(0, 0, width, height);
-      for (const b of balls) {
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, b.r, 0, 2 * Math.PI);
-        ctx.fillStyle = b.color;
-        ctx.globalAlpha = 0.18;
-        ctx.fill();
-        ctx.globalAlpha = 1;
-        b.x += b.dx;
-        b.y += b.dy;
-        if (b.x < -b.r) b.x = width + b.r;
-        if (b.x > width + b.r) b.x = -b.r;
-        if (b.y < -b.r) b.y = height + b.r;
-        if (b.y > height + b.r) b.y = -b.r;
-      }
-      requestAnimationFrame(animate);
-    }
-
-    const handleResize = () => {
-      width = window.innerWidth;
-      height = window.innerHeight;
-      canvas.width = width;
-      canvas.height = height;
-    };
-
-    window.addEventListener("resize", handleResize);
-    animate();
-
-    return () => {
-      running = false;
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
 
   function handleOtpRequest(e: React.FormEvent) {
     e.preventDefault();
@@ -136,7 +79,6 @@ export default function LoginPage() {
 
   return (
     <section className="relative min-h-screen bg-neutral-100 overflow-hidden">
-      <canvas id="auth-bg-balls-canvas" className="fixed inset-0 w-full h-full z-0 pointer-events-none" style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh" }} />
       <div className="relative z-10 min-h-screen flex flex-col">
         <header className="w-full flex items-center justify-between py-2 px-4 md:px-8 mb-2 bg-white shadow-none">
           <div className="flex w-full items-center justify-between">

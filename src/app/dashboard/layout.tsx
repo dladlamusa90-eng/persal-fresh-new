@@ -61,48 +61,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [profileName, setProfileName] = useState("Thabo Mokoena");
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const pathname = usePathname();
+  const isDashboardHome = pathname === "/dashboard";
 
   const isActivePath = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
-  React.useEffect(() => {
-    const canvas = document.getElementById('bg-balls-canvas') as HTMLCanvasElement | null;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-    canvas.width = width;
-    canvas.height = height;
-    const balls = Array.from({ length: 18 }).map(() => ({
-      x: Math.random() * width,
-      y: Math.random() * height,
-      r: 18 + Math.random() * 18,
-      dx: (Math.random() - 0.5) * 0.7,
-      dy: (Math.random() - 0.5) * 0.7,
-      color: `hsl(210, 80%, ${60 + Math.random() * 20}%)`
-    }));
-    let running = true;
-    function animate() {
-      if (!running) return;
-      ctx.clearRect(0, 0, width, height);
-      for (const b of balls) {
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, b.r, 0, 2 * Math.PI);
-        ctx.fillStyle = b.color;
-        ctx.globalAlpha = 0.18;
-        ctx.fill();
-        ctx.globalAlpha = 1;
-        b.x += b.dx;
-        b.y += b.dy;
-        if (b.x < -b.r) b.x = width + b.r;
-        if (b.x > width + b.r) b.x = -b.r;
-        if (b.y < -b.r) b.y = height + b.r;
-        if (b.y > height + b.r) b.y = -b.r;
-      }
-      requestAnimationFrame(animate);
-    }
-    animate();
-    return () => { running = false; };
-  }, []);
 
   React.useEffect(() => {
     let mounted = true;
@@ -133,7 +94,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, []);
   return (
     <div className="min-h-screen bg-neutral-100 flex flex-col relative overflow-x-hidden">
-      <canvas id="bg-balls-canvas" className="fixed inset-0 w-full h-full z-0 pointer-events-none" style={{position:'fixed',top:0,left:0,width:'100vw',height:'100vh'}} />
       <div className="relative z-10">
         {loggedIn && (
           <>
@@ -256,9 +216,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         )}
         <LoanStatusBadge />
         <main className="flex-1 w-full px-4 md:px-8 py-4 md:py-8">
-          <div className="w-full max-w-5xl mx-auto bg-white rounded-2xl shadow p-4 md:p-8 mt-2 md:mt-8 mb-8 md:mb-12">
-            {children}
-          </div>
+          {isDashboardHome ? (
+            <div className="w-full max-w-7xl mx-auto mt-1 md:mt-4 mb-8 md:mb-12">
+              {children}
+            </div>
+          ) : (
+            <div className="w-full max-w-5xl mx-auto bg-white rounded-2xl shadow p-4 md:p-8 mt-2 md:mt-8 mb-8 md:mb-12">
+              {children}
+            </div>
+          )}
         </main>
         <ChatWidget />
       </div>
