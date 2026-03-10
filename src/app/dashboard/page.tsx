@@ -10,7 +10,7 @@ export default function DashboardHomePage() {
   const [selectedDays, setSelectedDays] = useState(60);
   const [error, setError] = useState("");
   const [showFeeBreakdown, setShowFeeBreakdown] = useState(false);
-  const [showLoanDocuments, setShowLoanDocuments] = useState(false);
+  const [activeMyLoanSection, setActiveMyLoanSection] = useState<"summary" | "documents">("summary");
   const repayDateInputRef = useRef<HTMLInputElement | null>(null);
 
   function updateDesiredLoan(value: number) {
@@ -74,27 +74,20 @@ export default function DashboardHomePage() {
       <div className="grid grid-cols-1 md:grid-cols-[190px_1fr] gap-6 md:gap-8">
         <aside className="pt-6">
           <nav className="space-y-3 text-[22px] md:text-base">
-            <Link href="/dashboard" className="block text-persal-blue font-semibold border-b-2 border-persal-blue pb-1 w-fit">
-              Loan summary
-            </Link>
-            <div className="pt-1">
-              <button
-                type="button"
-                onClick={() => setShowLoanDocuments((prev) => !prev)}
-                className="text-gray-700 font-medium mb-2 hover:text-persal-blue transition"
-              >
-                Loan documents
-              </button>
-              {showLoanDocuments && (
-                <div className="pl-3 space-y-1.5">
-                  <Link href="/dashboard/lending/active-loan" className="block text-gray-600 hover:text-persal-blue transition">Active Loan</Link>
-                  <Link href="/dashboard/lending/application-status" className="block text-gray-600 hover:text-persal-blue transition">Status</Link>
-                  <Link href="/dashboard/lending/schedule" className="block text-gray-600 hover:text-persal-blue transition">Schedule</Link>
-                  <Link href="/dashboard/lending/statement" className="block text-gray-600 hover:text-persal-blue transition">Statement</Link>
-                  <Link href="/dashboard/lending/history" className="block text-gray-600 hover:text-persal-blue transition">Loan History</Link>
-                </div>
-              )}
-            </div>
+            <button
+              type="button"
+              onClick={() => setActiveMyLoanSection("summary")}
+              className={`block pb-1 w-fit transition ${activeMyLoanSection === "summary" ? "text-persal-blue font-semibold border-b-2 border-persal-blue" : "text-gray-700 hover:text-persal-blue"}`}
+            >
+              My loan
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveMyLoanSection("documents")}
+              className={`block pb-1 w-fit transition ${activeMyLoanSection === "documents" ? "text-persal-blue font-semibold border-b-2 border-persal-blue" : "text-gray-700 hover:text-persal-blue"}`}
+            >
+              Loan documents
+            </button>
           </nav>
         </aside>
 
@@ -109,6 +102,8 @@ export default function DashboardHomePage() {
             </div>
           </div>
 
+          {activeMyLoanSection === "summary" && (
+          <>
           <div id="calc" className="bg-white rounded-2xl shadow-xl border border-blue-200 overflow-hidden">
             <div className="grid grid-cols-1 md:grid-cols-12">
               <aside className="md:col-span-4 bg-persal-dark text-white">
@@ -360,6 +355,49 @@ export default function DashboardHomePage() {
             </div>
           </div>
 
+          <div className="mt-4 rounded-xl bg-white border border-gray-200 p-6 text-center">
+            <h2 className="text-4xl md:text-5xl text-gray-700">Flexible, short term loans that give you back control.</h2>
+            <p className="mt-3 text-gray-600 text-[22px] md:text-base">
+              Our short term loans help people manage their cash flow. If you need a quick loan to tide you over for a short while, we&apos;re here for you.
+            </p>
+          </div>
+          </>
+          )}
+
+          {activeMyLoanSection === "documents" && (
+            <div className="rounded-2xl bg-white border border-gray-200 shadow-sm p-5 md:p-6">
+              <h2 className="text-2xl md:text-3xl text-gray-800 font-normal mb-2">Loan documents</h2>
+              <p className="text-gray-600 mb-6">All your loan records are available in one place.</p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Link href="/dashboard/lending/active-loan" className="rounded-xl border border-gray-200 bg-gray-50 p-4 hover:border-persal-blue hover:bg-blue-50/40 transition">
+                  <div className="text-lg text-gray-800">Active Loan</div>
+                  <div className="mt-1 text-sm text-gray-600">View your current active loan details.</div>
+                </Link>
+
+                <Link href="/dashboard/lending/application-status" className="rounded-xl border border-gray-200 bg-gray-50 p-4 hover:border-persal-blue hover:bg-blue-50/40 transition">
+                  <div className="text-lg text-gray-800">Status</div>
+                  <div className="mt-1 text-sm text-gray-600">Check the latest application status.</div>
+                </Link>
+
+                <Link href="/dashboard/lending/schedule" className="rounded-xl border border-gray-200 bg-gray-50 p-4 hover:border-persal-blue hover:bg-blue-50/40 transition">
+                  <div className="text-lg text-gray-800">Schedule</div>
+                  <div className="mt-1 text-sm text-gray-600">See your repayment schedule and due dates.</div>
+                </Link>
+
+                <Link href="/dashboard/lending/statement" className="rounded-xl border border-gray-200 bg-gray-50 p-4 hover:border-persal-blue hover:bg-blue-50/40 transition">
+                  <div className="text-lg text-gray-800">Statement</div>
+                  <div className="mt-1 text-sm text-gray-600">Open your latest loan statements.</div>
+                </Link>
+
+                <Link href="/dashboard/lending/history" className="rounded-xl border border-gray-200 bg-gray-50 p-4 hover:border-persal-blue hover:bg-blue-50/40 transition md:col-span-2">
+                  <div className="text-lg text-gray-800">Loan History</div>
+                  <div className="mt-1 text-sm text-gray-600">Review your previous loans and activity.</div>
+                </Link>
+              </div>
+            </div>
+          )}
+
           {showFeeBreakdown && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4" role="dialog" aria-modal="true" aria-label="Fees Breakdown">
               <div className="w-full max-w-sm rounded-xl overflow-hidden bg-gray-100 shadow-2xl border border-gray-200">
@@ -394,12 +432,6 @@ export default function DashboardHomePage() {
             </div>
           )}
 
-          <div className="mt-4 rounded-xl bg-white border border-gray-200 p-6 text-center">
-            <h2 className="text-4xl md:text-5xl text-gray-700">Flexible, short term loans that give you back control.</h2>
-            <p className="mt-3 text-gray-600 text-[22px] md:text-base">
-              Our short term loans help people manage their cash flow. If you need a quick loan to tide you over for a short while, we&apos;re here for you.
-            </p>
-          </div>
         </div>
       </div>
     </section>

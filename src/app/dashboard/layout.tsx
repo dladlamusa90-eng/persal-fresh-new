@@ -43,15 +43,9 @@ const DropdownMenuItem = ({ href, children }: { href: string; children: React.Re
 };
 
 const dashboardMenu = [
-  { name: "Loan Documents", subMenu: [
-    { name: "Active Loan", href: "/dashboard/lending/active-loan" },
-    { name: "Status", href: "/dashboard/lending/application-status" },
-    { name: "Schedule", href: "/dashboard/lending/schedule" },
-    { name: "Statement", href: "/dashboard/lending/statement" },
-    { name: "Loan History", href: "/dashboard/lending/history" },
-  ] },
+  { name: "My Loan", href: "/dashboard" },
   { name: "My Details", href: "/dashboard/profile" },
-  { name: "Contact Us", href: "/dashboard/support" },
+  { name: "Support", href: "/dashboard/support" },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -62,7 +56,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const isDashboardHome = pathname === "/dashboard";
 
-  const isActivePath = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+  const isActivePath = (href: string) => {
+    if (href === "/dashboard") {
+      return pathname === "/dashboard";
+    }
+    return pathname === href || pathname.startsWith(`${href}/`);
+  };
 
   React.useEffect(() => {
     let mounted = true;
