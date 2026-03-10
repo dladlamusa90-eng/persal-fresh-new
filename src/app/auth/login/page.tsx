@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSession, signIn } from "next-auth/react";
-import { Eye, EyeOff } from "lucide-react";
+import { ChevronLeft, Eye, EyeOff } from "lucide-react";
 
 type LoginTab = "id" | "email";
 
@@ -10,6 +10,8 @@ export default function LoginPage() {
   const [activeTab, setActiveTab] = useState<LoginTab>("id");
   const [idNumber, setIdNumber] = useState("");
   const [otpInfo, setOtpInfo] = useState("");
+  const [showOtpStep, setShowOtpStep] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -83,8 +85,17 @@ export default function LoginPage() {
       return;
     }
 
-    setOtpInfo("OTP sent. Please check your cellphone linked to your ID number.");
+    setOtpInfo("");
+    setOtpCode("");
+    setShowOtpStep(true);
   }
+
+  function handleOtpLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setOtpInfo("Demo mode: OTP verification is not enabled yet.");
+  }
+
+  const maskedCell = `*** *** ${idNumber.replace(/\D/g, "").slice(-4).padStart(4, "0")}`;
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -140,12 +151,14 @@ export default function LoginPage() {
         </header>
 
         <div className="max-w-5xl mx-auto w-full px-4 md:px-6 mt-6 pb-8 bg-white/70 backdrop-blur-sm border border-gray-200 rounded-3xl p-5 md:p-8 shadow-sm">
-          <div className="bg-gray-200 rounded-full p-1 flex items-center gap-2">
+          {!showOtpStep && (
+            <div className="bg-gray-200 rounded-full p-1 flex items-center gap-2">
             <button
               type="button"
               onClick={() => {
                 setActiveTab("id");
                 setError("");
+                setShowOtpStep(false);
               }}
               className={`w-1/2 rounded-full py-2.5 text-sm md:text-base font-medium transition ${activeTab === "id" ? "bg-white text-sky-600 shadow" : "text-gray-700 hover:text-gray-900"}`}
             >
@@ -156,14 +169,86 @@ export default function LoginPage() {
               onClick={() => {
                 setActiveTab("email");
                 setOtpInfo("");
+                setShowOtpStep(false);
               }}
               className={`w-1/2 rounded-full py-2.5 text-sm md:text-base font-medium transition ${activeTab === "email" ? "bg-white text-sky-600 shadow" : "text-gray-700 hover:text-gray-900"}`}
             >
               Email login
             </button>
-          </div>
+            </div>
+          )}
 
           <div className="mt-10">
+            {showOtpStep ? (
+              <form onSubmit={handleOtpLogin} className="space-y-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowOtpStep(false);
+                    setOtpInfo("");
+                  }}
+                  className="inline-flex items-center gap-1 text-sky-600 hover:underline text-sm"
+                >
+                  <ChevronLeft size={16} />
+                  <span>Back</span>
+                </button>
+
+                <h1 className="text-2xl md:text-3xl text-gray-800 font-medium">Log in with OTP</h1>
+                <p className="text-base md:text-lg text-gray-600">
+                  We&apos;ve sent an OTP via SMS to the cellphone number registered to this account. Please enter the OTP to log in.
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] items-center gap-4">
+                  <label className="text-gray-700 text-base md:text-lg">Cellphone number</label>
+                  <input
+                    type="text"
+                    value={maskedCell}
+                    readOnly
+                    className="w-full rounded-xl border border-gray-300 bg-gray-100 px-4 py-2.5 text-gray-700"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] items-start gap-4">
+                  <label htmlFor="otp-code" className="text-gray-700 text-base md:text-lg pt-2.5">Please enter the 4 digit OTP</label>
+                  <div className="w-full">
+                    <input
+                      id="otp-code"
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={4}
+                      value={otpCode}
+                      onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                      placeholder="OTP"
+                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-300"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setOtpInfo("A new OTP has been sent (demo).")}
+                      className="mt-4 text-sky-600 hover:underline text-base"
+                    >
+                      Request new OTP
+                    </button>
+                  </div>
+                </div>
+
+                {otpInfo && <div className="text-sm font-medium text-sky-700">{otpInfo}</div>}
+
+                <div className="flex justify-end">
+                  <div className="w-full md:w-[320px]">
+                    <p className="text-base text-right text-gray-700 mb-4">
+                      Trouble logging in? <button type="button" onClick={() => { setShowOtpStep(false); setActiveTab("email"); }} className="text-sky-600 hover:underline">Log in with your email</button>
+                    </p>
+                    <button
+                      type="submit"
+                      className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl px-7 py-2.5 text-lg transition"
+                    >
+                      Log in
+                    </button>
+                  </div>
+                </div>
+              </form>
+            ) : (
+              <>
             <h1 className="text-2xl md:text-3xl text-gray-800 font-medium">Welcome back, please log in</h1>
 
             {activeTab === "id" ? (
@@ -246,6 +331,8 @@ export default function LoginPage() {
                   </div>
                 </div>
               </form>
+            )}
+              </>
             )}
           </div>
         </div>
