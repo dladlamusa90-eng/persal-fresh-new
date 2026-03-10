@@ -11,3 +11,4 @@ tsconfig.tsbuildinfo
 *.log
 tmp-*.js
 cookies.txt
+.env.local
