@@ -92,7 +92,7 @@ export default function DashboardHomePage() {
             </div>
           </div>
 
-          <div id="calc" className="bg-white rounded-2xl shadow-lg border border-blue-100 overflow-hidden">
+          <div id="calc" className="bg-white rounded-2xl shadow-xl border border-blue-200 overflow-hidden">
             <div className="grid grid-cols-1 md:grid-cols-12">
               <aside className="md:col-span-4 bg-persal-dark text-white">
                 <div className="p-4 md:p-5 border-b border-white/20">

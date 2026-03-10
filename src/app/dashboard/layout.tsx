@@ -93,7 +93,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     };
   }, []);
   return (
-    <div className="min-h-screen bg-neutral-100 flex flex-col relative overflow-x-hidden">
+    <div className="min-h-screen bg-[#fafcff] flex flex-col relative overflow-x-hidden">
       <div className="relative z-10">
         {loggedIn && (
           <>
