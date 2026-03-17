@@ -30,7 +30,7 @@ export default function AdminLoansPanel({ initialLoans, totalUsers, totalAdmins 
   const router = useRouter();
   const [loans, setLoans] = useState<AdminLoanRow[]>(initialLoans);
   const [loanFilter, setLoanFilter] = useState<LoanFilter>("ALL");
-  const [profitRange, setProfitRange] = useState<ProfitRange>("7D");
+  const [profitRange, setProfitRange] = useState<ProfitRange>("30D");
   const [customFromDate, setCustomFromDate] = useState("");
   const [customToDate, setCustomToDate] = useState("");
   const [loadingById, setLoadingById] = useState<Record<string, LoanAction | null>>({});
@@ -261,7 +261,7 @@ export default function AdminLoansPanel({ initialLoans, totalUsers, totalAdmins 
 
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div>
-              <p className="text-sm text-gray-500">Total Profit</p>
+              <p className="text-sm text-gray-500">Overall Profit (selected range)</p>
               <p className="text-2xl font-bold text-green-700">R {currencyFormatter.format(Math.round(profitSummary.totalProfit))}</p>
             </div>
             <p className="text-sm text-gray-600">Paid Loans Count: <span className="font-semibold">{profitSummary.loansCount}</span></p>

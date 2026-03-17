@@ -15,7 +15,7 @@ export default function BurnUserButton({ userId, role, initialBurned }: Props) {
 
   async function handleToggle() {
     if (role === "ADMIN") {
-      setMessage("Admin accounts cannot be burned.");
+      setMessage("Admin accounts cannot be banned.");
       return;
     }
 
@@ -42,7 +42,7 @@ export default function BurnUserButton({ userId, role, initialBurned }: Props) {
       }
 
       setIsBurned(Boolean(body.user?.isBurned));
-      setMessage(Boolean(body.user?.isBurned) ? "User has been burned." : "User access restored.");
+      setMessage(Boolean(body.user?.isBurned) ? "User has been banned." : "User access restored.");
     } catch {
       setMessage("Network error. Please try again.");
     } finally {
@@ -60,7 +60,7 @@ export default function BurnUserButton({ userId, role, initialBurned }: Props) {
           isBurned ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"
         }`}
       >
-        {isSubmitting ? "Saving..." : isBurned ? "Restore User" : "Burn User"}
+        {isSubmitting ? "Saving..." : isBurned ? "Restore User" : "Ban User"}
       </button>
       {message && <p className="text-xs text-gray-600">{message}</p>}
     </div>
