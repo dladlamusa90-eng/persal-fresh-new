@@ -3,27 +3,52 @@ import Link from "next/link";
 import React, { useState, useEffect, useRef } from "react";
 import AppFooter from "@/app/components/AppFooter";
 
+const CAROUSEL_IMAGES = [
+  { src: "/get-started.png", alt: "Get Started 1" },
+  { src: "/get-started-2.png", alt: "Get Started 2" },
+];
+
+const HOW_IT_WORKS_STEPS = [
+  {
+    img: "/how-step1.png",
+    alt: "Check Eligibility",
+    link: "#calc",
+    text: "Check Eligibility",
+    desc: "Enter the loan amount and choose your month term to see your estimated offer.",
+  },
+  {
+    img: "/how-step2.png",
+    alt: "Apply Online",
+    link: "/auth/login",
+    text: "Apply Online",
+    desc: "Complete your application securely online in minutes.",
+  },
+  {
+    img: "/how-step3.png",
+    alt: "Payroll Deduction",
+    link: "#about-persal",
+    text: "Payroll Deduction",
+    desc: "Repayments are deducted directly from your salary for convenience and peace of mind.",
+  },
+];
+
 function CarouselCTA() {
-  const images = [
-    { src: "/get-started.png", alt: "Get Started 1" },
-    { src: "/get-started-2.png", alt: "Get Started 2" },
-  ];
   const [idx, setIdx] = useState(0);
   useEffect(() => {
     const timer = setInterval(() => {
-      setIdx(i => (i + 1) % images.length);
+      setIdx(i => (i + 1) % CAROUSEL_IMAGES.length);
     }, 3500);
     return () => clearInterval(timer);
   }, []);
   const goNext = (e) => {
     e.stopPropagation();
-    setIdx(i => (i + 1) % images.length);
+    setIdx(i => (i + 1) % CAROUSEL_IMAGES.length);
   };
   return (
     <div className="relative w-full h-48 md:h-full">
       <img
-        src={images[idx].src}
-        alt={images[idx].alt}
+        src={CAROUSEL_IMAGES[idx].src}
+        alt={CAROUSEL_IMAGES[idx].alt}
         className="w-full h-48 md:h-full object-cover rounded-b-2xl md:rounded-r-2xl md:rounded-bl-none shadow-none border-none bg-transparent transition-all duration-700"
         style={{ minHeight: '192px', maxHeight: '340px' }}
         loading="lazy"
@@ -51,6 +76,7 @@ export default function Home() {
       const height = window.innerHeight;
       canvas.width = width;
       canvas.height = height;
+      let rafId = 0;
       const balls = Array.from({ length: 18 }).map(() => ({
         x: Math.random() * width,
         y: Math.random() * height,
@@ -77,10 +103,13 @@ export default function Home() {
           if (b.y < -b.r) b.y = height + b.r;
           if (b.y > height + b.r) b.y = -b.r;
         }
-        requestAnimationFrame(animate);
+        rafId = requestAnimationFrame(animate);
       }
       animate();
-      return () => { running = false; };
+      return () => {
+        running = false;
+        cancelAnimationFrame(rafId);
+      };
     }, []);
   const maxLoan = 5000;
   const [desiredLoan, setDesiredLoan] = useState(1500);
@@ -126,14 +155,15 @@ export default function Home() {
   const dayKnobPercent = Math.min(97, Math.max(3, dayPercent));
   const repayDate = new Date();
   repayDate.setDate(repayDate.getDate() + termDays);
-  const repayDateLabel = repayDate.toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
   const repayDateISO = repayDate.toISOString().split("T")[0];
   const repayDateDisplay = repayDateISO.replace(/-/g, "/");
-  const repayDateLabelCompact = repayDateLabel.replace(/\s+/g, "");
+  const repayDateLabelCompact = repayDate
+    .toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    })
+    .replace(/\s+/g, "");
 
   function setDaysFromRepayDate(value: string) {
     if (!value) return;
@@ -509,65 +539,11 @@ export default function Home() {
             </div>
           )}
         </section>
-
-        {/* Info Section */}
-        <section className="hidden w-full max-w-5xl mx-auto bg-white rounded-2xl shadow p-8 mb-12 mt-8">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-persal-dark">Everything You Need to Get Started</h2>
-            <p className="text-gray-600 mt-2">Clear limits, simple requirements, and a guided process.</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-blue-50 border border-persal-light rounded-2xl shadow-sm p-6 h-full">
-              <h3 className="text-lg font-bold text-persal-dark mb-3">What you can get</h3>
-              <p className="text-gray-700 text-base leading-relaxed">
-                First-time users can apply for up to <span className="font-semibold text-persal-blue">R2500</span>. Returning users can apply for up to <span className="font-semibold text-persal-blue">R5000</span>, with up to 3 months to repay.
-              </p>
-            </div>
-            <div className="bg-white border border-persal-light rounded-2xl shadow-sm p-6 h-full">
-              <h3 className="text-lg font-bold text-persal-dark mb-3">What you'll need</h3>
-              <ul className="space-y-2 text-gray-700">
-                <li>A cellphone number</li>
-                <li>SA ID number</li>
-                <li>Bank account details</li>
-                <li>Most recent proof of income</li>
-                <li>Persal Number</li>
-              </ul>
-            </div>
-            <div className="bg-white border border-persal-light rounded-2xl shadow-sm p-6 h-full">
-              <h3 className="text-lg font-bold text-persal-dark mb-3">How to apply</h3>
-              <ol className="space-y-3 text-gray-700">
-                <li className="flex items-start gap-3"><span className="w-6 h-6 rounded-full bg-blue-100 text-persal-blue text-xs font-bold flex items-center justify-center mt-0.5">1</span><span>Choose the amount you need.</span></li>
-                <li className="flex items-start gap-3"><span className="w-6 h-6 rounded-full bg-blue-100 text-persal-blue text-xs font-bold flex items-center justify-center mt-0.5">2</span><span>Select your repayment term.</span></li>
-                <li className="flex items-start gap-3"><span className="w-6 h-6 rounded-full bg-blue-100 text-persal-blue text-xs font-bold flex items-center justify-center mt-0.5">3</span><span>Click Apply Now and complete your request.</span></li>
-              </ol>
-            </div>
-          </div>
-        </section>
-
-
         {/* How It Works (3 steps) */}
         <section className="w-full max-w-5xl mx-auto bg-white rounded-2xl shadow p-8 mb-12 mt-8">
           <h2 className="text-2xl font-bold text-persal-dark mb-6 text-center">How It Works</h2>
           <div className="flex flex-col md:flex-row gap-8 md:gap-0 justify-between items-stretch md:items-start">
-            {[{
-              img: "/how-step1.png",
-              alt: "Check Eligibility",
-              link: "#calc",
-              text: "Check Eligibility",
-              desc: "Enter the loan amount and choose your month term to see your estimated offer."
-            }, {
-              img: "/how-step2.png",
-              alt: "Apply Online",
-              link: "/auth/login",
-              text: "Apply Online",
-              desc: "Complete your application securely online in minutes."
-            }, {
-              img: "/how-step3.png",
-              alt: "Payroll Deduction",
-              link: "#about-persal",
-              text: "Payroll Deduction",
-              desc: "Repayments are deducted directly from your salary for convenience and peace of mind."
-            }].map((step, idx) => (
+            {HOW_IT_WORKS_STEPS.map((step, idx) => (
               <div
                 key={step.text}
                 className={`flex-1 flex flex-col items-center px-2 md:px-6 py-4 md:py-0 justify-between h-full${idx < 2 ? ' md:border-r md:border-gray-200' : ''}`}
@@ -665,11 +641,4 @@ export default function Home() {
   </>
   );
 }
-
-// IMAGE PLACEHOLDERS:
-// hero-banner.jpg — Hero section primary graphic
-// calc-illustration.jpg — Loan calculator graphic
-// trust-logo1.jpg, trust-logo2.jpg, trust-logo3.jpg — Trust partner logos
-// how-step1.jpg, how-step2.jpg, how-step3.jpg — How it works icons
-// testimonial1.jpg, testimonial2.jpg, testimonial3.jpg — Testimonial portraits
 

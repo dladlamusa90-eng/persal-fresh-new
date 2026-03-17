@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation";
 import ChatWidget from "@/app/components/ChatWidget";
 import LoanStatusBadge from "@/app/components/LoanStatusBadge";
 import AppFooter from "@/app/components/AppFooter";
+import { signOut } from "next-auth/react";
+import SessionTimeoutDialog from "@/app/components/SessionTimeoutDialog";
 
 function getProfileInitial(fullName: string) {
   const initial = fullName.trim().charAt(0);
@@ -43,7 +45,13 @@ const DropdownMenuItem = ({ href, children }: { href: string; children: React.Re
   );
 };
 
-const dashboardMenu = [
+type DashboardMenuItem = {
+  name: string;
+  href: string;
+  subMenu?: Array<{ name: string; href: string }>;
+};
+
+const dashboardMenu: DashboardMenuItem[] = [
   { name: "My Loan", href: "/dashboard" },
   { name: "My Details", href: "/dashboard/profile" },
   { name: "Support", href: "/dashboard/support" },
@@ -56,6 +64,67 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const pathname = usePathname();
   const isDashboardHome = pathname === "/dashboard";
+
+  // ── Session timeout ─────────────────────────────────────────────
+  const IDLE_TIMEOUT_MS = 3 * 60 * 1000; // 3 minutes of inactivity
+  const WARN_SECONDS = 60; // countdown duration
+
+  const [showWarning, setShowWarning] = useState(false);
+  const [countdown, setCountdown] = useState(WARN_SECONDS);
+  const stayLoggedInRef = React.useRef<() => void>(() => {});
+  const handleLogout = () => signOut({ callbackUrl: "/auth/login" });
+
+  React.useEffect(() => {
+    let idleTimer: ReturnType<typeof setTimeout>;
+    let countdownInterval: ReturnType<typeof setInterval>;
+    let dialogActive = false;
+
+    const startCountdown = () => {
+      if (dialogActive) return;
+      dialogActive = true;
+      let remaining = WARN_SECONDS;
+      setShowWarning(true);
+      setCountdown(WARN_SECONDS);
+      countdownInterval = setInterval(() => {
+        remaining -= 1;
+        setCountdown(remaining);
+        if (remaining <= 0) {
+          clearInterval(countdownInterval);
+          signOut({ callbackUrl: "/auth/login" });
+        }
+      }, 1000);
+    };
+
+    const resetIdleTimer = () => {
+      if (dialogActive) return;
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(startCountdown, IDLE_TIMEOUT_MS);
+    };
+
+    stayLoggedInRef.current = () => {
+      dialogActive = false;
+      clearInterval(countdownInterval);
+      setShowWarning(false);
+      setCountdown(WARN_SECONDS);
+      resetIdleTimer();
+    };
+
+    const activityEvents = [
+      "mousemove", "mousedown", "keydown",
+      "scroll", "touchstart", "click",
+    ] as const;
+    activityEvents.forEach(e =>
+      window.addEventListener(e, resetIdleTimer, { passive: true })
+    );
+    resetIdleTimer();
+
+    return () => {
+      activityEvents.forEach(e => window.removeEventListener(e, resetIdleTimer));
+      clearTimeout(idleTimer);
+      clearInterval(countdownInterval);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // ── End session timeout ──────────────────────────────────────────
 
   const isActivePath = (href: string) => {
     if (href === "/dashboard") {
@@ -169,12 +238,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     </Link>
                   )
                 ))}
-                <a
-                  href="/"
+                <button
+                  onClick={handleLogout}
                   className="mt-3 px-4 py-2 bg-persal-blue text-white rounded-lg font-semibold text-sm shadow hover:bg-persal-dark transition text-center w-full"
                 >
                   Logout
-                </a>
+                </button>
               </nav>
             </aside>
 
@@ -212,13 +281,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     )
                   ))}
                 </ul>
-                <a
-                  href="/"
+                <button
+                  onClick={handleLogout}
                   className="ml-4 px-4 py-2 bg-persal-blue text-white rounded-lg font-semibold text-sm shadow hover:bg-persal-dark transition"
                   title="Logout and return to homepage"
                 >
                   Logout
-                </a>
+                </button>
               </div>
             </nav>
           </>
@@ -238,6 +307,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <AppFooter isAuthenticated />
         <ChatWidget />
       </div>
+      {showWarning && (
+        <SessionTimeoutDialog
+          countdown={countdown}
+          totalSeconds={WARN_SECONDS}
+          onStay={() => stayLoggedInRef.current()}
+          onLogout={handleLogout}
+        />
+      )}
     </div>
   );
 }

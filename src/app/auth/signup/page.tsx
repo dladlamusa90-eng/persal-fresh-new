@@ -1,11 +1,11 @@
 "use client";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import AppFooter from "@/app/components/AppFooter";
 
-export default function SignupPage() {
+function SignupPageContent() {
   const searchParams = useSearchParams();
   const [firstName, setFirstName] = useState("");
   const [surname, setSurname] = useState("");
@@ -264,5 +264,13 @@ export default function SignupPage() {
     </section>
     <AppFooter />
     </>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<section className="relative min-h-screen bg-neutral-100 overflow-hidden" />}>
+      <SignupPageContent />
+    </Suspense>
   );
 }

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import {
@@ -11,7 +11,7 @@ import {
 } from "@/lib/loanPolicy";
 import { SOUTH_AFRICAN_BANK_NAMES } from "@/lib/validators/auth";
 
-export default function ApplyPage() {
+function ApplyPageContent() {
   const router = useRouter();
   const [hasActiveLoan, setHasActiveLoan] = useState(false);
   const [isReturningUser, setIsReturningUser] = useState(false);
@@ -383,7 +383,6 @@ export default function ApplyPage() {
             I authorize debit collection from this account at term end and accept the debit mandate terms.
           </label>
         </div>
-        {/* ...existing code... (document upload section remains unchanged) */}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Required Documents</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -415,5 +414,13 @@ export default function ApplyPage() {
         </button>
       </form>
     </section>
+  );
+}
+
+export default function ApplyPage() {
+  return (
+    <Suspense fallback={<section className="max-w-2xl mx-auto py-12" />}>
+      <ApplyPageContent />
+    </Suspense>
   );
 }

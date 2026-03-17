@@ -179,7 +179,6 @@ export default function ActiveLoanPage() {
               <span className="text-xs font-medium text-blue-700">Secure Payroll Deduction</span>
             </div>
           </div>
-          {/* ...existing loan details ... */}
         <div className="flex items-center gap-2">
           <span className="text-gray-500 text-xs">Term</span>
           <span className="text-base font-semibold text-gray-900 ml-auto">{loanDetails.term}</span>
