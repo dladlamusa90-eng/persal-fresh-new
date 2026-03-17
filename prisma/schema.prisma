@@ -42,11 +42,41 @@ model User {
   isBurned      Boolean  @default(false)
   burnedAt      DateTime?
   loans         Loan[]
+  loginOtps     LoginOtp[]
+  passwordResetOtps PasswordResetOtp[]
   createdAt     DateTime @default(now())
 
   @@index([role])
   @@index([isBurned])
   @@index([createdAt])
+}
+
+model LoginOtp {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash   String
+  expiresAt  DateTime
+  consumedAt DateTime?
+  attempts   Int       @default(0)
+  createdAt  DateTime  @default(now())
+
+  @@index([userId, createdAt])
+  @@index([expiresAt])
+}
+
+model PasswordResetOtp {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash   String
+  expiresAt  DateTime
+  consumedAt DateTime?
+  attempts   Int       @default(0)
+  createdAt  DateTime  @default(now())
+
+  @@index([userId, createdAt])
+  @@index([expiresAt])
 }
 
 model Loan {

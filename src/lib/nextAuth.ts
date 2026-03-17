@@ -6,6 +6,7 @@ import { isRole } from "@/lib/roles";
 import { hash } from "@/lib/bcrypt";
 import { clearAuthFailures, isAuthLocked, registerAuthFailure } from "@/lib/security/rateLimit";
 import { getAuthSecret } from "@/lib/authSecret";
+import { isSouthAfricanIdNumber, normalizeIdNumber } from "@/lib/validators/auth";
 
 const AUTH_SECRET = getAuthSecret();
 
@@ -18,21 +19,27 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: "Credentials",
       credentials: {
-        email: { label: "Email", type: "email" },
+        email: { label: "Email or SA ID number", type: "text" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        const email = credentials?.email?.toLowerCase().trim();
+        const identifier = String(credentials?.email ?? "").trim();
         const password = credentials?.password;
 
-        if (!email || !password) return null;
+        if (!identifier || !password) return null;
 
-        const lockKey = `nextauth:${email}`;
+        const normalizedId = normalizeIdNumber(identifier);
+        const usingId = isSouthAfricanIdNumber(normalizedId);
+        const normalizedEmail = identifier.toLowerCase();
+
+        const lockKey = `nextauth:${usingId ? normalizedId : normalizedEmail}`;
         const lock = isAuthLocked(lockKey);
         if (lock.locked) return null;
 
-        const user = await prisma.user.findUnique({
-          where: { email },
+        const user = await prisma.user.findFirst({
+          where: usingId
+            ? { idNumber: normalizedId }
+            : { email: { equals: normalizedEmail, mode: "insensitive" } },
           select: {
             id: true,
             email: true,

@@ -10,13 +10,20 @@ export default function SignupPage() {
   const [firstName, setFirstName] = useState("");
   const [surname, setSurname] = useState("");
   const [idNumber, setIdNumber] = useState("");
+  const [persalNumber, setPersalNumber] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showRequirementsPopup, setShowRequirementsPopup] = useState(searchParams.get("from") === "login");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
 
-  function handleSignup(e: React.FormEvent) {
+  async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
-    if (!firstName.trim() || !surname.trim() || !idNumber.trim()) {
+    if (isSubmitting) return;
+
+    if (!firstName.trim() || !surname.trim() || !idNumber.trim() || !persalNumber.trim() || !phone.trim() || !email.trim() || !password.trim()) {
       setError("Please complete all required fields.");
       return;
     }
@@ -27,8 +34,54 @@ export default function SignupPage() {
       return;
     }
 
+    const normalizedPersal = persalNumber.replace(/\D/g, "");
+    if (normalizedPersal.length !== 8) {
+      setError("Please enter a valid 8-digit Persal Number.");
+      return;
+    }
+
+    const normalizedPhone = phone.replace(/[\s()-]/g, "");
+    if (!/^(?:\+27|0)[1-9][0-9]{8}$/.test(normalizedPhone)) {
+      setError("Please enter a valid South African cellphone number.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+
     setError("");
-    router.push("/auth/login");
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          fullName: `${firstName.trim()} ${surname.trim()}`.trim(),
+          email: email.trim().toLowerCase(),
+          password,
+          idNumber: sanitizedId,
+          persalNumber: normalizedPersal,
+          phone: normalizedPhone,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.error || "Signup failed. Please try again.");
+        return;
+      }
+
+      router.push("/auth/login");
+    } catch {
+      setError("Signup failed. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -92,6 +145,59 @@ export default function SignupPage() {
                 className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base md:text-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-300"
               />
             </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
+              <label htmlFor="persal-number" className="text-gray-700 text-lg md:text-xl">Persal Number</label>
+              <input
+                id="persal-number"
+                name="persalNumber"
+                type="text"
+                inputMode="numeric"
+                value={persalNumber}
+                onChange={(e) => setPersalNumber(e.target.value.replace(/\D/g, "").slice(0, 8))}
+                placeholder="8-digit Persal Number"
+                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base md:text-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-300"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
+              <label htmlFor="cellphone" className="text-gray-700 text-lg md:text-xl">Cellphone</label>
+              <input
+                id="cellphone"
+                name="phone"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="e.g. 0821234567"
+                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base md:text-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-300"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
+              <label htmlFor="email" className="text-gray-700 text-lg md:text-xl">Email</label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Email address"
+                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base md:text-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-300"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
+              <label htmlFor="password" className="text-gray-700 text-lg md:text-xl">Password</label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Password"
+                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base md:text-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-300"
+              />
+            </div>
           </div>
 
           <div className="mt-8 flex items-center justify-between gap-4">
@@ -100,9 +206,10 @@ export default function SignupPage() {
             </p>
             <button
               type="submit"
-              className="bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl px-7 py-2.5 text-lg md:text-xl min-w-[200px] md:min-w-[230px] transition"
+              disabled={isSubmitting}
+              className="bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl px-7 py-2.5 text-lg md:text-xl min-w-[200px] md:min-w-[230px] transition disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Continue
+              {isSubmitting ? "Creating..." : "Continue"}
             </button>
           </div>
 

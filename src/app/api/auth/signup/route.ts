@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     const normalizedAccountNumber = normalizeAccountNumber(String(accountNumber ?? "").trim());
     const normalizedBankName = String(bankName ?? "").trim();
 
-    if (!fullName || !email || !persalNumber || !password || !normalizedPhone || !normalizedIdNumber || !normalizedBankName || !normalizedAccountNumber) {
+    if (!fullName || !email || !persalNumber || !password || !normalizedPhone || !normalizedIdNumber) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
@@ -67,18 +67,28 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!isSouthAfricanBankName(normalizedBankName)) {
-      return NextResponse.json(
-        { error: "Please select a valid South African bank." },
-        { status: 400 }
-      );
-    }
+    const hasBankFields = Boolean(normalizedBankName || normalizedAccountNumber);
+    if (hasBankFields) {
+      if (!normalizedBankName || !normalizedAccountNumber) {
+        return NextResponse.json(
+          { error: "Bank Name and Account Number must both be provided." },
+          { status: 400 }
+        );
+      }
 
-    if (!isValidBankAccountNumber(normalizedBankName, normalizedAccountNumber)) {
-      return NextResponse.json(
-        { error: `Account Number for ${normalizedBankName} must be ${getBankAccountConstraintLabel(normalizedBankName)}.` },
-        { status: 400 }
-      );
+      if (!isSouthAfricanBankName(normalizedBankName)) {
+        return NextResponse.json(
+          { error: "Please select a valid South African bank." },
+          { status: 400 }
+        );
+      }
+
+      if (!isValidBankAccountNumber(normalizedBankName, normalizedAccountNumber)) {
+        return NextResponse.json(
+          { error: `Account Number for ${normalizedBankName} must be ${getBankAccountConstraintLabel(normalizedBankName)}.` },
+          { status: 400 }
+        );
+      }
     }
 
     const existingUser = await prisma.user.findFirst({
@@ -142,8 +152,8 @@ export async function POST(req: NextRequest) {
         password: hashedPassword,
         phone: normalizedPhone,
         idNumber: normalizedIdNumber,
-        bankName: normalizedBankName,
-        accountNumber: normalizedAccountNumber,
+        bankName: normalizedBankName || null,
+        accountNumber: normalizedAccountNumber || null,
       },
     });
     return NextResponse.json({ message: "User created", user: { id: user.id, email: user.email } }, { status: 201 });

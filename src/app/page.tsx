@@ -164,7 +164,7 @@ export default function Home() {
           <button
             type="button"
             onClick={() => setShowTopAd(false)}
-            className="absolute top-1 right-2 md:right-4 w-7 h-7 rounded-full border border-blue-200/60 text-blue-100 hover:bg-blue-100/10 transition leading-none"
+            className="absolute top-0.5 right-2 md:right-3 text-blue-100 hover:text-white transition leading-none text-base md:text-lg"
             aria-label="Close promotional banner"
           >
             ×

@@ -21,7 +21,8 @@
     "pg": "^8.18.0",
     "prisma": "^7.4.0",
     "react": "latest",
-    "react-dom": "latest"
+    "react-dom": "latest",
+    "twilio": "^5.13.0"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",

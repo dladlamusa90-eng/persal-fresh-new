@@ -1,5 +1,5 @@
 type LoginInput = {
-  email: string;
+  identifier: string;
   password: string;
 };
 
@@ -172,25 +172,27 @@ export const loginSchema = {
       return { success: false, error: "Invalid input" };
     }
 
-    const maybeEmail = (input as Record<string, unknown>).email;
+    const maybeIdentifier =
+      (input as Record<string, unknown>).identifier ?? (input as Record<string, unknown>).email;
     const maybePassword = (input as Record<string, unknown>).password;
 
-    if (typeof maybeEmail !== "string" || typeof maybePassword !== "string") {
+    if (typeof maybeIdentifier !== "string" || typeof maybePassword !== "string") {
       return { success: false, error: "Invalid input" };
     }
 
-    const email = maybeEmail.trim().toLowerCase();
+    const identifier = maybeIdentifier.trim();
     const password = maybePassword;
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email) || password.length < 1) {
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier.toLowerCase());
+    const isId = isSouthAfricanIdNumber(identifier);
+    if ((!isEmail && !isId) || password.length < 1) {
       return { success: false, error: "Invalid input" };
     }
 
     return {
       success: true,
       data: {
-        email,
+        identifier,
         password,
       },
     };

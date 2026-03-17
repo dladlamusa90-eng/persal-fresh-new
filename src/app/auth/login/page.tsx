@@ -12,15 +12,17 @@ export default function LoginPage() {
   const [idNumber, setIdNumber] = useState("");
   const [otpInfo, setOtpInfo] = useState("");
   const [showOtpStep, setShowOtpStep] = useState(false);
+  const [otpMaskedPhone, setOtpMaskedPhone] = useState("");
   const [otpCode, setOtpCode] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRequestingOtp, setIsRequestingOtp] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
 
-  function handleOtpRequest(e: React.FormEvent) {
+  async function handleOtpRequest(e: React.FormEvent) {
     e.preventDefault();
 
     const sanitized = idNumber.replace(/\D/g, "");
@@ -30,16 +32,87 @@ export default function LoginPage() {
     }
 
     setOtpInfo("");
-    setOtpCode("");
-    setShowOtpStep(true);
+    setError("");
+    setIsRequestingOtp(true);
+
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "request-otp",
+          idNumber: sanitized,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        setOtpInfo(data.error || "We could not find an account for that ID number.");
+        setShowOtpStep(false);
+        setOtpMaskedPhone("");
+        return;
+      }
+
+      setOtpMaskedPhone(String(data.maskedPhone ?? ""));
+      setOtpCode("");
+      setShowOtpStep(true);
+    } catch {
+      setOtpInfo("We could not send your OTP right now. Please try again.");
+      setShowOtpStep(false);
+      setOtpMaskedPhone("");
+    } finally {
+      setIsRequestingOtp(false);
+    }
   }
 
   function handleOtpLogin(e: React.FormEvent) {
     e.preventDefault();
-    setOtpInfo("Demo mode: OTP verification is not enabled yet.");
-  }
+    const sanitized = idNumber.replace(/\D/g, "");
+    const otp = otpCode.replace(/\D/g, "").slice(0, 4);
 
-  const maskedCell = `*** *** ${idNumber.replace(/\D/g, "").slice(-4).padStart(4, "0")}`;
+    if (!/^\d{13}$/.test(sanitized)) {
+      setOtpInfo("Please enter a valid 13-digit SA ID number.");
+      return;
+    }
+
+    if (!/^\d{4}$/.test(otp)) {
+      setOtpInfo("Please enter the 4-digit OTP.");
+      return;
+    }
+
+    setOtpInfo("");
+
+    fetch("/api/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        action: "verify-otp",
+        idNumber: sanitized,
+        otpCode: otp,
+      }),
+    })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) {
+          setOtpInfo(data.error || "OTP verification failed.");
+          return;
+        }
+
+        if (data.user?.role === "ADMIN") {
+          router.push("/admin");
+          return;
+        }
+
+        router.push("/dashboard");
+      })
+      .catch(() => {
+        setOtpInfo("OTP verification failed. Please try again.");
+      });
+  }
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -124,12 +197,13 @@ export default function LoginPage() {
 
           <div className="mt-10">
             {showOtpStep ? (
-              <form onSubmit={handleOtpLogin} className="space-y-6">
+              <form onSubmit={handleOtpLogin} className="space-y-6 md:space-y-7">
                 <button
                   type="button"
                   onClick={() => {
                     setShowOtpStep(false);
                     setOtpInfo("");
+                    setOtpMaskedPhone("");
                   }}
                   className="inline-flex items-center gap-1 text-sky-600 hover:underline text-sm"
                 >
@@ -137,22 +211,22 @@ export default function LoginPage() {
                   <span>Back</span>
                 </button>
 
-                <h1 className="text-2xl md:text-3xl text-gray-800 font-medium">Log in with OTP</h1>
-                <p className="text-base md:text-lg text-gray-600">
+                <h1 className="text-2xl md:text-[42px] text-gray-800 font-medium leading-tight">Log in with OTP</h1>
+                <p className="text-base md:text-[18px] text-gray-600 max-w-[920px] leading-relaxed">
                   We&apos;ve sent an OTP via SMS to the cellphone number registered to this account. Please enter the OTP to log in.
                 </p>
 
-                <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] items-center gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] items-center gap-4 md:gap-9 pt-2">
                   <label className="text-gray-700 text-base md:text-lg">Cellphone number</label>
                   <input
                     type="text"
-                    value={maskedCell}
+                    value={otpMaskedPhone}
                     readOnly
-                    className="w-full rounded-xl border border-gray-300 bg-gray-100 px-4 py-2.5 text-gray-700"
+                    className="w-full rounded-xl border border-gray-300 bg-gray-100 px-4 py-3 text-gray-700"
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] items-start gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] items-start gap-4 md:gap-9">
                   <label htmlFor="otp-code" className="text-gray-700 text-base md:text-lg pt-2.5">Please enter the 4 digit OTP</label>
                   <div className="w-full">
                     <input
@@ -167,7 +241,33 @@ export default function LoginPage() {
                     />
                     <button
                       type="button"
-                      onClick={() => setOtpInfo("A new OTP has been sent (demo).")}
+                      onClick={async () => {
+                        const sanitized = idNumber.replace(/\D/g, "");
+                        if (!/^\d{13}$/.test(sanitized)) {
+                          setOtpInfo("Please enter a valid 13-digit SA ID number.");
+                          return;
+                        }
+
+                        const response = await fetch("/api/auth/login", {
+                          method: "POST",
+                          headers: {
+                            "Content-Type": "application/json",
+                          },
+                          body: JSON.stringify({
+                            action: "request-otp",
+                            idNumber: sanitized,
+                          }),
+                        });
+
+                        const data = await response.json();
+                        if (!response.ok) {
+                          setOtpInfo(data.error || "We could not send a new OTP.");
+                          return;
+                        }
+
+                        setOtpMaskedPhone(String(data.maskedPhone ?? otpMaskedPhone));
+                        setOtpInfo("A new OTP has been sent.");
+                      }}
                       className="mt-4 text-sky-600 hover:underline text-base"
                     >
                       Request new OTP
@@ -177,7 +277,7 @@ export default function LoginPage() {
 
                 {otpInfo && <div className="text-sm font-medium text-sky-700">{otpInfo}</div>}
 
-                <div className="flex justify-end">
+                <div className="flex justify-end pt-2">
                   <div className="w-full md:w-[320px]">
                     <p className="text-base text-right text-gray-700 mb-4">
                       Trouble logging in? <button type="button" onClick={() => { setShowOtpStep(false); setActiveTab("email"); }} className="text-sky-600 hover:underline">Log in with your email</button>
@@ -212,8 +312,8 @@ export default function LoginPage() {
                 {otpInfo && <p className="text-sm font-medium text-sky-700">{otpInfo}</p>}
                 <div className="flex items-center justify-between gap-4 pt-6">
                   <p className="text-gray-700 text-base md:text-lg">Don&apos;t have an account? <a href="/auth/signup?from=login" className="text-sky-600 hover:underline">Register</a></p>
-                  <button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl px-7 py-2.5 text-lg md:text-xl min-w-[200px] md:min-w-[230px] transition">
-                    Get OTP
+                  <button type="submit" disabled={isRequestingOtp} className="bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl px-7 py-2.5 text-lg md:text-xl min-w-[200px] md:min-w-[230px] transition disabled:opacity-60 disabled:cursor-not-allowed">
+                    {isRequestingOtp ? "Checking..." : "Get OTP"}
                   </button>
                 </div>
               </form>
@@ -235,7 +335,7 @@ export default function LoginPage() {
                   <label htmlFor="password" className="text-gray-700 text-lg">Password</label>
                   <div className="w-full">
                     <div className="text-right mb-2">
-                      <a href="#" className="text-sky-600 hover:underline text-sm md:text-base">Forgot your password?</a>
+                      <a href="/auth/reset-password" className="text-sky-600 hover:underline text-sm md:text-base">Forgot your password?</a>
                     </div>
                     <div className="relative w-full">
                       <input
@@ -263,7 +363,19 @@ export default function LoginPage() {
                 <div className="flex justify-end">
                   <div className="w-full md:w-[360px]">
                     <p className="text-base text-right text-gray-700 mb-4">
-                      Trouble logging in? <a href="#" className="text-sky-600 hover:underline">Log in with your cellphone</a>
+                        Trouble logging in?{" "}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveTab("id");
+                            setError("");
+                            setOtpInfo("");
+                            setShowOtpStep(false);
+                          }}
+                          className="text-sky-600 hover:underline"
+                        >
+                          Log in with your cellphone
+                        </button>
                     </p>
                     <button
                       type="submit"
