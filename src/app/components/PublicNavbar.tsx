@@ -32,7 +32,7 @@ export default function PublicNavbar() {
         {!loggedIn ? (
           <>
             <Link href="/auth/login" className="px-6 py-2 border border-blue-600 text-blue-600 rounded-xl font-semibold hover:bg-blue-50 transition">Login</Link>
-            <Link href="/auth/signup" className="px-6 py-2 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition">Sign Up</Link>
+            <Link href="/auth/signup?from=login" className="px-6 py-2 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition">Sign Up</Link>
           </>
         ) : (
           <>

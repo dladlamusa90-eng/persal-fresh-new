@@ -88,8 +88,8 @@ export default function LoginPage() {
               <img src="/logo.png" alt="Persal Logo" className="w-[90px] h-[90px] object-contain -my-4" style={{ width: "90px", height: "90px" }} />
             </a>
             <nav className="flex gap-4 items-center">
-              <a href="/auth/login" className="text-persal-dark font-medium px-4 py-2 rounded hover:bg-blue-50 transition">Login</a>
-              <a href="/auth/login" className="bg-persal-blue text-white font-semibold px-4 py-2 rounded shadow hover:bg-persal-dark transition">Apply</a>
+              <span className="px-4 py-2 rounded bg-gray-100 text-gray-400 font-medium cursor-not-allowed select-none">Login</span>
+              <a href="/auth/signup?from=login" className="bg-persal-blue text-white font-semibold px-4 py-2 rounded shadow hover:bg-persal-dark transition">Register</a>
             </nav>
           </div>
         </header>
@@ -211,7 +211,7 @@ export default function LoginPage() {
                 </div>
                 {otpInfo && <p className="text-sm font-medium text-sky-700">{otpInfo}</p>}
                 <div className="flex items-center justify-between gap-4 pt-6">
-                  <p className="text-gray-700 text-base md:text-lg">Don&apos;t have an account? <a href="/auth/signup" className="text-sky-600 hover:underline">Register</a></p>
+                  <p className="text-gray-700 text-base md:text-lg">Don&apos;t have an account? <a href="/auth/signup?from=login" className="text-sky-600 hover:underline">Register</a></p>
                   <button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl px-7 py-2.5 text-lg md:text-xl min-w-[200px] md:min-w-[230px] transition">
                     Get OTP
                   </button>

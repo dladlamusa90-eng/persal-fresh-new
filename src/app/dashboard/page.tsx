@@ -104,7 +104,7 @@ export default function DashboardHomePage() {
 
           {activeMyLoanSection === "summary" && (
           <>
-          <div id="calc" className="bg-white rounded-2xl shadow-xl border border-blue-200 overflow-hidden">
+          <div id="calc" className="bg-white rounded-2xl shadow-[0_-10px_18px_-16px_rgba(2,12,27,0.35),0_22px_42px_-22px_rgba(2,12,27,0.58),0_10px_18px_-14px_rgba(2,12,27,0.35)] overflow-hidden">
             <div className="grid grid-cols-1 md:grid-cols-12">
               <aside className="md:col-span-4 bg-persal-dark text-white">
                 <div className="p-4 md:p-5 border-b border-white/20">
@@ -283,8 +283,26 @@ export default function DashboardHomePage() {
                           </svg>
                         </button>
                         <div className="relative flex-1 h-10">
-                          <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-1.5 bg-gray-200 rounded-full" />
-                          <div className="absolute left-0 top-1/2 -translate-y-1/2 h-1.5 bg-persal-blue rounded-full" style={{ width: `${dayPercent}%` }} />
+                          <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 flex gap-1.5">
+                            <div className="relative h-1.5 flex-1 rounded-full bg-gray-200 overflow-hidden">
+                              <div
+                                className="absolute left-0 top-0 h-full bg-persal-blue rounded-full"
+                                style={{ width: `${termDays <= 6 ? 0 : termDays >= 30 ? 100 : ((termDays - 6) / 24) * 100}%` }}
+                              />
+                            </div>
+                            <div className="relative h-1.5 flex-1 rounded-full bg-gray-200 overflow-hidden">
+                              <div
+                                className="absolute left-0 top-0 h-full bg-persal-blue rounded-full"
+                                style={{ width: `${termDays <= 30 ? 0 : termDays >= 60 ? 100 : ((termDays - 30) / 30) * 100}%` }}
+                              />
+                            </div>
+                            <div className="relative h-1.5 flex-1 rounded-full bg-gray-200 overflow-hidden">
+                              <div
+                                className="absolute left-0 top-0 h-full bg-persal-blue rounded-full"
+                                style={{ width: `${termDays <= 60 ? 0 : termDays >= 90 ? 100 : ((termDays - 60) / 30) * 100}%` }}
+                              />
+                            </div>
+                          </div>
                           <input
                             id="termDays"
                             type="range"
@@ -316,6 +334,15 @@ export default function DashboardHomePage() {
                             <line x1="5" y1="12" x2="19" y2="12" />
                           </svg>
                         </button>
+                      </div>
+                      <div className="mt-1 flex items-center gap-3 md:gap-4" aria-hidden="true">
+                        <div className="w-8" />
+                        <div className="flex-1 grid grid-cols-3 text-[10px] md:text-[11px] text-gray-500/50">
+                          <span className="text-center">1st Month</span>
+                          <span className="text-center">2nd Month</span>
+                          <span className="text-center">3rd Month</span>
+                        </div>
+                        <div className="w-8" />
                       </div>
                     </div>
                   </div>
