@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { signOut } from "next-auth/react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Wallet, FileText, CheckCircle, Banknote } from "lucide-react";
 import Link from "next/link";
 import AppFooter from "@/app/components/AppFooter";
 
@@ -44,14 +44,13 @@ const dashboardMenu = [
   { name: "Support", href: "/dashboard/support" },
 ];
 
-export default function HowItWorksPage() {
+export default function HowToApplyPage() {
   const [isClient, setIsClient] = useState(false);
   const [session, setSession] = useState<any>(null);
   const [status, setStatus] = useState<string>("loading");
 
   useEffect(() => {
     setIsClient(true);
-    // Get session on client side only
     async function getSession() {
       const session = await fetch("/api/auth/session").then(res => res.json());
       setSession(session);
@@ -66,10 +65,36 @@ export default function HowItWorksPage() {
 
   const isAuthenticated = status === "authenticated" && !!session?.user;
 
+  const steps = [
+    {
+      number: 1,
+      title: "Describe your needs",
+      description: "Decide how much money you need and when you want to repay it. Move the sliders on the homepage and decide exactly how much cash you need and after how many days you'd like to repay it. We'll show you the cost of your loan in real-time and once you're happy click the 'apply now' button.",
+      icon: Wallet,
+    },
+    {
+      number: 2,
+      title: "Complete your application",
+      description: "Complete an online application form. You will need to provide us with your personal information on your ID number, employment details, your Persal number and your bank account details.",
+      icon: FileText,
+    },
+    {
+      number: 3,
+      title: "We verify your details",
+      description: "We verify your income. Once your loan has been approved, we will need to verify your income. You will need to provide us with your most recent payslip or bank statement which clearly shows your personal details as well as your income. To find out more about what and how to upload, check out our 'How to Upload' guide.",
+      icon: CheckCircle,
+    },
+    {
+      number: 4,
+      title: "Money transferred",
+      description: "The money is transferred to your bank account. You will be send an email inside the system to verify your bank details are correct. The funds are available to you within 3 hours.",
+      icon: Banknote,
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-neutral-100">
       {isAuthenticated ? (
-        // Authenticated header (dashboard style)
         <header className="w-full border-b border-gray-200 bg-white px-4 md:px-8">
           <div className="w-full max-w-6xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-6">
@@ -102,7 +127,6 @@ export default function HowItWorksPage() {
           </div>
         </header>
       ) : (
-        // Public header (unauthenticated)
         <header className="w-full flex items-center justify-center py-2 px-4 md:px-8 mb-2 bg-white shadow-none">
           <div className="flex w-full max-w-5xl items-center justify-between">
             <a href="/" className="flex items-center gap-2">
@@ -120,84 +144,58 @@ export default function HowItWorksPage() {
         <section className="max-w-5xl mx-auto px-4 md:px-6 mt-2 mb-8">
           <div className="rounded-2xl bg-white border border-gray-200 shadow-sm overflow-hidden">
             <div className="bg-gradient-to-r from-persal-dark to-blue-800 px-6 py-8 md:px-8 md:py-10">
-              <h1 className="text-3xl md:text-4xl font-semibold text-white">Short term loan</h1>
+              <h1 className="text-3xl md:text-4xl font-semibold text-white">Applying is simple</h1>
               <p className="mt-3 text-blue-100 text-sm md:text-base max-w-3xl">
-                Clear guidance on Persal short term loans, eligibility requirements, and the full application process.
+                Our simple 4-step application process makes it easy to apply for a Persal loan.
               </p>
             </div>
 
             <article className="px-6 md:px-8 py-7 text-gray-800">
-              <p className="text-sm leading-relaxed mb-4">
-                Short term loans are a common way of borrowing in South Africa and can be an alternative to traditional payday products. People usually apply online when they need funds quickly for emergency or unexpected costs.
-              </p>
-              <p className="text-sm leading-relaxed mb-4">
-                These loans can help when you need cash for an urgent expense that was not planned for. However, many products in the market are expensive or hard to understand. Persal is focused on clear pricing, responsible lending, and simple repayment.
-              </p>
+              <h2 className="text-2xl md:text-3xl font-semibold mb-8 text-gray-900">Get Started</h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                {steps.map((step) => {
+                  const IconComponent = step.icon;
+                  return (
+                    <div key={step.number} className="bg-blue-50 rounded-xl p-6 border border-blue-100">
+                      <div className="flex items-center gap-4 mb-3">
+                        <div className="flex items-center justify-center h-12 w-12 rounded-full bg-persal-blue text-white">
+                          <IconComponent size={24} />
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900">Step {step.number}</h3>
+                      </div>
+                      <h4 className="text-base font-semibold text-gray-900 mb-2">{step.title}</h4>
+                      <p className="text-sm text-gray-700 leading-relaxed">{step.description}</p>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <h2 className="text-2xl md:text-3xl font-semibold mb-4 text-gray-900">Short term credit</h2>
               <p className="text-sm leading-relaxed mb-6">
-                Sometimes you need short-term support for a quick cash gap. Persal gives you a transparent option designed for government employees, with fair terms and practical repayment expectations.
+                We want to make you a quick offer. That way credit can start during any two minute, but Persal provides full info on how the credit terms will help you out of a 1 month, and if you&apos;re unsure, we can always figure out what may work for you.
               </p>
 
-              <h2 className="text-3xl md:text-[34px] font-normal mb-3 text-gray-900">Why are other short term loans so expensive?</h2>
               <p className="text-sm leading-relaxed mb-6">
-                A lot of short term loan providers include extra charges and high costs that can make borrowing expensive. With Persal, we aim to keep the process straightforward and compliant with National Credit Regulations. Once approved, most customers can receive funds within a couple of hours.
+                Unlike some lenders or credit card providers, we won&apos;t keep extending your existing balance or encourage you to make minimum repayments. We plaintext back, you carefully review, think about your situation, and feel good about your choice.
               </p>
 
-              <h2 className="text-3xl md:text-[34px] font-normal mb-3 text-gray-900">A short term loan that gives you financial freedom</h2>
-              <p className="text-sm leading-relaxed mb-4">
-                We advise that short term loans should be used for urgent or unexpected expenses only, and that you borrow only what you can comfortably repay in about a month.
-              </p>
+              <h2 className="text-2xl md:text-3xl font-semibold mb-4 text-gray-900">Transparency</h2>
               <p className="text-sm leading-relaxed mb-6">
-                If month-end pressure becomes difficult, Persal can help with short-term support so you can continue meeting your important commitments.
+                We believe that our customers deserve the clearest view of what they will owe us. There are no all costs, upfront and in the application process, are clear transparent throughout the life of the credit facility.
               </p>
 
-              <h2 className="text-3xl md:text-[34px] font-normal mb-3 text-gray-900">How to apply for a Persal short term loan</h2>
-              <p className="text-sm leading-relaxed mb-3">
-                We designed the application process to be quick and easy. Follow these steps below.
-              </p>
-              <ol className="list-decimal pl-5 text-sm leading-relaxed mb-6 space-y-1">
-                <li>Connect to our site using a mobile phone, tablet, or desktop PC.</li>
-                <li>Create your account and log in.</li>
-                <li>Specify your desired amount of Rand.</li>
-                <li>Specify your desired repayment period.</li>
-                <li>Complete your application via our secure form.</li>
-                <li>Provide your most recent payslip or bank statement (not older than 60 days) as proof of income.</li>
-                <li>If successful, your cash is sent to your bank account, typically within 3 hours.</li>
-                <li>You pay back the loan with the agreed timeframe; early repayment is allowed and encouraged.</li>
-              </ol>
-
-              <p className="text-sm leading-relaxed mb-2">Conditions of the Persal term loan product</p>
-              <ul className="list-disc pl-5 text-sm leading-relaxed mb-6 space-y-1">
-                <li>Our short term loans are designed for short-term usage only; faster repayment can reduce your total borrowing cost.</li>
-                <li>If your loan is repaid later than agreed terms, your application can be declined in future and your credit profile may be negatively affected.</li>
-                <li>If you find yourself repeatedly using loans, short term finance may not be the right fit for you.</li>
-                <li>To qualify, you must be a South African resident with a bank account in your own name, and be 18 years or older.</li>
-              </ul>
-
-              <h2 className="text-3xl md:text-[34px] font-normal mb-3 text-gray-900">What is Persal&apos;s credit selection criteria?</h2>
-              <p className="text-sm leading-relaxed mb-2">
-                Persal conducts an affordability and credit assessment for each applicant. Applicants must:
-              </p>
-              <ul className="list-disc pl-5 text-sm leading-relaxed mb-6 space-y-1">
-                <li>Be South African residents aged 18 or older.</li>
-                <li>Possess a valid South African ID number.</li>
-                <li>Provide a valid Persal Number.</li>
-                <li>Be South African government employees (public servants).</li>
-                <li>Have an active bank account in their own name.</li>
-                <li>Provide proof of regular income through a recent payslip or bank statement.</li>
-                <li>Have access to a mobile phone.</li>
-              </ul>
               <p className="text-sm leading-relaxed mb-6">
-                These checks help ensure customers can borrow responsibly and repay their loans.
+                No credit card or rate card is valid. Instead, we say what you must know and make certain that you will see the totality of your costs and realize what you are using to apply for the credit.
               </p>
 
-              <h2 className="text-3xl md:text-[34px] font-normal mb-3 text-gray-900">How does Persal collect payments on short term loans?</h2>
+              <h2 className="text-2xl md:text-3xl font-semibold mb-4 text-gray-900">Failure to stick to your side of the deal</h2>
               <p className="text-sm leading-relaxed mb-6">
-                Persal collects repayments via approved payment methods on the agreed due date. Customers should ensure sufficient funds are available to avoid additional fees or penalties.
+                The one way you will avoid issues are if you stick your side of the deal. If you don&apos;t stick to your side, the deal you will be in breach of your credit agreement and will have to pay penalties and interest. If you do not repay your credit, you may face court orders and you will find it challenging to get credit again in time.
               </p>
 
-              <h2 className="text-3xl md:text-[34px] font-normal mb-3 text-gray-900">What happens if I&apos;m unable to make my short-term loan repayment?</h2>
               <p className="text-sm leading-relaxed mb-6">
-                If you are unable to make repayment, contact Persal immediately to discuss your situation. Late or missed payments can result in additional fees and may negatively affect your credit score.
+                We want to help make sure you can collect the money fast account help the financial system. If you are unable to make your payment let us know because we can make different terms possible. All the questions you have about late payment or defaulting are welcome if you are at any time unsure yourself about the repayment of the facility of the credit or your agreement to be able to do.
               </p>
 
               <div className="mt-8 pt-6 border-t border-gray-200">

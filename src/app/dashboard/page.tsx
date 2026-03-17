@@ -392,7 +392,7 @@ export default function DashboardHomePage() {
           <div className="mt-4 rounded-xl bg-gray-100 p-6 text-center">
             <h2 className="text-3xl md:text-4xl text-gray-700">Flexible, short term loans that give you back control.</h2>
             <p className="mt-3 text-gray-600 text-[22px] md:text-base">
-              Our <Link href="/dashboard/lending/apply" className="text-persal-blue hover:underline">short term loans</Link> help people manage their cash flow. If you need a quick loan to tide you over for a short while, we&apos;re here for you. Our <Link href="/dashboard/lending/apply" className="text-persal-blue hover:underline">personal loan</Link> process is simple and easy to understand. To find out more, visit <Link href="/how-it-works" className="text-persal-blue hover:underline">how it works.</Link>
+              Our <Link href="/how-it-works" className="text-persal-blue hover:underline">short term loans</Link> help people manage their cash flow. If you need a quick loan to tide you over for a short while, we&apos;re here for you. Our personal loan process is simple and easy to understand. To find out more, visit <Link href="/how-to-apply" className="text-persal-blue hover:underline">how it works.</Link>
             </p>
           </div>
           </>
