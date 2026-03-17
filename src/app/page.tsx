@@ -203,10 +203,10 @@ export default function Home() {
       )}
       <div className="min-h-screen flex flex-col bg-transparent relative z-10">
         {/* Header with logo and auth buttons */}
-        <header className="w-full flex items-center justify-between py-2 px-4 md:px-8 mb-2 bg-white shadow-none">
-          <div className="flex w-full items-center justify-between">
+        <header className="w-full flex items-center justify-center py-2 px-4 md:px-8 mb-2 bg-white shadow-none">
+          <div className="flex w-full max-w-5xl items-center justify-between">
             <a href="/" className="flex items-center gap-2">
-              <img src="/logo.png" alt="Persal Logo" className="w-[90px] h-[90px] object-contain -my-4" style={{ width: '90px', height: '90px' }} />
+              <img src="/logo.png" alt="Persal Logo" className="w-[90px] h-[90px] object-contain -my-4 scale-[1.3]" style={{ width: '90px', height: '90px' }} />
             </a>
             <nav className="flex gap-4 items-center">
               <a href="/auth/login" className="text-persal-dark font-medium px-4 py-2 rounded hover:bg-blue-50 transition">Login</a>
