@@ -206,7 +206,7 @@ export default function Home() {
         <header className="w-full flex items-center justify-center py-2 px-4 md:px-8 mb-2 bg-white shadow-none">
           <div className="flex w-full max-w-5xl items-center justify-between">
             <a href="/" className="flex items-center gap-2">
-              <img src="/logo.png" alt="Persal Logo" className="w-[90px] h-[90px] object-contain -my-4 scale-[1.3]" style={{ width: '90px', height: '90px' }} />
+              <img src="/logo.png" alt="Persal Logo" className="w-[100px] h-[100px] object-contain -my-5" style={{ width: '100px', height: '100px' }} />
             </a>
             <nav className="flex gap-4 items-center">
               <a href="/auth/login" className="text-persal-dark font-medium px-4 py-2 rounded hover:bg-blue-50 transition">Login</a>
@@ -220,14 +220,37 @@ export default function Home() {
           <div className="w-full">
             <div id="calc" className="bg-white rounded-2xl shadow-[0_-10px_18px_-16px_rgba(2,12,27,0.35),0_22px_42px_-22px_rgba(2,12,27,0.58),0_10px_18px_-14px_rgba(2,12,27,0.35)] overflow-hidden">
               <div className="grid grid-cols-1 md:grid-cols-12">
-                <aside className="md:col-span-4 bg-persal-dark text-white">
-                  <div className="p-4 md:p-5 border-b border-white/20">
+                <aside className="relative overflow-hidden md:col-span-4 bg-persal-dark text-white">
+                  <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+                    <div className="absolute inset-0 bg-gradient-to-b from-blue-700/25 via-blue-800/10 to-transparent" />
+                    <svg
+                      viewBox="0 0 600 220"
+                      className="absolute -bottom-4 left-0 w-full h-40 text-blue-300/25"
+                      preserveAspectRatio="none"
+                    >
+                      <path
+                        d="M0 120 C90 70 180 170 270 120 C360 70 450 170 540 120 C570 102 590 90 600 95 L600 220 L0 220 Z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                    <svg
+                      viewBox="0 0 600 220"
+                      className="absolute -bottom-10 left-0 w-full h-44 text-blue-200/20"
+                      preserveAspectRatio="none"
+                    >
+                      <path
+                        d="M0 140 C90 95 180 190 270 140 C360 95 450 190 540 140 C570 122 590 110 600 116 L600 220 L0 220 Z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                  </div>
+                  <div className="relative z-10 p-4 md:p-5 border-b border-white/20">
                     <h3 className="text-orange-300 font-semibold text-lg mb-2">What you can get</h3>
                     <p className="text-white/95 leading-relaxed text-sm md:text-base font-semibold break-words">
                       New customers can apply for up to <b>R2500</b>, while existing customers can apply for up to <b>R5000</b>, with up to 3 months to repay.
                     </p>
                   </div>
-                  <div className="p-4 md:p-5 border-b border-white/20 bg-blue-900/25">
+                  <div className="relative z-10 p-4 md:p-5 border-b border-white/20 bg-blue-900/25">
                     <h3 className="text-orange-300 font-semibold text-lg mb-2">What you'll need:</h3>
                     <ul className="space-y-2 text-sm md:text-base text-white/95 break-words">
                       <li className="flex items-center gap-2">
@@ -264,12 +287,12 @@ export default function Home() {
                       </li>
                     </ul>
                   </div>
-                  <div className="p-4 md:p-5">
+                  <div className="relative z-10 p-4 md:p-5">
                     <h3 className="text-orange-300 font-semibold text-lg mb-2">How to apply</h3>
                     <ol className="space-y-2 text-sm md:text-base text-white/95 break-words">
                       <li><span className="text-orange-300 mr-2 font-bold">1</span>Choose the amount you need</li>
                       <li><span className="text-orange-300 mr-2 font-bold">2</span>Choose how long you will need to repay</li>
-                      <li><span className="text-orange-300 mr-2 font-bold">3</span>Click "Apply Now" and proceed to finalise your loan</li>
+                      <li><span className="text-orange-300 mr-2 font-bold">3</span>Click <span className="font-bold">"Apply Now"</span> and proceed to finalise your loan</li>
                     </ol>
                   </div>
                 </aside>

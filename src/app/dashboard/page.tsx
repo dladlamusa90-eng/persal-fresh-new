@@ -95,10 +95,9 @@ export default function DashboardHomePage() {
           <h1 className="text-4xl md:text-[42px] text-gray-800 font-normal mb-4">Hi Musa</h1>
 
           <div className="mb-4">
-            <div className="w-full rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700 text-lg md:text-base flex items-center justify-center gap-2">
+            <div className="w-full rounded-xl bg-gray-100 px-5 py-3 text-gray-700 text-lg md:text-base flex items-center justify-center gap-2">
               <Lightbulb size={18} className="text-persal-blue" />
               <span>You can apply for up to <b>R 5000</b></span>
-              <a href="#" className="text-persal-blue hover:underline">Discover how to get more</a>
             </div>
           </div>
 
@@ -155,7 +154,7 @@ export default function DashboardHomePage() {
                   <ol className="space-y-2 text-sm md:text-base text-white/95 break-words">
                     <li><span className="text-orange-300 mr-2 font-bold">1</span>Choose the amount you need</li>
                     <li><span className="text-orange-300 mr-2 font-bold">2</span>Choose how long you will need to repay</li>
-                    <li><span className="text-orange-300 mr-2 font-bold">3</span>Click "Apply Now" and proceed to finalise your loan</li>
+                    <li><span className="text-orange-300 mr-2 font-bold">3</span>Click <span className="font-bold">"Apply Now"</span> and proceed to finalise your loan</li>
                   </ol>
                 </div>
               </aside>
@@ -390,10 +389,10 @@ export default function DashboardHomePage() {
             </div>
           </div>
 
-          <div className="mt-4 rounded-xl bg-gray-100 border border-gray-200 p-6 text-center">
+          <div className="mt-4 rounded-xl bg-gray-100 p-6 text-center">
             <h2 className="text-3xl md:text-4xl text-gray-700">Flexible, short term loans that give you back control.</h2>
             <p className="mt-3 text-gray-600 text-[22px] md:text-base">
-              Our short term loans help people manage their cash flow. If you need a quick loan to tide you over for a short while, we&apos;re here for you.
+              Our <Link href="/dashboard/lending/apply" className="text-persal-blue hover:underline">short term loans</Link> help people manage their cash flow. If you need a quick loan to tide you over for a short while, we&apos;re here for you. Our <Link href="/dashboard/lending/apply" className="text-persal-blue hover:underline">personal loan</Link> process is simple and easy to understand. To find out more, visit <Link href="/how-it-works" className="text-persal-blue hover:underline">how it works.</Link>
             </p>
           </div>
           </>

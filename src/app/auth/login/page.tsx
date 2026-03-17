@@ -155,10 +155,10 @@ export default function LoginPage() {
     <>
     <section className="relative min-h-screen bg-neutral-100 overflow-hidden">
       <div className="relative z-10 min-h-screen flex flex-col">
-        <header className="w-full flex items-center justify-between py-2 px-4 md:px-8 mb-2 bg-white shadow-none">
-          <div className="flex w-full items-center justify-between">
+        <header className="w-full flex items-center justify-center py-2 px-4 md:px-8 mb-2 bg-white shadow-none">
+          <div className="flex w-full max-w-5xl items-center justify-between">
             <a href="/" className="flex items-center gap-2">
-              <img src="/logo.png" alt="Persal Logo" className="w-[90px] h-[90px] object-contain -my-4" style={{ width: "90px", height: "90px" }} />
+              <img src="/logo.png" alt="Persal Logo" className="w-[100px] h-[100px] object-contain -my-5" style={{ width: "100px", height: "100px" }} />
             </a>
             <nav className="flex gap-4 items-center">
               <span className="px-4 py-2 rounded bg-gray-100 text-gray-400 font-medium cursor-not-allowed select-none">Login</span>

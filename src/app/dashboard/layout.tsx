@@ -247,13 +247,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </nav>
             </aside>
 
-            <nav className="hidden md:flex w-full border-b border-gray-200 bg-white px-8 items-center justify-between">
-              <div className="flex items-center gap-6 h-[48px]">
-                <Link href="/dashboard" aria-label="Go to My Loan">
-                  <img src="/logo.png" alt="Persal Logo" className="h-[42px] w-auto object-contain" style={{ height: '42px' }} />
-                </Link>
-              </div>
-              <div className="flex items-center gap-4">
+            <nav className="hidden md:flex w-full border-b border-gray-200 bg-white px-4 md:px-8 items-center justify-center">
+              <div className="w-full max-w-6xl flex items-center justify-between">
+                <div className="flex items-center gap-6">
+                  <Link href="/dashboard" aria-label="Go to My Loan">
+                    <img src="/logo.png" alt="Persal Logo" className="w-[100px] h-[100px] object-contain -my-5" style={{ width: '100px', height: '100px' }} />
+                  </Link>
+                </div>
+                <div className="flex items-center gap-4">
                 <ul className="flex gap-4 items-center h-[56px]">
                   {dashboardMenu.map(item => (
                     item.subMenu ? (
@@ -288,6 +289,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 >
                   Logout
                 </button>
+                </div>
               </div>
             </nav>
           </>
