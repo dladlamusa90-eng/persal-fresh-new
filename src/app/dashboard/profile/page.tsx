@@ -59,6 +59,7 @@ export default function ProfilePage() {
             accountNumber?: string | null;
             profileImage?: string | null;
             points?: number;
+            address?: string | null;
           };
         };
 
@@ -73,6 +74,7 @@ export default function ProfilePage() {
           bankName: body.user.bankName ?? "",
           accountNumber: body.user.accountNumber ?? "",
           profileImage: body.user.profileImage ?? null,
+          address: body.user.address ?? "",
         });
         setInitialProfile({
           fullName: body.user.fullName ?? "",
@@ -83,6 +85,7 @@ export default function ProfilePage() {
           bankName: body.user.bankName ?? "",
           accountNumber: body.user.accountNumber ?? "",
           profileImage: body.user.profileImage ?? null,
+          address: body.user.address ?? "",
         });
         setPoints(typeof body.user.points === "number" ? body.user.points : 0);
       } catch {
@@ -323,7 +326,7 @@ export default function ProfilePage() {
 
   if (loading) return <div className="text-center py-8">Loading profile...</div>;
 
-  const firstName = (profile.fullName || "Musa").split(" ")[0];
+  const firstName = (profile.fullName || "").split(" ")[0] || "there";
 
   return (
     <section className="max-w-6xl mx-auto py-6 md:py-12">
@@ -362,24 +365,24 @@ export default function ProfilePage() {
           <div className="space-y-7">
             <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
               <div className="text-gray-700">Name</div>
-              <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{profile.fullName || "Musa Dladla"}</div>
+              <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{profile.fullName || "—"}</div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
               <div className="text-gray-700">Email</div>
-              <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{profile.email || "sinenhlanhlamusa9@gmail.com"}</div>
+              <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{profile.email || "—"}</div>
             </div>
             <div className="md:pl-[236px]"><a href="#" className="text-persal-blue hover:underline">Change your email</a></div>
 
             <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
               <div className="text-gray-700">Cell phone number</div>
-              <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{profile.phone || "0606039964"}</div>
+              <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{profile.phone || "—"}</div>
             </div>
             <div className="md:pl-[236px]"><a href="#" className="text-persal-blue hover:underline">Change your cell phone number</a></div>
 
             <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
               <div className="text-gray-700">Current Address</div>
-              <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">329 Hlalinakahle Ext 3, Emalahleni, 1045, Emalahleni</div>
+              <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{profile.address || "No address saved"}</div>
             </div>
             <div className="md:pl-[236px]"><a href="#" className="text-persal-blue hover:underline">Change your address</a></div>
 

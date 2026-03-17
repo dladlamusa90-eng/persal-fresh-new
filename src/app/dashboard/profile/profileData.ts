@@ -7,6 +7,7 @@ export type DashboardProfile = {
   bankName: string;
   accountNumber: string;
   profileImage: string | null;
+  address?: string;
 };
 
 export const DASHBOARD_PROFILE_STORAGE_KEY = "dashboard_profile_v1";
@@ -20,6 +21,7 @@ export const defaultDashboardProfile: DashboardProfile = {
   bankName: "ABSA",
   accountNumber: "1234567890",
   profileImage: null,
+  address: "",
 };
 
 export function getStoredDashboardProfile(): DashboardProfile {

@@ -64,6 +64,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const pathname = usePathname();
   const isDashboardHome = pathname === "/dashboard";
+  const isFullScreen = pathname === "/dashboard/lending/verify-number" || pathname === "/dashboard/lending/my-details" || pathname === "/dashboard/lending/current-address";
 
   // ── Session timeout ─────────────────────────────────────────────
   const IDLE_TIMEOUT_MS = 3 * 60 * 1000; // 3 minutes of inactivity
@@ -163,7 +164,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="min-h-screen bg-[#fafcff] flex flex-col relative overflow-x-hidden">
       <div className="relative z-10">
-        {loggedIn && (
+        {loggedIn && !isFullScreen && (
           <>
             <nav className="md:hidden w-full border-b border-gray-200 bg-white px-4 h-14 flex items-center justify-between">
               <button
@@ -294,9 +295,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </nav>
           </>
         )}
-        <LoanStatusBadge />
-        <main className="flex-1 w-full px-4 md:px-8 py-4 md:py-8">
-          {isDashboardHome ? (
+        {!isFullScreen && <LoanStatusBadge />}
+        <main className={isFullScreen ? "flex-1 w-full" : "flex-1 w-full px-4 md:px-8 py-4 md:py-8"}>
+          {isFullScreen ? (
+            children
+          ) : isDashboardHome ? (
             <div className="w-full max-w-7xl mx-auto mt-1 md:mt-4 mb-8 md:mb-12">
               {children}
             </div>

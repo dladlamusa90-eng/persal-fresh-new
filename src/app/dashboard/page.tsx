@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import { Lightbulb } from "lucide-react";
 
@@ -11,7 +11,19 @@ export default function DashboardHomePage() {
   const [error, setError] = useState("");
   const [showFeeBreakdown, setShowFeeBreakdown] = useState(false);
   const [activeMyLoanSection, setActiveMyLoanSection] = useState<"summary" | "documents">("summary");
+  const [firstName, setFirstName] = useState("");
   const repayDateInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    fetch("/api/users/me")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.user?.fullName) {
+          setFirstName(data.user.fullName.trim().split(" ")[0]);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   function updateDesiredLoan(value: number) {
     if (value < 100 || value > maxLoan) {
@@ -92,7 +104,7 @@ export default function DashboardHomePage() {
         </aside>
 
         <div className="pb-8">
-          <h1 className="text-4xl md:text-[42px] text-gray-800 font-normal mb-4">Hi Musa</h1>
+          <h1 className="text-4xl md:text-[42px] text-gray-800 font-normal mb-4">Hi {firstName || "there"}</h1>
 
           <div className="mb-4">
             <div className="w-full rounded-xl bg-gray-100 px-5 py-3 text-gray-700 text-lg md:text-base flex items-center justify-center gap-2">
@@ -378,7 +390,7 @@ export default function DashboardHomePage() {
                   </div>
                   <div className="text-center md:text-right">
                     <Link
-                      href={!error && desiredLoan >= 100 && desiredLoan <= maxLoan ? "/auth/login" : "#"}
+                        href={!error && desiredLoan >= 100 && desiredLoan <= maxLoan ? "/dashboard/lending/verify-number" : "#"}
                       className={`inline-block px-4 py-2 rounded-lg font-semibold text-base transition text-center ${!error && desiredLoan >= 100 && desiredLoan <= maxLoan ? "bg-orange-500 text-white hover:bg-orange-600 cursor-pointer" : "bg-gray-300 text-gray-400 cursor-not-allowed pointer-events-none"}`}
                     >
                       Apply Now

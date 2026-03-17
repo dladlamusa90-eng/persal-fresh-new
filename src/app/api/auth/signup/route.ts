@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await req.json();
-    const { fullName, email, persalNumber, password, phone, idNumber, bankName, accountNumber } = data;
+    const { fullName, email, persalNumber, password, phone, idNumber, bankName, accountNumber, address } = data;
 
     const normalizedEmail = String(email ?? "").trim().toLowerCase();
     const normalizedPersal = normalizePersalNumber(String(persalNumber ?? "").trim());
@@ -154,10 +154,12 @@ export async function POST(req: NextRequest) {
         idNumber: normalizedIdNumber,
         bankName: normalizedBankName || null,
         accountNumber: normalizedAccountNumber || null,
+        address: String(address ?? "").trim() || null,
       },
     });
     return NextResponse.json({ message: "User created", user: { id: user.id, email: user.email } }, { status: 201 });
   } catch (error) {
+    console.error("[signup] error:", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

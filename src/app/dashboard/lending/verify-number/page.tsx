@@ -1,0 +1,96 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+
+export default function VerifyNumberPage() {
+  const router = useRouter();
+  const [phone, setPhone] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadPhone() {
+      try {
+        const response = await fetch("/api/users/me", { cache: "no-store" });
+        if (!response.ok) {
+          if (mounted) setLoading(false);
+          return;
+        }
+
+        const body = (await response.json()) as {
+          user?: {
+            phone?: string | null;
+          };
+        };
+
+        if (mounted) {
+          setPhone(body.user?.phone ?? "");
+          setLoading(false);
+        }
+      } catch {
+        if (mounted) setLoading(false);
+      }
+    }
+
+    loadPhone();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  function handleNext() {
+    router.push("/dashboard/lending/my-details");
+  }
+
+  return (
+    <section className="max-w-6xl mx-auto px-4 md:px-6 py-4 md:py-6">
+      <div className="rounded-2xl bg-white px-6 py-6 md:px-8 md:py-8 shadow-sm">
+        <div className="mb-6">
+          <div className="text-sm font-medium text-persal-dark tracking-tight">15 %</div>
+          <div className="mt-2 h-1 w-full rounded-full bg-gray-300 overflow-hidden">
+            <div className="h-full w-[15%] bg-lime-500" />
+          </div>
+        </div>
+
+        <div className="max-w-2xl">
+          <h1 className="text-2xl md:text-3xl font-normal leading-tight text-persal-dark">Verify your number</h1>
+          <p className="mt-2 text-sm text-gray-600">
+            Before you proceed, please check if your cellphone number is correct.
+          </p>
+        </div>
+
+        <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-[200px_minmax(0,1fr)] md:items-center">
+          <div className="text-sm font-medium text-gray-700">
+            Cellphone number
+          </div>
+
+          <div>
+            <div className="rounded-xl bg-gray-100 px-4 py-4 text-base text-gray-700">
+              {loading ? "Loading..." : phone || "No cellphone number saved"}
+            </div>
+            <Link
+              href="/dashboard/profile"
+              className="mt-3 inline-block text-sm text-[#0c8fe8] transition hover:underline"
+            >
+              Change cellphone number
+            </Link>
+          </div>
+        </div>
+
+        <div className="mt-10 flex justify-end">
+          <button
+            type="button"
+            onClick={handleNext}
+            className="inline-flex min-w-[160px] items-center justify-center rounded-xl bg-[#ff972b] px-6 py-3 text-base font-semibold text-white transition hover:bg-[#f58a17]"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}

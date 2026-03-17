@@ -43,6 +43,7 @@ export async function GET() {
         bankName: true,
         accountNumber: true,
         profileImage: true,
+        address: true,
         points: true,
         role: true,
       } as any,
@@ -77,7 +78,22 @@ export async function PATCH(req: Request) {
       accountType?: string;
       branchCode?: string;
       profileImage?: string | null;
+      address?: string | null;
     };
+
+    // Address-only partial update
+    if (Object.keys(body).length === 1 && "address" in body) {
+      const currentUser = await prisma.user.findUnique({
+        where: session.user.id ? { id: session.user.id } : { email: String(session.user.email ?? "") },
+        select: { id: true },
+      });
+      if (!currentUser) return NextResponse.json({ error: "User not found" }, { status: 404 });
+      await prisma.user.update({
+        where: { id: currentUser.id },
+        data: { address: body.address ?? null } as any,
+      });
+      return NextResponse.json({ message: "Address updated" }, { status: 200 });
+    }
 
     const data = {
       fullName: String(body.fullName ?? "").trim(),
@@ -90,6 +106,7 @@ export async function PATCH(req: Request) {
       accountType: String(body.accountType ?? "").trim().toUpperCase(),
       branchCode: String(body.branchCode ?? "").trim(),
       profileImage: body.profileImage ?? null,
+      address: body.address ?? null,
     };
 
     if (!data.fullName || !data.email || !data.phone || !data.idNumber || !data.persalNumber || !data.bankName || !data.accountNumber || !data.accountType || !data.branchCode) {
@@ -192,6 +209,7 @@ export async function PATCH(req: Request) {
         bankName: true,
         accountNumber: true,
         profileImage: true,
+        address: true,
         points: true,
       } as any,
     });

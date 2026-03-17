@@ -14,6 +14,7 @@ function SignupPageContent() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [address, setAddress] = useState("");
   const [showRequirementsPopup, setShowRequirementsPopup] = useState(searchParams.get("from") === "login");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -23,7 +24,7 @@ function SignupPageContent() {
     e.preventDefault();
     if (isSubmitting) return;
 
-    if (!firstName.trim() || !surname.trim() || !idNumber.trim() || !persalNumber.trim() || !phone.trim() || !email.trim() || !password.trim()) {
+    if (!firstName.trim() || !surname.trim() || !idNumber.trim() || !persalNumber.trim() || !phone.trim() || !email.trim() || !password.trim() || !address.trim()) {
       setError("Please complete all required fields.");
       return;
     }
@@ -67,6 +68,7 @@ function SignupPageContent() {
           idNumber: sanitizedId,
           persalNumber: normalizedPersal,
           phone: normalizedPhone,
+          address: address.trim(),
         }),
       });
 
@@ -195,6 +197,19 @@ function SignupPageContent() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Password"
+                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base md:text-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-300"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
+              <label htmlFor="address" className="text-gray-700 text-lg md:text-xl">Current Address</label>
+              <input
+                id="address"
+                name="address"
+                type="text"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="e.g. 12 Maple Street, Johannesburg"
                 className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base md:text-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-300"
               />
             </div>
