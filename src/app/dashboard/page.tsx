@@ -70,9 +70,9 @@ export default function DashboardHomePage() {
   }
 
   return (
-    <section className="max-w-6xl mx-auto px-2 md:px-4">
+    <section className="max-w-6xl mx-auto px-2 md:px-4 -mt-6 md:-mt-10">
       <div className="grid grid-cols-1 md:grid-cols-[190px_1fr] gap-6 md:gap-8">
-        <aside className="pt-6">
+        <aside className="pt-2">
           <nav className="space-y-3 text-[22px] md:text-base">
             <button
               type="button"
