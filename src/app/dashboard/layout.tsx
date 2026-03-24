@@ -64,7 +64,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const pathname = usePathname();
   const isDashboardHome = pathname === "/dashboard";
-  const isFullScreen = pathname === "/dashboard/lending/verify-number" || pathname === "/dashboard/lending/my-details" || pathname === "/dashboard/lending/current-address" || pathname === "/dashboard/lending/employment-details";
+  const isFullScreen = pathname === "/dashboard/lending/verify-number" || pathname === "/dashboard/lending/my-details" || pathname === "/dashboard/lending/current-address" || pathname === "/dashboard/lending/employment-details" || pathname === "/dashboard/lending/monthly-finances";
 
   // ── Session timeout ─────────────────────────────────────────────
   const IDLE_TIMEOUT_MS = 3 * 60 * 1000; // 3 minutes of inactivity

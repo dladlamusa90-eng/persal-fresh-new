@@ -63,11 +63,19 @@ export default function MyDetailsPage() {
           </div>
         </div>
 
-        <div className="mt-10 flex justify-end">
+        <div className="mt-10 flex justify-between">
+          <button
+            type="button"
+            onClick={() => router.push("/dashboard/lending/verify-number")}
+            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-50"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6" /></svg>
+            Back
+          </button>
           <button
             type="button"
             onClick={handleNext}
-            className="inline-flex min-w-[160px] items-center justify-center rounded-xl bg-[#ff972b] px-6 py-3 text-base font-semibold text-white transition hover:bg-[#f58a17]"
+            className="inline-flex min-w-[120px] items-center justify-center rounded-xl bg-[#ff972b] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#f58a17]"
           >
             Next
           </button>
