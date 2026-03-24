@@ -8,6 +8,7 @@ const STORAGE_KEY = "wizard_monthly_finances";
 export default function MonthlyFinancesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [hydrated, setHydrated] = useState(false);
   const [grossIncome, setGrossIncome] = useState("");
   const [netIncome, setNetIncome] = useState("");
   const [creditRepayments, setCreditRepayments] = useState("");
@@ -29,15 +30,17 @@ export default function MonthlyFinancesPage() {
         if (p.livingExpenses !== undefined) setLivingExpenses(p.livingExpenses);
       }
     } catch {}
+    setHydrated(true);
   }, []);
 
   useEffect(() => {
+    if (!hydrated) return;
     try {
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
         grossIncome, netIncome, creditRepayments, livingExpenses,
       }));
     } catch {}
-  }, [grossIncome, netIncome, creditRepayments, livingExpenses]);
+  }, [hydrated, grossIncome, netIncome, creditRepayments, livingExpenses]);
 
   function withWizardQuery(path: string) {
     const query = searchParams.toString();

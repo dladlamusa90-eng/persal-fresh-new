@@ -394,7 +394,7 @@ export default function ProfilePage() {
 
             <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
               <div className="text-gray-700">Preferences</div>
-              <div className="text-gray-700">Not happy to receive communication from Wonga</div>
+              <div className="text-gray-700">Not happy to receive communication from Persal</div>
             </div>
             <div className="md:pl-[236px]"><a href="#communication-preferences" className="text-persal-blue hover:underline">Change your preferences</a></div>
           </div>
@@ -404,7 +404,7 @@ export default function ProfilePage() {
             <p className="mt-4 text-gray-600 text-lg">Your current communication preference is indicated below.</p>
 
             <div className="mt-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <p className="text-gray-600 text-lg">I am happy to receive updates and other communications from Wonga via email and sms.</p>
+              <p className="text-gray-600 text-lg">I am happy to receive updates and other communications from Persal via email and sms.</p>
               <div className="flex items-center gap-5 text-gray-700">
                 <label className="inline-flex items-center gap-2 cursor-pointer">
                   <input

@@ -11,13 +11,12 @@ const STORAGE_KEY = "wizard_employment_details";
 export default function EmploymentDetailsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [hydrated, setHydrated] = useState(false);
   const [employmentStatus, setEmploymentStatus] = useState("Employed");
   const [grossIncome, setGrossIncome] = useState("");
   const [netIncome, setNetIncome] = useState("");
   const [incomeFrequency, setIncomeFrequency] = useState("Monthly");
   const [salaryDay, setSalaryDay] = useState("");
-  const [showPepInfo, setShowPepInfo] = useState(false);
-  const [pepAnswer, setPepAnswer] = useState<"yes" | "no">("no");
 
   useEffect(() => {
     try {
@@ -29,25 +28,25 @@ export default function EmploymentDetailsPage() {
           netIncome?: string;
           incomeFrequency?: string;
           salaryDay?: string;
-          pepAnswer?: "yes" | "no";
         };
         if (p.employmentStatus) setEmploymentStatus(p.employmentStatus);
         if (p.grossIncome !== undefined) setGrossIncome(p.grossIncome);
         if (p.netIncome !== undefined) setNetIncome(p.netIncome);
         if (p.incomeFrequency) setIncomeFrequency(p.incomeFrequency);
         if (p.salaryDay !== undefined) setSalaryDay(p.salaryDay);
-        if (p.pepAnswer) setPepAnswer(p.pepAnswer);
       }
     } catch {}
+    setHydrated(true);
   }, []);
 
   useEffect(() => {
+    if (!hydrated) return;
     try {
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
-        employmentStatus, grossIncome, netIncome, incomeFrequency, salaryDay, pepAnswer,
+        employmentStatus, grossIncome, netIncome, incomeFrequency, salaryDay,
       }));
     } catch {}
-  }, [employmentStatus, grossIncome, netIncome, incomeFrequency, salaryDay, pepAnswer]);
+  }, [hydrated, employmentStatus, grossIncome, netIncome, incomeFrequency, salaryDay]);
 
   function withWizardQuery(path: string) {
     const query = searchParams.toString();
@@ -147,50 +146,6 @@ export default function EmploymentDetailsPage() {
           </div>
         </div>
 
-        <div className="mt-8">
-          <p className="text-sm md:text-base text-gray-700 leading-snug">
-            Are you, or anyone you&apos;re associated with, a{" "}
-            <span className="text-sky-500">Politically Exposed Person?</span>{" "}
-            <button
-              type="button"
-              onClick={() => setShowPepInfo(true)}
-              aria-label="What is a Politically Exposed Person"
-              className="inline-flex items-center text-orange-500 hover:text-orange-600 align-middle"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="9" />
-                <line x1="12" y1="10" x2="12" y2="16" />
-                <circle cx="12" cy="7" r="1" fill="currentColor" stroke="none" />
-              </svg>
-            </button>
-          </p>
-
-          <div className="mt-4 flex items-center gap-6">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="pepAnswer"
-                value="yes"
-                checked={pepAnswer === "yes"}
-                onChange={() => setPepAnswer("yes")}
-                className="w-4 h-4 accent-persal-blue cursor-pointer"
-              />
-              <span className="text-sm text-gray-700">Yes</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="pepAnswer"
-                value="no"
-                checked={pepAnswer === "no"}
-                onChange={() => setPepAnswer("no")}
-                className="w-4 h-4 accent-persal-blue cursor-pointer"
-              />
-              <span className="text-sm text-gray-700">No</span>
-            </label>
-          </div>
-        </div>
-
         <div className="mt-10 flex justify-between">
           <button
             type="button"
@@ -210,26 +165,6 @@ export default function EmploymentDetailsPage() {
         </div>
       </div>
 
-      {showPepInfo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4" role="dialog" aria-modal="true" aria-label="What is a Politically Exposed Person">
-          <div className="w-full max-w-sm rounded-xl overflow-hidden bg-gray-100 shadow-2xl border border-gray-200">
-            <div className="bg-orange-500 text-white px-4 py-2 flex items-center justify-between">
-              <h3 className="font-semibold text-base">What is this?</h3>
-              <button
-                type="button"
-                onClick={() => setShowPepInfo(false)}
-                className="text-white text-xl leading-none"
-                aria-label="Close PEP info"
-              >
-                ×
-              </button>
-            </div>
-            <div className="px-4 py-4 text-sm leading-snug text-gray-700">
-              A PEP is any individual who holds or has in the past held a position of public trust, such as government officials, important political party officials, etc. It is not always limited to these individuals but also includes their immediate family members & close business associates. Prominent Influential Persons (PIPs) includes the likes of local influencers, such as religious leaders or chiefs of provinces.
-            </div>
-          </div>
-        </div>
-      )}
     </section>
   );
 }

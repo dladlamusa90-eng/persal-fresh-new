@@ -45,7 +45,7 @@ export default function LoanStatusBadge() {
         label: "No Active Loan",
         className: "bg-gray-800 text-white",
         dotClassName: "bg-gray-500",
-        href: "/dashboard/lending/active-loan",
+        href: "/dashboard/lending/application-status",
       };
     }
 
