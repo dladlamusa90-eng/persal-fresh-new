@@ -1,23 +1,29 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const employmentOptions = ["Employed", "Self-employed", "Retired/Pensioner", "Grant recipient", "Unemployed"];
 const incomeFrequencyOptions = ["Monthly", "Weekly", "Fortnightly"];
 
 export default function EmploymentDetailsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [employmentStatus, setEmploymentStatus] = useState("Employed");
-  const [grossIncome, setGrossIncome] = useState("7500");
-  const [netIncome, setNetIncome] = useState("6000");
+  const [grossIncome, setGrossIncome] = useState("");
+  const [netIncome, setNetIncome] = useState("");
   const [incomeFrequency, setIncomeFrequency] = useState("Monthly");
-  const [salaryDay, setSalaryDay] = useState("25");
+  const [salaryDay, setSalaryDay] = useState("");
   const [showPepInfo, setShowPepInfo] = useState(false);
   const [pepAnswer, setPepAnswer] = useState<"yes" | "no">("no");
 
+  function withWizardQuery(path: string) {
+    const query = searchParams.toString();
+    return query ? `${path}?${query}` : path;
+  }
+
   function handleNext() {
-    router.push("/dashboard/lending/monthly-finances");
+    router.push(withWizardQuery("/dashboard/lending/monthly-finances"));
   }
 
   return (
@@ -156,7 +162,7 @@ export default function EmploymentDetailsPage() {
         <div className="mt-10 flex justify-between">
           <button
             type="button"
-            onClick={() => router.push("/dashboard/lending/current-address")}
+            onClick={() => router.push(withWizardQuery("/dashboard/lending/current-address"))}
             className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-50"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6" /></svg>

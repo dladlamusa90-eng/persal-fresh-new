@@ -2,12 +2,18 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function VerifyNumberPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(true);
+
+  function withWizardQuery(path: string) {
+    const query = searchParams.toString();
+    return query ? `${path}?${query}` : path;
+  }
 
   useEffect(() => {
     let mounted = true;
@@ -43,7 +49,7 @@ export default function VerifyNumberPage() {
   }, []);
 
   function handleNext() {
-    router.push("/dashboard/lending/my-details");
+    router.push(withWizardQuery("/dashboard/lending/my-details"));
   }
 
   return (

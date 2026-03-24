@@ -390,7 +390,7 @@ export default function DashboardHomePage() {
                   </div>
                   <div className="text-center md:text-right">
                     <Link
-                        href={!error && desiredLoan >= 100 && desiredLoan <= maxLoan ? "/dashboard/lending/verify-number" : "#"}
+                        href={!error && desiredLoan >= 100 && desiredLoan <= maxLoan ? `/dashboard/lending/verify-number?loan=${desiredLoan}&term=${term}&termDays=${termDays}` : "#"}
                       className={`inline-block px-4 py-2 rounded-lg font-semibold text-base transition text-center ${!error && desiredLoan >= 100 && desiredLoan <= maxLoan ? "bg-orange-500 text-white hover:bg-orange-600 cursor-pointer" : "bg-gray-300 text-gray-400 cursor-not-allowed pointer-events-none"}`}
                     >
                       Apply Now

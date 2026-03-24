@@ -1,14 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function MonthlyFinancesPage() {
   const router = useRouter();
-  const [grossIncome, setGrossIncome] = useState("7500");
-  const [netIncome, setNetIncome] = useState("6000");
-  const [creditRepayments, setCreditRepayments] = useState("1000");
-  const [livingExpenses, setLivingExpenses] = useState("2500");
+  const searchParams = useSearchParams();
+  const [grossIncome, setGrossIncome] = useState("");
+  const [netIncome, setNetIncome] = useState("");
+  const [creditRepayments, setCreditRepayments] = useState("");
+  const [livingExpenses, setLivingExpenses] = useState("");
+
+  function withWizardQuery(path: string) {
+    const query = searchParams.toString();
+    return query ? `${path}?${query}` : path;
+  }
 
   const disposable =
     (parseInt(netIncome || "0", 10) || 0) -
@@ -16,7 +22,7 @@ export default function MonthlyFinancesPage() {
     (parseInt(livingExpenses || "0", 10) || 0);
 
   function handleNext() {
-    router.push("/dashboard/lending/bank-details");
+    router.push(withWizardQuery("/dashboard/lending/bank-details"));
   }
 
   return (
@@ -109,7 +115,7 @@ export default function MonthlyFinancesPage() {
         <div className="mt-10 flex justify-between">
           <button
             type="button"
-            onClick={() => router.push("/dashboard/lending/employment-details")}
+            onClick={() => router.push(withWizardQuery("/dashboard/lending/employment-details"))}
             className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-50"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6" /></svg>

@@ -1,14 +1,38 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { calculateLoanCharges } from "@/lib/loanPolicy";
 
 export default function RepaymentDetailsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [showFeesBreakdown, setShowFeesBreakdown] = useState(false);
 
+  const rawLoan = Number(searchParams.get("loan"));
+  const loanAmount = Number.isFinite(rawLoan) && rawLoan >= 100 ? Math.min(5000, rawLoan) : 1500;
+
+  const rawTerm = Number(searchParams.get("term"));
+  const rawTermDays = Number(searchParams.get("termDays"));
+  const fallbackTerm = Math.max(1, Math.min(3, Math.ceil(((Number.isFinite(rawTermDays) && rawTermDays > 0) ? rawTermDays : 60) / 30)));
+  const term = Number.isFinite(rawTerm) && rawTerm >= 1 ? Math.max(1, Math.min(3, Math.floor(rawTerm))) : fallbackTerm;
+
+  const charges = calculateLoanCharges(loanAmount, term * 30);
+  const totalInterest = charges.interestMonth1 + charges.interestMonth2 + charges.interestMonth3;
+  const creditLifePremium = 0;
+  const totalToRepay = loanAmount + charges.totalCost + creditLifePremium;
+
+  function formatCurrency(value: number) {
+    return value.toFixed(2);
+  }
+
+  function withWizardQuery(path: string) {
+    const query = searchParams.toString();
+    return query ? `${path}?${query}` : path;
+  }
+
   function handleContinue() {
-    router.push("/dashboard/lending/apply");
+    router.push(withWizardQuery("/dashboard/lending/apply"));
   }
 
   return (
@@ -26,7 +50,7 @@ export default function RepaymentDetailsPage() {
         <div className="divide-y divide-gray-200 border-t border-gray-200">
           <div className="py-5 flex items-center justify-between gap-4">
             <p className="text-base font-medium text-gray-700">Total Credit Life premiums*</p>
-            <p className="text-base text-gray-700">R 12.88</p>
+            <p className="text-base text-gray-700">R {formatCurrency(creditLifePremium)}</p>
           </div>
 
           <div className="py-5 flex items-center justify-between gap-4">
@@ -50,7 +74,7 @@ export default function RepaymentDetailsPage() {
                 </svg>
               </button>
             </p>
-            <p className="text-base text-gray-700">R 3163.92</p>
+            <p className="text-base text-gray-700">R {formatCurrency(totalToRepay)}</p>
           </div>
         </div>
 
@@ -61,7 +85,7 @@ export default function RepaymentDetailsPage() {
         <div className="mt-10 flex items-center justify-between">
           <button
             type="button"
-            onClick={() => router.push("/dashboard/lending/bank-details")}
+            onClick={() => router.push(withWizardQuery("/dashboard/lending/bank-details"))}
             className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-50"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6" /></svg>
@@ -99,15 +123,15 @@ export default function RepaymentDetailsPage() {
               <div className="border-t border-gray-200">
                 <div className="py-3 flex items-center justify-between">
                   <span>Initiation fee</span>
-                  <span className="font-semibold">R 362.25</span>
+                  <span className="font-semibold">R {formatCurrency(charges.initiationFee)}</span>
                 </div>
                 <div className="py-3 flex items-center justify-between border-t border-gray-200">
                   <span>Service fees</span>
-                  <span className="font-semibold">R 138.00</span>
+                  <span className="font-semibold">R {formatCurrency(charges.serviceFee)}</span>
                 </div>
                 <div className="py-3 flex items-center justify-between border-t border-gray-200">
                   <span>Total interest</span>
-                  <span className="font-semibold">R 150.79</span>
+                  <span className="font-semibold">R {formatCurrency(totalInterest)}</span>
                 </div>
               </div>
 
@@ -124,13 +148,13 @@ export default function RepaymentDetailsPage() {
                       </svg>
                     </span>
                   </span>
-                  <span className="font-semibold">R 12.88</span>
+                  <span className="font-semibold">R {formatCurrency(creditLifePremium)}</span>
                 </div>
               </div>
 
               <div className="border-t border-gray-200 mt-2 pt-3 flex items-center justify-between text-sky-600 font-semibold">
                 <span>Total to repay</span>
-                <span>R 3163.92</span>
+                <span>R {formatCurrency(totalToRepay)}</span>
               </div>
             </div>
           </div>

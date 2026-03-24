@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { SOUTH_AFRICAN_BANK_NAMES } from "@/lib/validators/auth";
 
 const accountTypeOptions = [
@@ -12,10 +12,16 @@ const accountTypeOptions = [
 
 export default function BankDetailsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [bankName, setBankName] = useState("Capitec");
-  const [accountNumber, setAccountNumber] = useState("1729841846");
+  const [accountNumber, setAccountNumber] = useState("");
   const [accountType, setAccountType] = useState<(typeof accountTypeOptions)[number]["value"]>("SAVINGS");
+
+  function withWizardQuery(path: string) {
+    const query = searchParams.toString();
+    return query ? `${path}?${query}` : path;
+  }
 
   useEffect(() => {
     let mounted = true;
@@ -53,7 +59,7 @@ export default function BankDetailsPage() {
   }, []);
 
   function handleNext() {
-    router.push("/dashboard/lending/repayment-details");
+    router.push(withWizardQuery("/dashboard/lending/repayment-details"));
   }
 
   return (
@@ -132,7 +138,7 @@ export default function BankDetailsPage() {
         <div className="mt-10 flex justify-between">
           <button
             type="button"
-            onClick={() => router.push("/dashboard/lending/monthly-finances")}
+            onClick={() => router.push(withWizardQuery("/dashboard/lending/monthly-finances"))}
             className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-50"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6" /></svg>
