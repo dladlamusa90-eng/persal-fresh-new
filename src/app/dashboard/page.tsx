@@ -124,23 +124,23 @@ export default function DashboardHomePage() {
                     New customers can apply for up to <b>R2500</b>, while existing customers can apply for up to <b>R5000</b>, with up to 3 months to repay.
                   </p>
                 </div>
-                <div className="p-4 md:p-5 border-b border-white/20 bg-blue-900/25">
+                <div className="p-4 md:p-5 border-b border-white/20 bg-teal-900/25">
                   <h3 className="text-orange-300 font-semibold text-lg mb-2">What you&apos;ll need:</h3>
                   <ul className="space-y-2 text-sm md:text-base text-white/95 break-words">
                     <li className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-blue-200 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg className="w-4 h-4 text-teal-200 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <rect x="7" y="2" width="10" height="20" rx="2" /><line x1="10" y1="5" x2="14" y2="5" /><line x1="12" y1="18" x2="12" y2="18" />
                       </svg>
                       <span>A cellphone number</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-blue-200 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg className="w-4 h-4 text-teal-200 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <rect x="3" y="5" width="18" height="14" rx="2" /><circle cx="8" cy="12" r="2" /><line x1="13" y1="10" x2="18" y2="10" /><line x1="13" y1="14" x2="18" y2="14" />
                       </svg>
                       <span>SA ID number</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-blue-200 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg className="w-4 h-4 text-teal-200 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <rect x="3" y="5" width="18" height="14" rx="2" />
                         <line x1="7" y1="10" x2="17" y2="10" />
                         <line x1="7" y1="14" x2="13" y2="14" />
@@ -148,13 +148,13 @@ export default function DashboardHomePage() {
                       <span>Persal number</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-blue-200 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg className="w-4 h-4 text-teal-200 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <line x1="3" y1="21" x2="21" y2="21" /><line x1="5" y1="21" x2="5" y2="10" /><line x1="9" y1="21" x2="9" y2="10" /><line x1="15" y1="21" x2="15" y2="10" /><line x1="19" y1="21" x2="19" y2="10" /><polygon points="12 3 2 10 22 10 12 3" />
                       </svg>
                       <span>Bank account details</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-blue-200 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg className="w-4 h-4 text-teal-200 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z" /><polyline points="14 2 14 8 20 8" /><polyline points="9 15 11 17 15 13" />
                       </svg>
                       <span>Most recent proof of income</span>
@@ -416,27 +416,27 @@ export default function DashboardHomePage() {
               <p className="text-gray-600 mb-6">All your loan records are available in one place.</p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Link href="/dashboard/lending/active-loan" className="rounded-xl border border-gray-200 bg-gray-50 p-4 hover:border-persal-blue hover:bg-blue-50/40 transition">
+                <Link href="/dashboard/lending/active-loan" className="rounded-xl border border-gray-200 bg-gray-50 p-4 hover:border-persal-blue hover:bg-teal-50/40 transition">
                   <div className="text-lg text-gray-800">Active Loan</div>
                   <div className="mt-1 text-sm text-gray-600">View your current active loan details.</div>
                 </Link>
 
-                <Link href="/dashboard/lending/application-status" className="rounded-xl border border-gray-200 bg-gray-50 p-4 hover:border-persal-blue hover:bg-blue-50/40 transition">
+                <Link href="/dashboard/lending/application-status" className="rounded-xl border border-gray-200 bg-gray-50 p-4 hover:border-persal-blue hover:bg-teal-50/40 transition">
                   <div className="text-lg text-gray-800">Status</div>
                   <div className="mt-1 text-sm text-gray-600">Check the latest application status.</div>
                 </Link>
 
-                <Link href="/dashboard/lending/schedule" className="rounded-xl border border-gray-200 bg-gray-50 p-4 hover:border-persal-blue hover:bg-blue-50/40 transition">
+                <Link href="/dashboard/lending/schedule" className="rounded-xl border border-gray-200 bg-gray-50 p-4 hover:border-persal-blue hover:bg-teal-50/40 transition">
                   <div className="text-lg text-gray-800">Schedule</div>
                   <div className="mt-1 text-sm text-gray-600">See your repayment schedule and due dates.</div>
                 </Link>
 
-                <Link href="/dashboard/lending/statement" className="rounded-xl border border-gray-200 bg-gray-50 p-4 hover:border-persal-blue hover:bg-blue-50/40 transition">
+                <Link href="/dashboard/lending/statement" className="rounded-xl border border-gray-200 bg-gray-50 p-4 hover:border-persal-blue hover:bg-teal-50/40 transition">
                   <div className="text-lg text-gray-800">Statement</div>
                   <div className="mt-1 text-sm text-gray-600">Open your latest loan statements.</div>
                 </Link>
 
-                <Link href="/dashboard/lending/history" className="rounded-xl border border-gray-200 bg-gray-50 p-4 hover:border-persal-blue hover:bg-blue-50/40 transition md:col-span-2">
+                <Link href="/dashboard/lending/history" className="rounded-xl border border-gray-200 bg-gray-50 p-4 hover:border-persal-blue hover:bg-teal-50/40 transition md:col-span-2">
                   <div className="text-lg text-gray-800">Loan History</div>
                   <div className="mt-1 text-sm text-gray-600">Review your previous loans and activity.</div>
                 </Link>

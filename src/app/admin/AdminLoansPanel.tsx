@@ -208,28 +208,28 @@ export default function AdminLoansPanel({ initialLoans, totalUsers, totalAdmins 
               <button
                 type="button"
                 onClick={() => setProfitRange("7D")}
-                className={`px-3 py-1.5 rounded-md border text-sm font-medium ${profitRange === "7D" ? "bg-blue-50 border-blue-300 text-blue-700" : "border-gray-300 text-gray-700 hover:bg-gray-50"}`}
+                className={`px-3 py-1.5 rounded-md border text-sm font-medium ${profitRange === "7D" ? "bg-teal-50 border-teal-300 text-teal-700" : "border-gray-300 text-gray-700 hover:bg-gray-50"}`}
               >
                 7 days
               </button>
               <button
                 type="button"
                 onClick={() => setProfitRange("30D")}
-                className={`px-3 py-1.5 rounded-md border text-sm font-medium ${profitRange === "30D" ? "bg-blue-50 border-blue-300 text-blue-700" : "border-gray-300 text-gray-700 hover:bg-gray-50"}`}
+                className={`px-3 py-1.5 rounded-md border text-sm font-medium ${profitRange === "30D" ? "bg-teal-50 border-teal-300 text-teal-700" : "border-gray-300 text-gray-700 hover:bg-gray-50"}`}
               >
                 30 days
               </button>
               <button
                 type="button"
                 onClick={() => setProfitRange("YEAR")}
-                className={`px-3 py-1.5 rounded-md border text-sm font-medium ${profitRange === "YEAR" ? "bg-blue-50 border-blue-300 text-blue-700" : "border-gray-300 text-gray-700 hover:bg-gray-50"}`}
+                className={`px-3 py-1.5 rounded-md border text-sm font-medium ${profitRange === "YEAR" ? "bg-teal-50 border-teal-300 text-teal-700" : "border-gray-300 text-gray-700 hover:bg-gray-50"}`}
               >
                 Yearly
               </button>
               <button
                 type="button"
                 onClick={() => setProfitRange("CUSTOM")}
-                className={`px-3 py-1.5 rounded-md border text-sm font-medium ${profitRange === "CUSTOM" ? "bg-blue-50 border-blue-300 text-blue-700" : "border-gray-300 text-gray-700 hover:bg-gray-50"}`}
+                className={`px-3 py-1.5 rounded-md border text-sm font-medium ${profitRange === "CUSTOM" ? "bg-teal-50 border-teal-300 text-teal-700" : "border-gray-300 text-gray-700 hover:bg-gray-50"}`}
               >
                 Custom
               </button>
@@ -277,10 +277,10 @@ export default function AdminLoansPanel({ initialLoans, totalUsers, totalAdmins 
         <button
           type="button"
           onClick={() => router.push("/admin/users?role=USER")}
-          className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm text-left hover:border-blue-300 hover:bg-blue-50 transition"
+          className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm text-left hover:border-teal-300 hover:bg-teal-50 transition"
         >
           <p className="text-sm text-gray-500">Total Users</p>
-          <p className="text-2xl font-bold text-blue-700 mt-1">{totalUsers}</p>
+          <p className="text-2xl font-bold text-teal-700 mt-1">{totalUsers}</p>
         </button>
         <button
           type="button"

@@ -80,7 +80,7 @@ export default function VerifyNumberPage() {
             </div>
             <Link
               href="/dashboard/profile"
-              className="mt-3 inline-block text-sm text-[#0c8fe8] transition hover:underline"
+              className="mt-3 inline-block text-sm text-[#0f9a9a] transition hover:underline"
             >
               Change cellphone number
             </Link>

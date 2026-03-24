@@ -96,7 +96,7 @@ function SignupPageContent() {
               <img src="/logo.png" alt="Persal Logo" className="w-[100px] h-[100px] object-contain -my-5" style={{ width: "100px", height: "100px" }} />
             </a>
             <nav className="flex gap-4 items-center">
-              <a href="/auth/login" className="text-persal-dark font-medium px-4 py-2 rounded hover:bg-blue-50 transition">Login</a>
+              <a href="/auth/login" className="text-persal-dark font-medium px-4 py-2 rounded hover:bg-teal-50 transition">Login</a>
               <span className="px-4 py-2 rounded bg-gray-200 text-gray-500 font-semibold cursor-not-allowed select-none">Register</span>
             </nav>
           </div>
@@ -117,7 +117,7 @@ function SignupPageContent() {
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 placeholder="First name"
-                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base md:text-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-300"
+                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base md:text-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-300"
               />
             </div>
 
@@ -130,7 +130,7 @@ function SignupPageContent() {
                 value={surname}
                 onChange={(e) => setSurname(e.target.value)}
                 placeholder="Surname"
-                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base md:text-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-300"
+                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base md:text-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-300"
               />
             </div>
 
@@ -144,7 +144,7 @@ function SignupPageContent() {
                 value={idNumber}
                 onChange={(e) => setIdNumber(e.target.value.replace(/\D/g, "").slice(0, 13))}
                 placeholder="ID Number"
-                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base md:text-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-300"
+                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base md:text-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-300"
               />
             </div>
 
@@ -158,7 +158,7 @@ function SignupPageContent() {
                 value={persalNumber}
                 onChange={(e) => setPersalNumber(e.target.value.replace(/\D/g, "").slice(0, 8))}
                 placeholder="8-digit Persal Number"
-                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base md:text-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-300"
+                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base md:text-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-300"
               />
             </div>
 
@@ -171,7 +171,7 @@ function SignupPageContent() {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="e.g. 0821234567"
-                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base md:text-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-300"
+                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base md:text-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-300"
               />
             </div>
 
@@ -184,7 +184,7 @@ function SignupPageContent() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Email address"
-                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base md:text-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-300"
+                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base md:text-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-300"
               />
             </div>
 
@@ -197,7 +197,7 @@ function SignupPageContent() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Password"
-                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base md:text-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-300"
+                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base md:text-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-300"
               />
             </div>
 
@@ -210,14 +210,14 @@ function SignupPageContent() {
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder="e.g. 12 Maple Street, Johannesburg"
-                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base md:text-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-300"
+                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base md:text-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-300"
               />
             </div>
           </div>
 
           <div className="mt-8 flex items-center justify-between gap-4">
             <p className="text-gray-700 text-base md:text-lg">
-              Already have an account? <Link href="/auth/login" className="text-sky-600 hover:underline">Log in</Link>
+              Already have an account? <Link href="/auth/login" className="text-teal-600 hover:underline">Log in</Link>
             </p>
             <button
               type="submit"
@@ -228,7 +228,7 @@ function SignupPageContent() {
             </button>
           </div>
 
-          {error && <div className="mt-5 text-sm font-medium text-sky-700">{error}</div>}
+          {error && <div className="mt-5 text-sm font-medium text-teal-700">{error}</div>}
         </form>
           </div>
         </div>
@@ -238,7 +238,7 @@ function SignupPageContent() {
         <div className="fixed inset-0 z-50 bg-black/45 flex items-center justify-center px-4" role="dialog" aria-modal="true" aria-label="Application requirements">
           <div className="w-full max-w-xl rounded-2xl bg-[#efefef] p-5 md:p-6 shadow-2xl">
             <div className="flex justify-center mb-4">
-              <AlertCircle className="text-sky-500" size={48} strokeWidth={1.5} />
+              <AlertCircle className="text-teal-500" size={48} strokeWidth={1.5} />
             </div>
 
             <h2 className="text-xl md:text-2xl text-gray-700 text-center mb-5">What you&apos;ll need for your application:</h2>

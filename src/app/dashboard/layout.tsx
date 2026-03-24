@@ -20,7 +20,7 @@ const DropdownMenu = ({ label, children }: { label: string; children: React.Reac
     <li className="relative group flex items-center h-[56px]">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="px-4 h-[56px] flex items-center justify-center rounded text-sm font-medium text-persal-dark hover:bg-blue-50 hover:text-persal-blue transition gap-1"
+        className="px-4 h-[56px] flex items-center justify-center rounded text-sm font-medium text-persal-dark hover:bg-teal-50 hover:text-persal-blue transition gap-1"
         style={{lineHeight: '56px', paddingTop: 0, paddingBottom: 0}}
       >
         <span className="flex items-center" style={{height: '24px'}}>{label}</span>
@@ -38,7 +38,7 @@ const DropdownMenu = ({ label, children }: { label: string; children: React.Reac
 const DropdownMenuItem = ({ href, children }: { href: string; children: React.ReactNode }) => {
   return (
     <li>
-      <Link href={href} className="block px-4 py-2 text-sm text-persal-dark hover:bg-blue-50 hover:text-persal-blue transition">
+      <Link href={href} className="block px-4 py-2 text-sm text-persal-dark hover:bg-teal-50 hover:text-persal-blue transition">
         {children}
       </Link>
     </li>
@@ -170,7 +170,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <button
                 aria-label="Open menu"
                 onClick={() => setMobileMenuOpen(true)}
-                className="h-10 w-10 flex items-center justify-center rounded text-persal-dark hover:bg-blue-50 transition"
+                className="h-10 w-10 flex items-center justify-center rounded text-persal-dark hover:bg-teal-50 transition"
               >
                 <span className="text-xl leading-none">☰</span>
               </button>
@@ -216,8 +216,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                           onClick={() => setMobileMenuOpen(false)}
                           className={`block px-3 py-2 rounded text-sm font-medium transition w-full ${
                             isActivePath(sub.href)
-                              ? "bg-blue-100 text-persal-blue"
-                              : "text-persal-dark hover:bg-blue-50 hover:text-persal-blue"
+                              ? "bg-teal-100 text-persal-blue"
+                              : "text-persal-dark hover:bg-teal-50 hover:text-persal-blue"
                           }`}
                         >
                           {sub.name}
@@ -231,8 +231,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       onClick={() => setMobileMenuOpen(false)}
                       className={`block px-3 py-2 rounded text-sm font-medium transition w-full ${
                         isActivePath(item.href)
-                          ? "bg-blue-100 text-persal-blue"
-                          : "text-black hover:bg-blue-50 hover:text-black"
+                          ? "bg-teal-100 text-persal-blue"
+                          : "text-black hover:bg-teal-50 hover:text-black"
                       }`}
                     >
                       {item.name}
@@ -272,8 +272,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                           href={item.href}
                           className={`px-4 h-[34px] flex items-center rounded-md text-sm font-medium transition ${
                             isActivePath(item.href)
-                              ? "bg-blue-100 text-persal-blue"
-                              : "text-black hover:bg-blue-50 hover:text-black"
+                              ? "bg-teal-100 text-persal-blue"
+                              : "text-black hover:bg-teal-50 hover:text-black"
                           }`}
                           style={{ lineHeight: "1.2" }}
                         >

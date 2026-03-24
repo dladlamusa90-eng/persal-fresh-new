@@ -13,7 +13,7 @@ const DropdownMenu = ({ label, children }: { label: string; children: React.Reac
     <li className="relative group flex items-center h-[56px]">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="px-4 h-[56px] flex items-center justify-center rounded text-sm font-medium text-persal-dark hover:bg-blue-50 hover:text-persal-blue transition gap-1"
+        className="px-4 h-[56px] flex items-center justify-center rounded text-sm font-medium text-persal-dark hover:bg-teal-50 hover:text-persal-blue transition gap-1"
         style={{lineHeight: '56px', paddingTop: 0, paddingBottom: 0}}
       >
         <span className="flex items-center" style={{height: '24px'}}>{label}</span>
@@ -31,7 +31,7 @@ const DropdownMenu = ({ label, children }: { label: string; children: React.Reac
 const DropdownMenuItem = ({ href, children }: { href: string; children: React.ReactNode }) => {
   return (
     <li>
-      <Link href={href} className="block px-4 py-2 text-sm text-persal-dark hover:bg-blue-50 hover:text-persal-blue transition">
+      <Link href={href} className="block px-4 py-2 text-sm text-persal-dark hover:bg-teal-50 hover:text-persal-blue transition">
         {children}
       </Link>
     </li>
@@ -108,7 +108,7 @@ export default function HowToApplyPage() {
                   <li key={item.href} className="flex items-center h-[56px]">
                     <Link
                       href={item.href}
-                      className="px-4 h-[34px] flex items-center rounded-md text-sm font-medium transition text-black hover:bg-blue-50 hover:text-black"
+                      className="px-4 h-[34px] flex items-center rounded-md text-sm font-medium transition text-black hover:bg-teal-50 hover:text-black"
                       style={{ lineHeight: "1.2" }}
                     >
                       {item.name}
@@ -133,7 +133,7 @@ export default function HowToApplyPage() {
               <img src="/logo.png" alt="Persal Logo" className="w-[100px] h-[100px] object-contain -my-5" style={{ width: "100px", height: "100px" }} />
             </a>
             <nav className="flex gap-4 items-center">
-              <a href="/auth/login" className="text-persal-dark font-medium px-4 py-2 rounded hover:bg-blue-50 transition">Login</a>
+              <a href="/auth/login" className="text-persal-dark font-medium px-4 py-2 rounded hover:bg-teal-50 transition">Login</a>
               <a href="/auth/signup?from=login" className="bg-persal-blue text-white font-semibold px-4 py-2 rounded shadow hover:bg-persal-dark transition">Register</a>
             </nav>
           </div>
@@ -143,9 +143,9 @@ export default function HowToApplyPage() {
       <main className="pb-4">
         <section className="max-w-5xl mx-auto px-4 md:px-6 mt-2 mb-8">
           <div className="rounded-2xl bg-white border border-gray-200 shadow-sm overflow-hidden">
-            <div className="bg-gradient-to-r from-persal-dark to-blue-800 px-6 py-8 md:px-8 md:py-10">
+            <div className="bg-gradient-to-r from-persal-dark to-teal-800 px-6 py-8 md:px-8 md:py-10">
               <h1 className="text-3xl md:text-4xl font-semibold text-white">Applying is simple</h1>
-              <p className="mt-3 text-blue-100 text-sm md:text-base max-w-3xl">
+              <p className="mt-3 text-teal-100 text-sm md:text-base max-w-3xl">
                 Our simple 4-step application process makes it easy to apply for a Persal loan.
               </p>
             </div>
@@ -157,7 +157,7 @@ export default function HowToApplyPage() {
                 {steps.map((step) => {
                   const IconComponent = step.icon;
                   return (
-                    <div key={step.number} className="bg-blue-50 rounded-xl p-6 border border-blue-100">
+                    <div key={step.number} className="bg-teal-50 rounded-xl p-6 border border-teal-100">
                       <div className="flex items-center gap-4 mb-3">
                         <div className="flex items-center justify-center h-12 w-12 rounded-full bg-persal-blue text-white">
                           <IconComponent size={24} />

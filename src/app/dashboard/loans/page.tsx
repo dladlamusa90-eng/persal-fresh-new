@@ -66,7 +66,7 @@ export default async function MyLoansPage() {
                 <td className="py-2 px-4">
                   <Link
                     href="/dashboard/lending/application-status"
-                    className="inline-block bg-blue-600 hover:bg-blue-700 text-white rounded px-3 py-2 md:py-1 text-xs font-semibold shadow w-full md:w-auto"
+                    className="inline-block bg-teal-600 hover:bg-teal-700 text-white rounded px-3 py-2 md:py-1 text-xs font-semibold shadow w-full md:w-auto"
                   >
                     View Details
                   </Link>

@@ -204,7 +204,7 @@ function ApplyPageContent() {
   return (
     <section className="max-w-2xl mx-auto py-12">
       <h2 className="text-2xl font-semibold mb-6">Apply for a Loan</h2>
-      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded text-blue-800 text-sm">
+      <div className="mb-6 p-4 bg-teal-50 border border-teal-200 rounded text-teal-800 text-sm">
         <strong>Legal Notice:</strong> First-time users can borrow up to <b>R{FIRST_TIME_MAX_LOAN.toLocaleString()}</b>, returning users up to <b>R{RETURNING_MAX_LOAN.toLocaleString()}</b>, with a maximum term of <b>3 months</b>. Only one active loan per client is allowed.
       </div>
       <div className="mb-6 p-3 bg-gray-50 border border-gray-200 rounded text-gray-700 text-sm">
@@ -244,7 +244,7 @@ function ApplyPageContent() {
         <button
           type="button"
           onClick={handleCalculate}
-          className={`px-6 py-3 rounded-xl font-semibold transition w-full md:w-auto ${hasActiveLoan ? "bg-gray-300 text-gray-400 cursor-not-allowed" : "bg-blue-600 text-white hover:bg-blue-700"}`}
+          className={`px-6 py-3 rounded-xl font-semibold transition w-full md:w-auto ${hasActiveLoan ? "bg-gray-300 text-gray-400 cursor-not-allowed" : "bg-teal-600 text-white hover:bg-teal-700"}`}
           disabled={hasActiveLoan}
         >
           Calculate Eligibility
@@ -252,7 +252,7 @@ function ApplyPageContent() {
         {error && <div className="mt-2 text-red-600 font-semibold text-sm">{error}</div>}
         {calculated && !error && (
           <div className="mt-8 bg-gray-50 rounded-xl p-6 border border-gray-200 flex flex-col gap-6">
-            <div className="text-lg font-semibold text-gray-900">Maximum Loan Amount: <span className="text-blue-700 whitespace-nowrap">R {maxLoan.toLocaleString()}</span></div>
+            <div className="text-lg font-semibold text-gray-900">Maximum Loan Amount: <span className="text-teal-700 whitespace-nowrap">R {maxLoan.toLocaleString()}</span></div>
             <div>
               <label className="block text-gray-700 mb-2">Select Loan Amount (up to max)</label>
               <input
@@ -407,7 +407,7 @@ function ApplyPageContent() {
         {error && <div className="text-red-600 font-semibold text-sm">{error}</div>}
         <button
           type="submit"
-          className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
+          className="w-full px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-semibold transition disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
           disabled={hasActiveLoan || submitting}
         >
           {submitting ? "Submitting..." : "Submit Application"}

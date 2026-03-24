@@ -99,7 +99,7 @@ export default function BankDetailsPage() {
 
         <h1 className="text-2xl md:text-3xl font-normal text-persal-dark mb-3">Bank Details</h1>
         <p className="mb-8 text-sm text-gray-700 flex items-center gap-2">
-          <span className="text-sky-500 inline-flex" aria-hidden="true">
+          <span className="text-teal-500 inline-flex" aria-hidden="true">
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="9" />
               <line x1="12" y1="10" x2="12" y2="16" />

@@ -177,7 +177,7 @@ export default function LoginPage() {
                 setError("");
                 setShowOtpStep(false);
               }}
-              className={`w-1/2 rounded-full py-2.5 text-sm md:text-base font-medium transition ${activeTab === "id" ? "bg-white text-sky-600 shadow" : "text-gray-700 hover:text-gray-900"}`}
+              className={`w-1/2 rounded-full py-2.5 text-sm md:text-base font-medium transition ${activeTab === "id" ? "bg-white text-teal-600 shadow" : "text-gray-700 hover:text-gray-900"}`}
             >
               ID number login
             </button>
@@ -188,7 +188,7 @@ export default function LoginPage() {
                 setOtpInfo("");
                 setShowOtpStep(false);
               }}
-              className={`w-1/2 rounded-full py-2.5 text-sm md:text-base font-medium transition ${activeTab === "email" ? "bg-white text-sky-600 shadow" : "text-gray-700 hover:text-gray-900"}`}
+              className={`w-1/2 rounded-full py-2.5 text-sm md:text-base font-medium transition ${activeTab === "email" ? "bg-white text-teal-600 shadow" : "text-gray-700 hover:text-gray-900"}`}
             >
               Email login
             </button>
@@ -205,7 +205,7 @@ export default function LoginPage() {
                     setOtpInfo("");
                     setOtpMaskedPhone("");
                   }}
-                  className="inline-flex items-center gap-1 text-sky-600 hover:underline text-sm"
+                  className="inline-flex items-center gap-1 text-teal-600 hover:underline text-sm"
                 >
                   <ChevronLeft size={16} />
                   <span>Back</span>
@@ -237,7 +237,7 @@ export default function LoginPage() {
                       value={otpCode}
                       onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 4))}
                       placeholder="OTP"
-                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-300"
+                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-300"
                     />
                     <button
                       type="button"
@@ -268,19 +268,19 @@ export default function LoginPage() {
                         setOtpMaskedPhone(String(data.maskedPhone ?? otpMaskedPhone));
                         setOtpInfo("A new OTP has been sent.");
                       }}
-                      className="mt-4 text-sky-600 hover:underline text-base"
+                      className="mt-4 text-teal-600 hover:underline text-base"
                     >
                       Request new OTP
                     </button>
                   </div>
                 </div>
 
-                {otpInfo && <div className="text-sm font-medium text-sky-700">{otpInfo}</div>}
+                {otpInfo && <div className="text-sm font-medium text-teal-700">{otpInfo}</div>}
 
                 <div className="flex justify-end pt-2">
                   <div className="w-full md:w-[320px]">
                     <p className="text-base text-right text-gray-700 mb-4">
-                      Trouble logging in? <button type="button" onClick={() => { setShowOtpStep(false); setActiveTab("email"); }} className="text-sky-600 hover:underline">Log in with your email</button>
+                      Trouble logging in? <button type="button" onClick={() => { setShowOtpStep(false); setActiveTab("email"); }} className="text-teal-600 hover:underline">Log in with your email</button>
                     </p>
                     <button
                       type="submit"
@@ -306,12 +306,12 @@ export default function LoginPage() {
                     value={idNumber}
                     onChange={(e) => setIdNumber(e.target.value)}
                     placeholder="ID number"
-                    className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-300"
+                    className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-300"
                   />
                 </div>
-                {otpInfo && <p className="text-sm font-medium text-sky-700">{otpInfo}</p>}
+                {otpInfo && <p className="text-sm font-medium text-teal-700">{otpInfo}</p>}
                 <div className="flex items-center justify-between gap-4 pt-6">
-                  <p className="text-gray-700 text-base md:text-lg">Don&apos;t have an account? <a href="/auth/signup?from=login" className="text-sky-600 hover:underline">Register</a></p>
+                  <p className="text-gray-700 text-base md:text-lg">Don&apos;t have an account? <a href="/auth/signup?from=login" className="text-teal-600 hover:underline">Register</a></p>
                   <button type="submit" disabled={isRequestingOtp} className="bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl px-7 py-2.5 text-lg md:text-xl min-w-[200px] md:min-w-[230px] transition disabled:opacity-60 disabled:cursor-not-allowed">
                     {isRequestingOtp ? "Checking..." : "Get OTP"}
                   </button>
@@ -327,7 +327,7 @@ export default function LoginPage() {
                     placeholder="Email address or ID number"
                     value={email}
                     onChange={e => setEmail(e.target.value)}
-                    className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-300"
+                    className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-300"
                   />
                 </div>
 
@@ -335,7 +335,7 @@ export default function LoginPage() {
                   <label htmlFor="password" className="text-gray-700 text-lg">Password</label>
                   <div className="w-full">
                     <div className="text-right mb-2">
-                      <a href="/auth/reset-password" className="text-sky-600 hover:underline text-sm md:text-base">Forgot your password?</a>
+                      <a href="/auth/reset-password" className="text-teal-600 hover:underline text-sm md:text-base">Forgot your password?</a>
                     </div>
                     <div className="relative w-full">
                       <input
@@ -344,7 +344,7 @@ export default function LoginPage() {
                         placeholder="Password"
                         value={password}
                         onChange={e => setPassword(e.target.value)}
-                        className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 pr-12 text-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-300"
+                        className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 pr-12 text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-300"
                       />
                       <button
                         type="button"
@@ -372,7 +372,7 @@ export default function LoginPage() {
                             setOtpInfo("");
                             setShowOtpStep(false);
                           }}
-                          className="text-sky-600 hover:underline"
+                          className="text-teal-600 hover:underline"
                         >
                           Log in with your cellphone
                         </button>

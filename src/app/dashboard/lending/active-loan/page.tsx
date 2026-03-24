@@ -167,16 +167,16 @@ export default function ActiveLoanPage() {
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 flex flex-col gap-4 items-center justify-center mb-2">
             <h2 className="text-xl font-semibold text-persal-blue mb-2">Payroll Deduction</h2>
             <div className="flex items-center gap-2">
-              <Banknote className="w-6 h-6 text-blue-600" />
+              <Banknote className="w-6 h-6 text-teal-600" />
               <span className="text-lg font-bold text-gray-900">R {loanDetails.amount.toLocaleString()}</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-gray-500 text-xs">Deduction At End</span>
-              <span className="text-base font-semibold text-blue-700 ml-auto">R {loanDetails.repayable.toLocaleString()}</span>
+              <span className="text-base font-semibold text-teal-700 ml-auto">R {loanDetails.repayable.toLocaleString()}</span>
             </div>
             <div className="flex items-center gap-2 mt-2">
-              <ShieldCheck className="w-5 h-5 text-blue-600" />
-              <span className="text-xs font-medium text-blue-700">Secure Payroll Deduction</span>
+              <ShieldCheck className="w-5 h-5 text-teal-600" />
+              <span className="text-xs font-medium text-teal-700">Secure Payroll Deduction</span>
             </div>
           </div>
         <div className="flex items-center gap-2">

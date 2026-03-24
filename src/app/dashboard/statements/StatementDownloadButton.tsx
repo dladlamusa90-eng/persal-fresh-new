@@ -133,7 +133,7 @@ export default function StatementDownloadButton({ statementData }: Props) {
     <button
       type="button"
       onClick={handleDownload}
-      className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-3 font-semibold text-lg shadow transition"
+      className="bg-teal-600 hover:bg-teal-700 text-white rounded-lg px-6 py-3 font-semibold text-lg shadow transition"
     >
       Download Statement
     </button>

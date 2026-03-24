@@ -25,8 +25,8 @@ const statusConfig = {
     subtitle: "Your application was rejected by admin.",
   },
   PAID: {
-    dot: "bg-blue-500",
-    text: "text-blue-700",
+    dot: "bg-teal-500",
+    text: "text-teal-700",
     label: "Paid",
     subtitle: "This loan has been fully settled.",
   },
@@ -122,7 +122,7 @@ export default async function ApplicationStatusPage() {
           <p className="mt-2 text-sm text-gray-600">{statusView.subtitle}</p>
 
           <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className={`rounded-lg border px-3 py-2 ${progressStep >= 1 ? "border-sky-200 bg-sky-50" : "border-gray-200 bg-white"}`}>
+            <div className={`rounded-lg border px-3 py-2 ${progressStep >= 1 ? "border-teal-200 bg-teal-50" : "border-gray-200 bg-white"}`}>
               <p className="text-xs font-semibold text-gray-700">1. Submitted</p>
               <p className="text-xs text-gray-600 mt-1">Application received.</p>
             </div>

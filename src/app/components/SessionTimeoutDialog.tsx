@@ -18,7 +18,7 @@ export default function SessionTimeoutDialog({ countdown, totalSeconds, onStay, 
         <div className="px-6 pt-6 pb-4 text-center">
           <div className="flex items-center justify-center mb-3">
             <span
-              className={`inline-block h-2.5 w-2.5 rounded-full ${isUrgent ? "bg-red-500" : "bg-blue-500"}`}
+              className={`inline-block h-2.5 w-2.5 rounded-full ${isUrgent ? "bg-red-500" : "bg-teal-500"}`}
               aria-hidden="true"
             />
           </div>
@@ -46,7 +46,7 @@ export default function SessionTimeoutDialog({ countdown, totalSeconds, onStay, 
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
             <div
               className={`h-1.5 rounded-full transition-all duration-1000 ease-linear ${
-                isUrgent ? "bg-red-500" : "bg-blue-500"
+                isUrgent ? "bg-red-500" : "bg-teal-500"
               }`}
               style={{ width: `${progress}%` }}
             />

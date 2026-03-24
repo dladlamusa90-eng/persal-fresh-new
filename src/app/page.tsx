@@ -56,7 +56,7 @@ function CarouselCTA() {
       <button
         onClick={goNext}
         aria-label="Next image"
-        className="absolute right-2 bottom-2 bg-white/80 hover:bg-white text-blue-700 rounded-full p-2 shadow-md transition"
+        className="absolute right-2 bottom-2 bg-white/80 hover:bg-white text-teal-700 rounded-full p-2 shadow-md transition"
         style={{zIndex:2}}
       >
         <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
@@ -184,7 +184,7 @@ export default function Home() {
       <div className="relative z-10">
       {/* Top Bar (urgent message) */}
       {showTopAd && (
-        <div className="relative w-full bg-persal-dark text-blue-100 py-2 px-4 font-semibold text-xs md:text-sm tracking-wide" role="region" aria-label="Promotional banner">
+        <div className="relative w-full bg-persal-dark text-teal-100 py-2 px-4 font-semibold text-xs md:text-sm tracking-wide" role="region" aria-label="Promotional banner">
           <div className="max-w-5xl mx-auto flex items-center justify-center gap-3">
             <div className="text-center flex-1">
               Need cash today?<br className="hidden md:block" />
@@ -194,7 +194,7 @@ export default function Home() {
           <button
             type="button"
             onClick={() => setShowTopAd(false)}
-            className="absolute top-0.5 right-2 md:right-3 text-blue-100 hover:text-white transition leading-none text-base md:text-lg"
+            className="absolute top-0.5 right-2 md:right-3 text-teal-100 hover:text-white transition leading-none text-base md:text-lg"
             aria-label="Close promotional banner"
           >
             ×
@@ -209,7 +209,7 @@ export default function Home() {
               <img src="/logo.png" alt="Persal Logo" className="w-[100px] h-[100px] object-contain -my-5" style={{ width: '100px', height: '100px' }} />
             </a>
             <nav className="flex gap-4 items-center">
-              <a href="/auth/login" className="text-persal-dark font-medium px-4 py-2 rounded hover:bg-blue-50 transition">Login</a>
+              <a href="/auth/login" className="text-persal-dark font-medium px-4 py-2 rounded hover:bg-teal-50 transition">Login</a>
               <a href="/auth/signup?from=login" className="bg-persal-blue text-white font-semibold px-4 py-2 rounded shadow hover:bg-persal-dark transition">Register</a>
             </nav>
           </div>
@@ -222,10 +222,10 @@ export default function Home() {
               <div className="grid grid-cols-1 md:grid-cols-12">
                 <aside className="relative overflow-hidden md:col-span-4 bg-persal-dark text-white">
                   <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-                    <div className="absolute inset-0 bg-gradient-to-b from-blue-700/25 via-blue-800/10 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-b from-teal-700/25 via-teal-800/10 to-transparent" />
                     <svg
                       viewBox="0 0 600 220"
-                      className="absolute -bottom-4 left-0 w-full h-40 text-blue-300/25"
+                      className="absolute -bottom-4 left-0 w-full h-40 text-teal-300/25"
                       preserveAspectRatio="none"
                     >
                       <path
@@ -235,7 +235,7 @@ export default function Home() {
                     </svg>
                     <svg
                       viewBox="0 0 600 220"
-                      className="absolute -bottom-10 left-0 w-full h-44 text-blue-200/20"
+                      className="absolute -bottom-10 left-0 w-full h-44 text-teal-200/20"
                       preserveAspectRatio="none"
                     >
                       <path
@@ -250,23 +250,23 @@ export default function Home() {
                       New customers can apply for up to <b>R2500</b>, while existing customers can apply for up to <b>R5000</b>, with up to 3 months to repay.
                     </p>
                   </div>
-                  <div className="relative z-10 p-4 md:p-5 border-b border-white/20 bg-blue-900/25">
+                  <div className="relative z-10 p-4 md:p-5 border-b border-white/20 bg-teal-900/25">
                     <h3 className="text-orange-300 font-semibold text-lg mb-2">What you'll need:</h3>
                     <ul className="space-y-2 text-sm md:text-base text-white/95 break-words">
                       <li className="flex items-center gap-2">
-                        <svg className="w-4 h-4 text-blue-200 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <svg className="w-4 h-4 text-teal-200 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <rect x="7" y="2" width="10" height="20" rx="2" /><line x1="10" y1="5" x2="14" y2="5" /><line x1="12" y1="18" x2="12" y2="18" />
                         </svg>
                         <span>A cellphone number</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <svg className="w-4 h-4 text-blue-200 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <svg className="w-4 h-4 text-teal-200 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <rect x="3" y="5" width="18" height="14" rx="2" /><circle cx="8" cy="12" r="2" /><line x1="13" y1="10" x2="18" y2="10" /><line x1="13" y1="14" x2="18" y2="14" />
                         </svg>
                         <span>SA ID number</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <svg className="w-4 h-4 text-blue-200 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg className="w-4 h-4 text-teal-200 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <rect x="3" y="5" width="18" height="14" rx="2" />
                           <line x1="7" y1="10" x2="17" y2="10" />
                           <line x1="7" y1="14" x2="13" y2="14" />
@@ -274,13 +274,13 @@ export default function Home() {
                         <span>Persal number</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <svg className="w-4 h-4 text-blue-200 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <svg className="w-4 h-4 text-teal-200 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <line x1="3" y1="21" x2="21" y2="21" /><line x1="5" y1="21" x2="5" y2="10" /><line x1="9" y1="21" x2="9" y2="10" /><line x1="15" y1="21" x2="15" y2="10" /><line x1="19" y1="21" x2="19" y2="10" /><polygon points="12 3 2 10 22 10 12 3" />
                         </svg>
                         <span>Bank account details</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <svg className="w-4 h-4 text-blue-200 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <svg className="w-4 h-4 text-teal-200 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z" /><polyline points="14 2 14 8 20 8" /><polyline points="9 15 11 17 15 13" />
                         </svg>
                         <span>Most recent proof of income</span>
@@ -571,7 +571,7 @@ export default function Home() {
                 key={step.text}
                 className={`flex-1 flex flex-col items-center px-2 md:px-6 py-4 md:py-0 justify-between h-full${idx < 2 ? ' md:border-r md:border-gray-200' : ''}`}
               >
-                <img src={step.img} alt={step.alt} className="w-20 h-20 object-contain rounded-full bg-blue-50 border border-blue-100 mb-2" loading="lazy" />
+                <img src={step.img} alt={step.alt} className="w-20 h-20 object-contain rounded-full bg-teal-50 border border-teal-100 mb-2" loading="lazy" />
                 <Link href={step.link} className="text-lg font-semibold text-black mb-1 hover:underline cursor-pointer text-center" style={{minHeight:'2.5rem', display:'flex', alignItems:'center', justifyContent:'center'}}>{step.text}</Link>
                 <div className="text-gray-600 text-center" style={{minHeight:'3.5rem', display:'flex', alignItems:'center', justifyContent:'center'}}>{step.desc}</div>
               </div>
@@ -582,7 +582,7 @@ export default function Home() {
         {/* About Persal Section */}
         <section className="w-full max-w-5xl mx-auto bg-white rounded-2xl shadow p-8 mb-12 mt-8 flex flex-col md:flex-row items-center gap-8">
           <section id="about-persal" className="flex-1 flex justify-center">
-            <img src="/about-persal.jpg" alt="About Persal" className="w-72 h-72 max-w-full object-cover rounded-xl bg-blue-50 border border-persal-light shadow-md" loading="lazy" />
+            <img src="/about-persal.jpg" alt="About Persal" className="w-72 h-72 max-w-full object-cover rounded-xl bg-teal-50 border border-persal-light shadow-md" loading="lazy" />
           </section>
           <div className="flex-1">
             <h2 className="text-2xl font-bold text-persal-dark mb-4">About Persal</h2>
@@ -602,21 +602,21 @@ export default function Home() {
           <h2 className="text-2xl font-bold text-persal-dark mb-6 text-center">What Our Clients Say</h2>
           <div className="flex flex-col md:flex-row gap-8 justify-between items-stretch">
             {/* Testimonial 1 */}
-            <div className="flex-1 flex flex-col items-center bg-blue-50 rounded-xl p-6 shadow-sm">
+            <div className="flex-1 flex flex-col items-center bg-teal-50 rounded-xl p-6 shadow-sm">
               <img src="/client-1.png" alt="Client 1" className="w-16 h-16 object-cover rounded-full mb-3 border border-persal-light" loading="lazy" />
               <div className="text-gray-800 font-semibold mb-1">Nomsa M.</div>
               <div className="text-gray-600 text-center text-sm mb-2">"The process was so quick and easy. I got my loan approved in a day and repayments are stress-free!"</div>
               <div className="text-persal-blue text-xs font-medium">Department of Health</div>
             </div>
             {/* Testimonial 2 */}
-            <div className="flex-1 flex flex-col items-center bg-blue-50 rounded-xl p-6 shadow-sm">
+            <div className="flex-1 flex flex-col items-center bg-teal-50 rounded-xl p-6 shadow-sm">
               <img src="/client-2.png" alt="Client 2" className="w-16 h-16 object-cover rounded-full mb-3 border border-persal-light" loading="lazy" />
               <div className="text-gray-800 font-semibold mb-1">Thabo K.</div>
               <div className="text-gray-600 text-center text-sm mb-2">"Persal really cares about public servants. The support team was helpful and the rates are fair."</div>
               <div className="text-persal-blue text-xs font-medium">Department of Education</div>
             </div>
             {/* Testimonial 3 */}
-            <div className="flex-1 flex flex-col items-center bg-blue-50 rounded-xl p-6 shadow-sm">
+            <div className="flex-1 flex flex-col items-center bg-teal-50 rounded-xl p-6 shadow-sm">
               <img src="/client-3.png" alt="Client 3" className="w-16 h-16 object-cover rounded-full mb-3 border border-persal-light" loading="lazy" />
               <div className="text-gray-800 font-semibold mb-1">Lindiwe S.</div>
               <div className="text-gray-600 text-center text-sm mb-2">"I love that repayments come straight from my salary. No stress, no missed payments!"</div>
@@ -629,8 +629,8 @@ export default function Home() {
         <div className="w-full max-w-4xl mx-auto flex flex-col md:flex-row items-stretch gap-0 mb-12 mt-8">
           <section className="flex-1 bg-persal-blue rounded-t-2xl md:rounded-l-2xl md:rounded-tr-none shadow p-8 flex flex-col items-start justify-center">
             <h2 className="text-2xl font-bold text-white mb-3">Ready to get started?</h2>
-            <p className="text-blue-100 mb-5">Apply for your Persal payroll loan today and experience fast, fair, and stress-free borrowing.</p>
-            <a href="/auth/login" className="inline-block bg-white text-persal-blue font-semibold px-6 py-3 rounded-lg shadow hover:bg-blue-50 transition">Apply Now</a>
+            <p className="text-teal-100 mb-5">Apply for your Persal payroll loan today and experience fast, fair, and stress-free borrowing.</p>
+            <a href="/auth/login" className="inline-block bg-white text-persal-blue font-semibold px-6 py-3 rounded-lg shadow hover:bg-teal-50 transition">Apply Now</a>
           </section>
           <div className="flex-1 flex items-stretch">
             {/* Sliding image carousel */}
@@ -640,18 +640,18 @@ export default function Home() {
 
         {/* Subscribe Section */}
         <section className="w-full max-w-3xl mx-auto bg-white rounded-2xl shadow p-8 mb-12 mt-8 flex flex-col items-center">
-          <h2 className="text-2xl font-bold text-blue-800 mb-3 text-center">Stay Informed</h2>
+          <h2 className="text-2xl font-bold text-teal-800 mb-3 text-center">Stay Informed</h2>
           <p className="text-gray-600 mb-5 text-center">Subscribe to receive updates, financial tips, and special offers from Persal.</p>
           <form className="w-full flex flex-col sm:flex-row gap-3 justify-center items-center">
             <input
               type="email"
               required
               placeholder="Your email address"
-              className="flex-1 px-4 py-3 rounded-lg border border-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-800 bg-blue-50"
+              className="flex-1 px-4 py-3 rounded-lg border border-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-400 text-gray-800 bg-teal-50"
             />
             <button
               type="submit"
-              className="bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg shadow hover:bg-blue-800 transition"
+              className="bg-teal-700 text-white font-semibold px-6 py-3 rounded-lg shadow hover:bg-teal-800 transition"
             >
               Subscribe
             </button>

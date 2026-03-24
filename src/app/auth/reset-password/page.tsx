@@ -164,7 +164,7 @@ export default function ResetPasswordPage() {
                     setError("");
                     setMessage("");
                   }}
-                  className="mt-6 inline-flex items-center gap-1 text-sky-600 hover:underline text-sm"
+                  className="mt-6 inline-flex items-center gap-1 text-teal-600 hover:underline text-sm"
                 >
                   <ChevronLeft size={16} />
                   <span>Back</span>
@@ -183,7 +183,7 @@ export default function ResetPasswordPage() {
                       value={identifier}
                       onChange={(e) => setIdentifier(e.target.value)}
                       placeholder="name@email.com or 13-digit ID"
-                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-300"
+                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-300"
                     />
                   </div>
 
@@ -220,7 +220,7 @@ export default function ResetPasswordPage() {
                       maxLength={4}
                       value={otpCode}
                       onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-300"
+                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-300"
                     />
                   </div>
 
@@ -233,7 +233,7 @@ export default function ResetPasswordPage() {
                       type="password"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-300"
+                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-300"
                     />
                   </div>
 
@@ -246,7 +246,7 @@ export default function ResetPasswordPage() {
                       type="password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-300"
+                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-300"
                     />
                   </div>
 

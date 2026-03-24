@@ -21,9 +21,9 @@ module.exports = {
           50: "#fafafa"
         },
         persal: {
-          blue: '#2196f3', // main logo blue
-          light: '#5ec6ff', // light logo blue
-          dark: '#1a7cc7', // deep logo blue
+          blue: '#0f9a9a', // main brand teal
+          light: '#56c6c6', // light brand teal
+          dark: '#0b7f7f', // deep brand teal
         }
       }
     }

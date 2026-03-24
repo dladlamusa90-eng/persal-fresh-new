@@ -79,7 +79,7 @@ export default function RepaymentDetailsPage() {
         </div>
 
         <p className="mt-5 text-sm italic text-gray-700">
-          <span className="text-sky-500">*Credit Life is charged in all loans</span> which covers the outstanding debt in an unfortunate event.
+          <span className="text-teal-500">*Credit Life is charged in all loans</span> which covers the outstanding debt in an unfortunate event.
         </p>
 
         <div className="mt-10 flex items-center justify-between">
@@ -118,7 +118,7 @@ export default function RepaymentDetailsPage() {
             </div>
 
             <div className="px-4 py-4 text-base text-gray-700">
-              <p className="text-sky-600 font-semibold mb-3">Loan fees &amp; interest</p>
+              <p className="text-teal-600 font-semibold mb-3">Loan fees &amp; interest</p>
 
               <div className="border-t border-gray-200">
                 <div className="py-3 flex items-center justify-between">
@@ -135,7 +135,7 @@ export default function RepaymentDetailsPage() {
                 </div>
               </div>
 
-              <p className="text-sky-600 font-semibold mt-5 mb-3">Insurance</p>
+              <p className="text-teal-600 font-semibold mt-5 mb-3">Insurance</p>
               <div className="border-t border-gray-200">
                 <div className="py-3 flex items-center justify-between">
                   <span className="inline-flex items-center gap-2">
@@ -152,7 +152,7 @@ export default function RepaymentDetailsPage() {
                 </div>
               </div>
 
-              <div className="border-t border-gray-200 mt-2 pt-3 flex items-center justify-between text-sky-600 font-semibold">
+              <div className="border-t border-gray-200 mt-2 pt-3 flex items-center justify-between text-teal-600 font-semibold">
                 <span>Total to repay</span>
                 <span>R {formatCurrency(totalToRepay)}</span>
               </div>
