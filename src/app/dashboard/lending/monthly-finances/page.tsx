@@ -16,7 +16,7 @@ export default function MonthlyFinancesPage() {
     (parseInt(livingExpenses || "0", 10) || 0);
 
   function handleNext() {
-    router.push("/dashboard/lending/apply");
+    router.push("/dashboard/lending/bank-details");
   }
 
   return (
