@@ -83,6 +83,7 @@ export default function MonthlyFinancesPage() {
                 className="w-full rounded-xl bg-gray-100 border border-transparent pl-9 pr-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-persal-blue"
               />
             </div>
+            <p className="mt-2 text-sm italic text-gray-500">*Your total earnings <em>before tax and deductions</em></p>
           </div>
 
           {/* Nett monthly income */}

@@ -19,11 +19,43 @@ export default function BankDetailsPage() {
   const [bankName, setBankName] = useState("Capitec");
   const [accountNumber, setAccountNumber] = useState("");
   const [accountType, setAccountType] = useState<(typeof accountTypeOptions)[number]["value"]>("SAVINGS");
+  const [bankVerified, setBankVerified] = useState(false);
+  const [stitchStatus, setStitchStatus] = useState<"idle" | "success" | "error">("idle");
+  const [stitchErrorMsg, setStitchErrorMsg] = useState("");
 
   function withWizardQuery(path: string) {
     const query = searchParams.toString();
     return query ? `${path}?${query}` : path;
   }
+
+  // Handle Stitch OAuth callback query params
+  useEffect(() => {
+    const verified = searchParams.get("stitch_verified");
+    const error = searchParams.get("stitch_error");
+    if (verified === "true") {
+      setStitchStatus("success");
+      // Refresh bank details from server (Stitch may have updated them)
+      fetch("/api/users/me", { cache: "no-store" })
+        .then((r) => r.json())
+        .then((body) => {
+          if (body.user?.bankName) setBankName(body.user.bankName);
+          if (body.user?.accountNumber) setAccountNumber(body.user.accountNumber);
+          if (body.user?.accountType) setAccountType(body.user.accountType);
+          if (body.user?.bankVerified) setBankVerified(true);
+        })
+        .catch(() => {});
+    } else if (error) {
+      setStitchStatus("error");
+      const messages: Record<string, string> = {
+        session_expired: "Your verification session expired. Please try again.",
+        invalid_state: "Security check failed. Please try again.",
+        token_exchange_failed: "Could not connect to Stitch. Please try again.",
+        access_denied: "You cancelled bank verification.",
+      };
+      setStitchErrorMsg(messages[error] ?? "Bank verification failed. Please try again.");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -57,6 +89,7 @@ export default function BankDetailsPage() {
             bankName?: string | null;
             accountNumber?: string | null;
             accountType?: "CHEQUE" | "SAVINGS" | "TRANSMISSION" | null;
+            bankVerified?: boolean;
           };
         };
 
@@ -64,6 +97,7 @@ export default function BankDetailsPage() {
         if (body.user?.bankName) setBankName(body.user.bankName);
         if (body.user?.accountNumber) setAccountNumber(body.user.accountNumber);
         if (body.user?.accountType) setAccountType(body.user.accountType);
+        if (body.user?.bankVerified) setBankVerified(true);
         setLoading(false);
       } catch {
         if (mounted) setLoading(false);
@@ -98,7 +132,7 @@ export default function BankDetailsPage() {
         </div>
 
         <h1 className="text-2xl md:text-3xl font-normal text-persal-dark mb-3">Bank Details</h1>
-        <p className="mb-8 text-sm text-gray-700 flex items-center gap-2">
+        <p className="mb-6 text-sm text-gray-700 flex items-center gap-2">
           <span className="text-teal-500 inline-flex" aria-hidden="true">
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="9" />
@@ -108,6 +142,45 @@ export default function BankDetailsPage() {
           </span>
           Please ensure you select the bank account that your income is paid into.
         </p>
+
+        {/* Stitch bank verification panel */}
+        <div className={`mb-8 rounded-xl border px-5 py-4 ${bankVerified ? "border-teal-200 bg-teal-50" : "border-gray-200 bg-gray-50"}`}>
+          {bankVerified ? (
+            <div className="flex items-center gap-3">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-teal-100">
+                <svg className="h-5 w-5 text-teal-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </span>
+              <div>
+                <p className="text-sm font-semibold text-teal-800">Bank account verified</p>
+                <p className="text-xs text-teal-700 mt-0.5">Your bank account was confirmed via Stitch. The details below have been pre-filled.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-gray-800">Verify your bank account instantly</p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Use Stitch to securely link your bank and confirm your account details — no manual entry needed.
+                </p>
+              </div>
+              <a
+                href={`/api/stitch/link?returnTo=${encodeURIComponent("/dashboard/lending/bank-details" + (searchParams.toString() ? "?" + searchParams.toString() : ""))}`}
+                className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-persal-blue px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-persal-dark"
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg>
+                Verify with Stitch
+              </a>
+            </div>
+          )}
+
+          {stitchStatus === "error" && (
+            <p className="mt-3 text-xs text-red-600">{stitchErrorMsg}</p>
+          )}
+        </div>
 
         <div className="grid grid-cols-1 gap-8 md:grid-cols-[260px_minmax(0,1fr)] md:items-center">
           <label className="text-sm font-medium text-gray-700">Bank Name</label>

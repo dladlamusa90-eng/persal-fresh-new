@@ -42,6 +42,8 @@ model User {
   role          Role     @default(USER)
   isBurned      Boolean  @default(false)
   burnedAt      DateTime?
+  bankVerified    Boolean  @default(false)
+  stitchAccountId String?
   loans         Loan[]
   loginOtps     LoginOtp[]
   passwordResetOtps PasswordResetOtp[]
@@ -92,6 +94,8 @@ model Loan {
   disbursementSentAt DateTime?
   disbursementReference String?
   disbursementMode String?
+  stitchMandateId     String?
+  stitchMandateStatus String?
   userId    String
   user      User       @relation(fields: [userId], references: [id])
   createdAt DateTime   @default(now())

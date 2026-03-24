@@ -1,17 +1,46 @@
 import React from "react";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/nextAuth";
+import prisma from "@/lib/prisma";
 
-export default function AgreementPage({ params }: { params: { id: string } }) {
+type AgreementPageProps = {
+  params: Promise<{ id: string }>;
+};
+
+export default async function AgreementPage({ params }: AgreementPageProps) {
+  const session = await getServerSession(authOptions);
+  const { id } = await params;
+
+  let borrowerName = "Borrower";
+  if (session?.user?.id) {
+    const loan = await prisma.loan.findFirst({
+      where: {
+        id,
+        ...(session.user.role === "ADMIN" ? {} : { userId: session.user.id }),
+      },
+      select: {
+        user: {
+          select: {
+            fullName: true,
+          },
+        },
+      },
+    });
+
+    borrowerName = loan?.user?.fullName ?? "Borrower";
+  }
+
   return (
     <section className="max-w-2xl mx-auto py-12">
       <h2 className="text-2xl font-semibold mb-6">Loan Agreement</h2>
       <div className="bg-white rounded-xl shadow p-6 border border-gray-100 flex flex-col gap-4">
         <div className="mb-4">
           <span className="text-gray-500 text-xs">Agreement ID</span>
-          <span className="text-lg font-bold text-gray-900 ml-2">{params.id}</span>
+          <span className="text-lg font-bold text-gray-900 ml-2">{id}</span>
         </div>
         <div className="mb-4">
           <span className="text-gray-500 text-xs">Borrower</span>
-          <span className="text-lg font-bold text-gray-900 ml-2">Thabo Mokoena</span>
+          <span className="text-lg font-bold text-gray-900 ml-2">{borrowerName}</span>
         </div>
         <div className="mb-4">
           <span className="text-gray-500 text-xs">Loan Amount</span>

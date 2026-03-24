@@ -60,7 +60,7 @@ const dashboardMenu: DashboardMenuItem[] = [
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const loggedIn = true;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [profileName, setProfileName] = useState("Thabo Mokoena");
+  const [profileName, setProfileName] = useState("Persal User");
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const pathname = usePathname();
   const isDashboardHome = pathname === "/dashboard";
