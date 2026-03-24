@@ -1,16 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 const maritalOptions = ["Unmarried", "Married", "Divorced", "Widowed"];
 const homeOptions = ["Tenant", "Owner", "Living With Parents", "Other"];
+
+const STORAGE_KEY = "wizard_my_details";
 
 export default function MyDetailsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [maritalStatus, setMaritalStatus] = useState("Unmarried");
   const [homeStatus, setHomeStatus] = useState("Tenant");
+
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const p = JSON.parse(saved) as { maritalStatus?: string; homeStatus?: string };
+        if (p.maritalStatus) setMaritalStatus(p.maritalStatus);
+        if (p.homeStatus) setHomeStatus(p.homeStatus);
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ maritalStatus, homeStatus }));
+    } catch {}
+  }, [maritalStatus, homeStatus]);
 
   function withWizardQuery(path: string) {
     const query = searchParams.toString();

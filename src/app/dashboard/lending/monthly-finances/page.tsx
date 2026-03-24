@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+
+const STORAGE_KEY = "wizard_monthly_finances";
 
 export default function MonthlyFinancesPage() {
   const router = useRouter();
@@ -10,6 +12,32 @@ export default function MonthlyFinancesPage() {
   const [netIncome, setNetIncome] = useState("");
   const [creditRepayments, setCreditRepayments] = useState("");
   const [livingExpenses, setLivingExpenses] = useState("");
+
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const p = JSON.parse(saved) as {
+          grossIncome?: string;
+          netIncome?: string;
+          creditRepayments?: string;
+          livingExpenses?: string;
+        };
+        if (p.grossIncome !== undefined) setGrossIncome(p.grossIncome);
+        if (p.netIncome !== undefined) setNetIncome(p.netIncome);
+        if (p.creditRepayments !== undefined) setCreditRepayments(p.creditRepayments);
+        if (p.livingExpenses !== undefined) setLivingExpenses(p.livingExpenses);
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+        grossIncome, netIncome, creditRepayments, livingExpenses,
+      }));
+    } catch {}
+  }, [grossIncome, netIncome, creditRepayments, livingExpenses]);
 
   function withWizardQuery(path: string) {
     const query = searchParams.toString();

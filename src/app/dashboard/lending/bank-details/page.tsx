@@ -10,6 +10,8 @@ const accountTypeOptions = [
   { value: "TRANSMISSION", label: "Transmission account" },
 ] as const;
 
+const BANK_STORAGE_KEY = "wizard_bank_details";
+
 export default function BankDetailsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -28,6 +30,22 @@ export default function BankDetailsPage() {
 
     async function loadUser() {
       try {
+        // Restore from sessionStorage first (user may have edited and navigated back)
+        const saved = sessionStorage.getItem(BANK_STORAGE_KEY);
+        if (saved) {
+          const p = JSON.parse(saved) as {
+            bankName?: string;
+            accountNumber?: string;
+            accountType?: "CHEQUE" | "SAVINGS" | "TRANSMISSION";
+          };
+          if (!mounted) return;
+          if (p.bankName) setBankName(p.bankName);
+          if (p.accountNumber !== undefined) setAccountNumber(p.accountNumber);
+          if (p.accountType) setAccountType(p.accountType);
+          setLoading(false);
+          return;
+        }
+
         const response = await fetch("/api/users/me", { cache: "no-store" });
         if (!response.ok) {
           if (mounted) setLoading(false);
@@ -57,6 +75,13 @@ export default function BankDetailsPage() {
       mounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (loading) return;
+    try {
+      sessionStorage.setItem(BANK_STORAGE_KEY, JSON.stringify({ bankName, accountNumber, accountType }));
+    } catch {}
+  }, [bankName, accountNumber, accountType, loading]);
 
   function handleNext() {
     router.push(withWizardQuery("/dashboard/lending/repayment-details"));

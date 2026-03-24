@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 const employmentOptions = ["Employed", "Self-employed", "Retired/Pensioner", "Grant recipient", "Unemployed"];
 const incomeFrequencyOptions = ["Monthly", "Weekly", "Fortnightly"];
+
+const STORAGE_KEY = "wizard_employment_details";
 
 export default function EmploymentDetailsPage() {
   const router = useRouter();
@@ -16,6 +18,36 @@ export default function EmploymentDetailsPage() {
   const [salaryDay, setSalaryDay] = useState("");
   const [showPepInfo, setShowPepInfo] = useState(false);
   const [pepAnswer, setPepAnswer] = useState<"yes" | "no">("no");
+
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const p = JSON.parse(saved) as {
+          employmentStatus?: string;
+          grossIncome?: string;
+          netIncome?: string;
+          incomeFrequency?: string;
+          salaryDay?: string;
+          pepAnswer?: "yes" | "no";
+        };
+        if (p.employmentStatus) setEmploymentStatus(p.employmentStatus);
+        if (p.grossIncome !== undefined) setGrossIncome(p.grossIncome);
+        if (p.netIncome !== undefined) setNetIncome(p.netIncome);
+        if (p.incomeFrequency) setIncomeFrequency(p.incomeFrequency);
+        if (p.salaryDay !== undefined) setSalaryDay(p.salaryDay);
+        if (p.pepAnswer) setPepAnswer(p.pepAnswer);
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+        employmentStatus, grossIncome, netIncome, incomeFrequency, salaryDay, pepAnswer,
+      }));
+    } catch {}
+  }, [employmentStatus, grossIncome, netIncome, incomeFrequency, salaryDay, pepAnswer]);
 
   function withWizardQuery(path: string) {
     const query = searchParams.toString();
