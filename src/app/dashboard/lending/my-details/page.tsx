@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 const maritalOptions = ["Unmarried", "Married", "Divorced", "Widowed"];
-const homeOptions = ["Tenant", "Owner", "Living with family", "Other"];
+const homeOptions = ["Tenant", "Owner", "Living With Parents", "Other"];
 
 export default function MyDetailsPage() {
   const router = useRouter();

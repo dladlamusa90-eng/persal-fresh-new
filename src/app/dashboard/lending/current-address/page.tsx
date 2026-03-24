@@ -8,7 +8,7 @@ export default function CurrentAddressPage() {
   const [address, setAddress] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [showPopup, setShowPopup] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
 
   useEffect(() => {
     let mounted = true;
@@ -31,40 +31,44 @@ export default function CurrentAddressPage() {
     return () => { mounted = false; };
   }, []);
 
-  async function handleNext() {
-    if (saving) return;
+  async function persistAddress() {
+    const response = await fetch("/api/users/me", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ address }),
+    });
+    return response.ok;
+  }
+
+  async function handleSaveAddress() {
+    if (saving || loading) return;
     setSaving(true);
+    setSaveMessage("");
     try {
-      await fetch("/api/users/me", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ address }),
-      });
-      setShowPopup(true);
-      setTimeout(() => {
-        setShowPopup(false);
-        router.push("/dashboard/lending/apply");
-      }, 1800);
+      const ok = await persistAddress();
+      setSaveMessage(ok ? "Address saved." : "Could not save address.");
     } catch {
-      router.push("/dashboard/lending/apply");
+      setSaveMessage("Could not save address.");
     } finally {
       setSaving(false);
     }
   }
 
+  async function handleNext() {
+    if (saving || loading) return;
+    setSaving(true);
+    try {
+      await persistAddress();
+    } catch {
+      // Continue to next step even if save fails.
+    } finally {
+      setSaving(false);
+    }
+    router.push("/dashboard/lending/employment-details");
+  }
+
   return (
     <section className="max-w-6xl mx-auto px-4 md:px-6 py-4 md:py-6">
-      {showPopup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-          <div className="bg-white rounded-2xl shadow-xl px-8 py-6 flex items-center gap-3">
-            <svg className="h-6 w-6 text-green-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-            <span className="text-gray-800 font-medium">Address saved successfully.</span>
-          </div>
-        </div>
-      )}
-
       <div className="rounded-2xl bg-white px-6 py-6 md:px-8 md:py-8 shadow-sm">
         <div className="mb-6">
           <div className="text-sm font-medium text-persal-dark tracking-tight">40 %</div>
@@ -77,15 +81,32 @@ export default function CurrentAddressPage() {
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-[200px_minmax(0,1fr)] md:items-center">
           <label htmlFor="address" className="text-sm font-medium text-gray-800">Street address</label>
-          <input
-            id="address"
-            type="text"
-            value={loading ? "" : address}
-            onChange={e => setAddress(e.target.value)}
-            placeholder={loading ? "Loading..." : "Enter your street address"}
-            disabled={loading}
-            className="rounded-xl bg-gray-100 border border-gray-200 px-4 py-3 text-sm text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-persal-blue disabled:opacity-50"
-          />
+          <div>
+            <input
+              id="address"
+              type="text"
+              value={loading ? "" : address}
+              onChange={e => setAddress(e.target.value)}
+              placeholder={loading ? "Loading..." : "Enter your street address"}
+              disabled={loading}
+              className="rounded-xl bg-gray-100 border border-gray-200 px-4 py-3 text-sm text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-persal-blue disabled:opacity-50"
+            />
+            <div className="mt-2 flex items-center gap-4">
+              <button
+                type="button"
+                onClick={handleSaveAddress}
+                disabled={saving || loading}
+                className="text-sm font-medium text-persal-blue hover:underline disabled:opacity-60"
+              >
+                Save new address
+              </button>
+              {saveMessage && (
+                <span className={`text-sm ${saveMessage === "Address saved." ? "text-green-600" : "text-red-600"}`}>
+                  {saveMessage}
+                </span>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="mt-10 flex justify-end">
