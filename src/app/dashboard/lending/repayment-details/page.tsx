@@ -19,8 +19,7 @@ export default function RepaymentDetailsPage() {
 
   const charges = calculateLoanCharges(loanAmount, term * 30);
   const totalInterest = charges.interestMonth1 + charges.interestMonth2 + charges.interestMonth3;
-  const creditLifePremium = 0;
-  const totalToRepay = loanAmount + charges.totalCost + creditLifePremium;
+  const totalToRepay = loanAmount + charges.totalCost;
 
   function formatCurrency(value: number) {
     return value.toFixed(2);
@@ -49,11 +48,6 @@ export default function RepaymentDetailsPage() {
 
         <div className="divide-y divide-gray-200 border-t border-gray-200">
           <div className="py-5 flex items-center justify-between gap-4">
-            <p className="text-base font-medium text-gray-700">Total Credit Life premiums*</p>
-            <p className="text-base text-gray-700">R {formatCurrency(creditLifePremium)}</p>
-          </div>
-
-          <div className="py-5 flex items-center justify-between gap-4">
             <p className="text-base font-medium text-gray-700">Start date</p>
             <p className="text-base text-gray-700">Upon loan cash payout</p>
           </div>
@@ -77,10 +71,6 @@ export default function RepaymentDetailsPage() {
             <p className="text-base text-gray-700">R {formatCurrency(totalToRepay)}</p>
           </div>
         </div>
-
-        <p className="mt-5 text-sm italic text-gray-700">
-          <span className="text-teal-500">*Credit Life is charged in all loans</span> which covers the outstanding debt in an unfortunate event.
-        </p>
 
         <div className="mt-10 flex items-center justify-between">
           <button
@@ -132,23 +122,6 @@ export default function RepaymentDetailsPage() {
                 <div className="py-3 flex items-center justify-between border-t border-gray-200">
                   <span>Total interest</span>
                   <span className="font-semibold">R {formatCurrency(totalInterest)}</span>
-                </div>
-              </div>
-
-              <p className="text-teal-600 font-semibold mt-5 mb-3">Insurance</p>
-              <div className="border-t border-gray-200">
-                <div className="py-3 flex items-center justify-between">
-                  <span className="inline-flex items-center gap-2">
-                    Credit Life
-                    <span className="text-orange-500 inline-flex" aria-hidden="true">
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="9" />
-                        <line x1="12" y1="10" x2="12" y2="16" />
-                        <circle cx="12" cy="7" r="1" fill="currentColor" stroke="none" />
-                      </svg>
-                    </span>
-                  </span>
-                  <span className="font-semibold">R {formatCurrency(creditLifePremium)}</span>
                 </div>
               </div>
 

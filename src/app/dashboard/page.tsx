@@ -54,7 +54,6 @@ export default function DashboardHomePage() {
   const totalRepayable = desiredLoan + totalCost;
   const totalInterest = interest1 + interest2 + interest3;
   const totalFees = initiationFee + serviceFee;
-  const insuranceFee = 0;
   const amountPercent = ((desiredLoan - 100) / (5000 - 100)) * 100;
   const dayPercent = ((termDays - 6) / (90 - 6)) * 100;
   const amountKnobPercent = Math.min(97, Math.max(3, amountPercent));
@@ -466,9 +465,6 @@ export default function DashboardHomePage() {
                   <div className="px-4 py-3 flex items-center justify-between"><span className="text-gray-700">Service fees</span><span className="font-semibold text-gray-700">R{serviceFee.toFixed(2)}</span></div>
                   <div className="px-4 py-3 flex items-center justify-between"><span className="text-gray-700">Total fees</span><span className="font-semibold text-gray-700">R{totalFees.toFixed(2)}</span></div>
                   <div className="px-4 py-3 flex items-center justify-between"><span className="text-gray-700">Total interest</span><span className="font-semibold text-gray-700">R{totalInterest.toFixed(2)}</span></div>
-                  <div className="px-4 py-3 flex items-center justify-between"><span className="text-gray-700 inline-flex items-center gap-1">Insurance
-                    <svg className="w-3.5 h-3.5 text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9" /><line x1="12" y1="10" x2="12" y2="16" /><circle cx="12" cy="7" r="1" fill="currentColor" stroke="none" /></svg>
-                  </span><span className="font-semibold text-gray-700">R{insuranceFee.toFixed(2)}</span></div>
                 </div>
                 <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between text-persal-blue font-semibold">
                   <span>Total to repay</span>
