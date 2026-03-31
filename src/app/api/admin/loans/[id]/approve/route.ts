@@ -37,17 +37,11 @@ export async function PATCH(_: Request, context: RouteContext) {
       );
     }
 
-    const disbursementReference = `DSB-${Date.now()}-${loan.userId.slice(0, 6)}`;
-    const disbursedAt = new Date();
-
     const updatedLoan = await prisma.loan.update({
       where: { id },
       data: {
         status: "APPROVED",
         rejectionReason: null,
-        disbursementSentAt: disbursedAt,
-        disbursementReference,
-        disbursementMode: "AUTO_TEST_TRANSFER",
       } as any,
       select: {
         id: true,
@@ -70,26 +64,11 @@ export async function PATCH(_: Request, context: RouteContext) {
       at: new Date().toISOString(),
     });
 
-    console.info("[audit] loan-auto-disbursement", {
-      actorUserId: session.user.id,
-      loanId: id,
-      userId: updatedLoan.userId,
-      amount: updatedLoan.amount,
-      mode: updatedLoan.disbursementMode,
-      disbursedAt: updatedLoan.disbursementSentAt?.toISOString(),
-      disbursementReference: updatedLoan.disbursementReference,
-    });
-
     return NextResponse.json(
       {
-        message: "Loan approved and money sent automatically (test mode, no real money transfer).",
+        message: "Loan approved. Continue to transfer funds to the applicant.",
         loan: updatedLoan,
-        disbursement: {
-          sent: true,
-          sentAt: updatedLoan.disbursementSentAt,
-          mode: updatedLoan.disbursementMode,
-          reference: updatedLoan.disbursementReference,
-        },
+        transferUrl: `/admin/loans/${id}/transfer`,
       },
       { status: 200 }
     );

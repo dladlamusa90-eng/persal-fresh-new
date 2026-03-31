@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { Prisma } from "@prisma/client";
 import { authOptions } from "@/lib/nextAuth";
 import prisma from "@/lib/prisma";
 import { ALLOWED_TERM_DAYS, FIRST_TIME_MAX_LOAN, MIN_LOAN_AMOUNT, RETURNING_MAX_LOAN, getMaxLoanForUser } from "@/lib/loanPolicy";
@@ -33,6 +34,8 @@ export async function POST(req: Request) {
     const body = (await req.json()) as {
       amount?: number;
       termDays?: number;
+      grossSalary?: number;
+      disposableIncome?: number;
       phone?: string;
       idNumber?: string;
       persalNumber?: string;
@@ -44,6 +47,8 @@ export async function POST(req: Request) {
     };
     const amount = Number(body.amount);
     const termDays = Number(body.termDays);
+    const grossSalary = Number(body.grossSalary);
+    const disposableIncome = Number(body.disposableIncome);
 
     const phone = normalizePhoneNumber(String(body.phone ?? "").trim());
     const idNumber = normalizeIdNumber(String(body.idNumber ?? "").trim());
@@ -54,56 +59,55 @@ export async function POST(req: Request) {
     const branchCode = String(body.branchCode ?? "").trim();
     const debitMandateAccepted = Boolean(body.debitMandateAccepted);
 
-    if (!Number.isFinite(amount) || !Number.isFinite(termDays)) {
+    if (!Number.isFinite(amount) || !Number.isFinite(termDays) || !Number.isFinite(grossSalary) || !Number.isFinite(disposableIncome)) {
       return NextResponse.json({ error: "Invalid loan payload" }, { status: 400 });
     }
 
-    if (!phone || !idNumber || !persalNumber || !bankName || !accountNumber || !accountType || !branchCode) {
-      return NextResponse.json(
-        { error: "All debit and banking details are required for loan requests." },
-        { status: 400 }
-      );
+    if (grossSalary <= 0 || disposableIncome < 0 || disposableIncome > grossSalary) {
+      return NextResponse.json({ error: "Invalid income details supplied." }, { status: 400 });
     }
 
-    if (!debitMandateAccepted) {
-      return NextResponse.json({ error: "You must accept the debit mandate to continue." }, { status: 400 });
-    }
+    const hasCompleteDebitAndBankingPayload = Boolean(
+      phone && idNumber && persalNumber && bankName && accountNumber && accountType && branchCode
+    );
 
-    if (!isSouthAfricanPhoneNumber(phone)) {
-      return NextResponse.json(
-        { error: "Please enter a valid South African phone number." },
-        { status: 400 }
-      );
-    }
+    if (hasCompleteDebitAndBankingPayload) {
+      if (!isSouthAfricanPhoneNumber(phone)) {
+        return NextResponse.json(
+          { error: "Please enter a valid South African phone number." },
+          { status: 400 }
+        );
+      }
 
-    if (!isSouthAfricanIdNumber(idNumber)) {
-      return NextResponse.json({ error: "Please enter a valid South African ID Number." }, { status: 400 });
-    }
+      if (!isSouthAfricanIdNumber(idNumber)) {
+        return NextResponse.json({ error: "Please enter a valid South African ID Number." }, { status: 400 });
+      }
 
-    if (!isValidPersalNumber(persalNumber)) {
-      return NextResponse.json({ error: "Persal Number must be exactly 8 digits." }, { status: 400 });
-    }
+      if (!isValidPersalNumber(persalNumber)) {
+        return NextResponse.json({ error: "Persal Number must be exactly 8 digits." }, { status: 400 });
+      }
 
-    if (!isSouthAfricanBankName(bankName)) {
-      return NextResponse.json({ error: "Please select a valid South African bank." }, { status: 400 });
-    }
+      if (!isSouthAfricanBankName(bankName)) {
+        return NextResponse.json({ error: "Please select a valid South African bank." }, { status: 400 });
+      }
 
-    if (!isValidBankAccountNumber(bankName, accountNumber)) {
-      return NextResponse.json(
-        { error: `Account Number for ${bankName} must be ${getBankAccountConstraintLabel(bankName)}.` },
-        { status: 400 }
-      );
-    }
+      if (!isValidBankAccountNumber(bankName, accountNumber)) {
+        return NextResponse.json(
+          { error: `Account Number for ${bankName} must be ${getBankAccountConstraintLabel(bankName)}.` },
+          { status: 400 }
+        );
+      }
 
-    if (!isValidBankAccountType(accountType)) {
-      return NextResponse.json(
-        { error: "Account type must be Cheque, Savings, or Transmission." },
-        { status: 400 }
-      );
-    }
+      if (!isValidBankAccountType(accountType)) {
+        return NextResponse.json(
+          { error: "Account type must be Cheque, Savings, or Transmission." },
+          { status: 400 }
+        );
+      }
 
-    if (!isValidBranchCode(branchCode)) {
-      return NextResponse.json({ error: "Branch code must be exactly 6 digits." }, { status: 400 });
+      if (!isValidBranchCode(branchCode)) {
+        return NextResponse.json({ error: "Branch code must be exactly 6 digits." }, { status: 400 });
+      }
     }
 
     if (!ALLOWED_TERM_DAYS.includes(termDays as (typeof ALLOWED_TERM_DAYS)[number])) {
@@ -112,7 +116,20 @@ export async function POST(req: Request) {
 
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
-      select: { id: true, isBurned: true },
+      select: {
+        id: true,
+        isBurned: true,
+        fullName: true,
+        email: true,
+        address: true,
+        phone: true,
+        idNumber: true,
+        persalNumber: true,
+        bankName: true,
+        accountNumber: true,
+        accountType: true,
+        branchCode: true,
+      },
     });
 
     if (!user) {
@@ -125,6 +142,14 @@ export async function POST(req: Request) {
         { status: 403 }
       );
     }
+
+    const applicationDraft = await prisma.loanApplicationDraft.findUnique({
+      where: { userId: user.id },
+      select: {
+        data: true,
+        documents: true,
+      },
+    });
 
     const openLoan = await prisma.loan.findFirst({
       where: {
@@ -161,29 +186,83 @@ export async function POST(req: Request) {
 
     const now = new Date();
     const ipAddress = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-    const mandateReference = `DM-${now.getTime()}-${user.id.slice(0, 6)}`;
+    const mandateReference = debitMandateAccepted
+      ? `DM-${now.getTime()}-${user.id.slice(0, 6)}`
+      : null;
 
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        phone,
-        idNumber,
-        persalNumber,
-        bankName,
-        accountNumber,
-        accountType: accountType as "CHEQUE" | "SAVINGS" | "TRANSMISSION",
-        branchCode,
-      },
-    });
+    const resolvedPhone = phone || user.phone || null;
+    const resolvedIdNumber = idNumber || user.idNumber || null;
+    const resolvedPersalNumber = persalNumber || user.persalNumber || null;
+    const resolvedBankName = bankName || user.bankName || null;
+    const resolvedAccountNumber = accountNumber || user.accountNumber || null;
+    const resolvedAccountType =
+      (isValidBankAccountType(accountType)
+        ? (accountType as "CHEQUE" | "SAVINGS" | "TRANSMISSION")
+        : user.accountType) ?? null;
+    const resolvedBranchCode = branchCode || user.branchCode || null;
+
+    const profileUpdatePayload: {
+      phone?: string;
+      idNumber?: string;
+      persalNumber?: string;
+      bankName?: string;
+      accountNumber?: string;
+      accountType?: "CHEQUE" | "SAVINGS" | "TRANSMISSION";
+      branchCode?: string;
+    } = {};
+
+    if (phone) profileUpdatePayload.phone = phone;
+    if (idNumber) profileUpdatePayload.idNumber = idNumber;
+    if (persalNumber) profileUpdatePayload.persalNumber = persalNumber;
+    if (bankName) profileUpdatePayload.bankName = bankName;
+    if (accountNumber) profileUpdatePayload.accountNumber = accountNumber;
+    if (isValidBankAccountType(accountType)) {
+      profileUpdatePayload.accountType = accountType as "CHEQUE" | "SAVINGS" | "TRANSMISSION";
+    }
+    if (branchCode) profileUpdatePayload.branchCode = branchCode;
+
+    if (Object.keys(profileUpdatePayload).length > 0) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: profileUpdatePayload,
+      });
+    }
 
     const loan = await prisma.loan.create({
       data: {
         userId: user.id,
         amount,
         termDays,
+        applicationData: {
+          ...(((applicationDraft?.data as Record<string, unknown> | null) ?? {})),
+          requestedAmount: amount,
+          requestedTermDays: termDays,
+          requestedGrossSalary: grossSalary,
+          requestedDisposableIncome: disposableIncome,
+          address: (((applicationDraft?.data as Record<string, unknown> | null) ?? {}).address as string | undefined) ?? user.address ?? null,
+          phone: resolvedPhone,
+          idNumber: resolvedIdNumber,
+          persalNumber: resolvedPersalNumber,
+          bankName: resolvedBankName,
+          accountNumber: resolvedAccountNumber,
+          accountType: resolvedAccountType,
+          branchCode: resolvedBranchCode,
+        } as Prisma.InputJsonValue,
+        applicationDocuments: (((applicationDraft?.documents as Record<string, unknown> | null) ?? {}) as Prisma.InputJsonValue),
+        grossSalary,
+        disposableIncome,
+        applicantFullName: user.fullName,
+        applicantEmail: user.email,
+        applicantPhone: resolvedPhone,
+        applicantIdNumber: resolvedIdNumber,
+        applicantPersalNumber: resolvedPersalNumber,
+        applicantBankName: resolvedBankName,
+        applicantAccountNumber: resolvedAccountNumber,
+        applicantAccountType: resolvedAccountType,
+        applicantBranchCode: resolvedBranchCode,
         status: "PENDING",
-        debitMandateAccepted: true,
-        debitMandateAcceptedAt: now,
+        debitMandateAccepted,
+        debitMandateAcceptedAt: debitMandateAccepted ? now : null,
         debitMandateReference: mandateReference,
       },
       select: {
@@ -192,6 +271,8 @@ export async function POST(req: Request) {
         termDays: true,
         status: true,
         createdAt: true,
+        grossSalary: true,
+        disposableIncome: true,
         debitMandateReference: true,
       },
     });

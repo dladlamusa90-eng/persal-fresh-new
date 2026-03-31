@@ -1,42 +1,82 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 const maritalOptions = ["Unmarried", "Married", "Divorced", "Widowed"];
 const homeOptions = ["Tenant", "Owner", "Living With Parents", "Other"];
 
-const STORAGE_KEY = "wizard_my_details";
-
 export default function MyDetailsPage() {
+  return (
+    <Suspense fallback={<section className="max-w-6xl mx-auto px-4 md:px-6 py-4 md:py-6"><p className="text-sm text-gray-600">Loading...</p></section>}>
+      <MyDetailsContent />
+    </Suspense>
+  );
+}
+
+function MyDetailsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [maritalStatus, setMaritalStatus] = useState("Unmarried");
   const [homeStatus, setHomeStatus] = useState("Tenant");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    try {
-      const saved = sessionStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const p = JSON.parse(saved) as { maritalStatus?: string; homeStatus?: string };
-        if (p.maritalStatus) setMaritalStatus(p.maritalStatus);
-        if (p.homeStatus) setHomeStatus(p.homeStatus);
+    let mounted = true;
+
+    async function loadDraft() {
+      try {
+        const response = await fetch("/api/loan-application-draft", { cache: "no-store" });
+        if (!response.ok) {
+          if (mounted) setLoading(false);
+          return;
+        }
+
+        const body = (await response.json()) as {
+          draft?: {
+            data?: {
+              maritalStatus?: string;
+              homeStatus?: string;
+            };
+          };
+        };
+
+        if (!mounted) return;
+        if (body.draft?.data?.maritalStatus) setMaritalStatus(body.draft.data.maritalStatus);
+        if (body.draft?.data?.homeStatus) setHomeStatus(body.draft.data.homeStatus);
+      } catch {
+        return;
+      } finally {
+        if (mounted) setLoading(false);
       }
-    } catch {}
-  }, []);
+    }
 
-  useEffect(() => {
-    try {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ maritalStatus, homeStatus }));
-    } catch {}
-  }, [maritalStatus, homeStatus]);
+    loadDraft();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   function withWizardQuery(path: string) {
     const query = searchParams.toString();
     return query ? `${path}?${query}` : path;
   }
 
-  function handleNext() {
+  async function handleNext() {
+    if (saving) return;
+    setSaving(true);
+    try {
+      await fetch("/api/loan-application-draft", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data: { maritalStatus, homeStatus } }),
+      });
+    } catch {
+      return;
+    } finally {
+      setSaving(false);
+    }
     router.push(withWizardQuery("/dashboard/lending/current-address"));
   }
 
@@ -59,6 +99,7 @@ export default function MyDetailsPage() {
             <select
               value={maritalStatus}
               onChange={e => setMaritalStatus(e.target.value)}
+              disabled={loading}
               className="w-full rounded-md border border-gray-200 bg-white pl-4 pr-10 py-3 text-sm text-gray-700 appearance-none focus:outline-none focus:ring-2 focus:ring-persal-blue"
             >
               {maritalOptions.map(opt => (
@@ -76,6 +117,7 @@ export default function MyDetailsPage() {
             <select
               value={homeStatus}
               onChange={e => setHomeStatus(e.target.value)}
+              disabled={loading}
               className="w-full rounded-md border border-gray-200 bg-white pl-4 pr-10 py-3 text-sm text-gray-700 appearance-none focus:outline-none focus:ring-2 focus:ring-persal-blue"
             >
               {homeOptions.map(opt => (
@@ -100,9 +142,10 @@ export default function MyDetailsPage() {
           <button
             type="button"
             onClick={handleNext}
+            disabled={loading || saving}
             className="inline-flex min-w-[120px] items-center justify-center rounded-xl bg-[#ff972b] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#f58a17]"
           >
-            Next
+            {saving ? "Saving..." : "Next"}
           </button>
         </div>
       </div>

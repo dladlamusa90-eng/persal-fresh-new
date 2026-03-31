@@ -31,6 +31,8 @@ export async function GET() {
           status: true,
           rejectionReason: true,
           createdAt: true,
+          disbursementSentAt: true,
+          disbursementReference: true,
         },
       }),
       prisma.loan.count({

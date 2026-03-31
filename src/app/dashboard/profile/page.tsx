@@ -36,13 +36,19 @@ export default function ProfilePage() {
   const [cropY, setCropY] = useState(0);
   const [loading, setLoading] = useState(true);
   const [receivesCommunication, setReceivesCommunication] = useState(false);
+  const [accountType, setAccountType] = useState("");
+  const [branchCode, setBranchCode] = useState("");
+  const [applicationData, setApplicationData] = useState<Record<string, string | number | null>>({});
 
   useEffect(() => {
     let mounted = true;
 
     async function loadProfile() {
       try {
-        const response = await fetch("/api/users/me", { cache: "no-store" });
+        const [response, draftResponse] = await Promise.all([
+          fetch("/api/users/me", { cache: "no-store" }),
+          fetch("/api/loan-application-draft", { cache: "no-store" }),
+        ]);
         if (!response.ok) {
           setErrorMessage("Unable to load profile details.");
           return;
@@ -57,11 +63,17 @@ export default function ProfilePage() {
             persalNumber?: string | null;
             bankName?: string | null;
             accountNumber?: string | null;
+            accountType?: string | null;
+            branchCode?: string | null;
             profileImage?: string | null;
             points?: number;
             address?: string | null;
           };
         };
+
+        const draftBody = draftResponse.ok
+          ? ((await draftResponse.json()) as { draft?: { data?: Record<string, string | number | null> } })
+          : undefined;
 
         if (!mounted || !body.user) return;
 
@@ -88,6 +100,9 @@ export default function ProfilePage() {
           address: body.user.address ?? "",
         });
         setPoints(typeof body.user.points === "number" ? body.user.points : 0);
+        setAccountType(body.user.accountType ?? "");
+        setBranchCode(body.user.branchCode ?? "");
+        setApplicationData(draftBody?.draft?.data ?? {});
       } catch {
         setErrorMessage("Unable to load profile details.");
       } finally {
@@ -449,36 +464,30 @@ export default function ProfilePage() {
             <div className="space-y-7">
               <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
                 <div className="text-gray-700">Employment status</div>
-                <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700 flex items-center justify-between">
-                  <span>Self-employed</span>
-                  <ChevronDown className="text-persal-blue" size={22} />
-                </div>
+                <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{displayValue(applicationData.employmentStatus)}</div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
                 <div className="text-gray-700">Gross monthly income (before tax &amp; deductions)</div>
-                <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">R 7500</div>
+                <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{displayCurrency(applicationData.employmentGrossIncome)}</div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
                 <div className="text-gray-700">Net monthly income (after tax &amp; deductions)</div>
-                <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">R 6000</div>
+                <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{displayCurrency(applicationData.employmentNetIncome)}</div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
                 <div className="text-gray-700">Frequency of income</div>
-                <div className="rounded-xl bg-white border border-gray-200 px-5 py-3 text-gray-700 flex items-center justify-between">
-                  <span>Monthly</span>
-                  <ChevronDown className="text-persal-blue" size={22} />
-                </div>
+                <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{displayValue(applicationData.incomeFrequency)}</div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
                 <div className="text-gray-700">Salary day</div>
-                <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">25</div>
+                <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{displayValue(applicationData.salaryDay)}</div>
               </div>
 
-              <div className="md:pl-[236px]"><a href="#" className="text-persal-blue hover:underline">Change your employment details</a></div>
+              <div className="md:pl-[236px]"><a href="/dashboard/lending/employment-details" className="text-persal-blue hover:underline">Change your employment details</a></div>
             </div>
           )}
 
@@ -486,26 +495,25 @@ export default function ProfilePage() {
             <div className="space-y-7">
               <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
                 <div className="text-gray-700">Bank name</div>
-                <div className="rounded-xl bg-white border border-gray-200 px-5 py-3 text-gray-700 flex items-center justify-between">
-                  <span>{profile.bankName || "Capitec"}</span>
-                  <ChevronDown className="text-persal-blue" size={22} />
-                </div>
+                <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{profile.bankName || displayValue(applicationData.bankName)}</div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
                 <div className="text-gray-700">Account number</div>
-                <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{profile.accountNumber || "1729841846"}</div>
+                <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{profile.accountNumber || displayValue(applicationData.accountNumber)}</div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
                 <div className="text-gray-700">Account type</div>
-                <div className="rounded-xl bg-white border border-gray-200 px-5 py-3 text-gray-700 flex items-center justify-between">
-                  <span>Savings account</span>
-                  <ChevronDown className="text-persal-blue" size={22} />
-                </div>
+                <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{formatAccountType(accountType || stringValue(applicationData.accountType))}</div>
               </div>
 
-              <div className="md:pl-[236px]"><a href="#" className="text-persal-blue hover:underline">Change your banking details</a></div>
+              <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
+                <div className="text-gray-700">Branch code</div>
+                <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{branchCode || displayValue(applicationData.branchCode)}</div>
+              </div>
+
+              <div className="md:pl-[236px]"><a href="/dashboard/lending/bank-details" className="text-persal-blue hover:underline">Change your banking details</a></div>
             </div>
           )}
         </div>
@@ -595,4 +603,29 @@ export default function ProfilePage() {
       )}
     </section>
   );
+}
+
+function displayValue(value: string | number | null | undefined) {
+  if (value == null || value === "") return "Not captured yet";
+  return String(value);
+}
+
+function stringValue(value: string | number | null | undefined) {
+  if (value == null || value === "") return "";
+  return String(value);
+}
+
+function displayCurrency(value: string | number | null | undefined) {
+  if (value == null || value === "") return "Not captured yet";
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return String(value);
+  return `R ${amount.toLocaleString()}`;
+}
+
+function formatAccountType(value: string | null | undefined) {
+  if (!value) return "Not captured yet";
+  if (value === "CHEQUE") return "Cheque account";
+  if (value === "SAVINGS") return "Savings account";
+  if (value === "TRANSMISSION") return "Transmission account";
+  return value;
 }

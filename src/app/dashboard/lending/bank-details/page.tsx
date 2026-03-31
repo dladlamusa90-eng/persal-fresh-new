@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SOUTH_AFRICAN_BANK_NAMES } from "@/lib/validators/auth";
@@ -10,9 +11,23 @@ const accountTypeOptions = [
   { value: "TRANSMISSION", label: "Transmission account" },
 ] as const;
 
-const BANK_STORAGE_KEY = "wizard_bank_details";
-
 export default function BankDetailsPage() {
+  return (
+    <Suspense
+      fallback={
+        <section className="max-w-6xl mx-auto px-4 md:px-6 py-4 md:py-6">
+          <div className="rounded-2xl bg-white px-6 py-6 md:px-8 md:py-8 shadow-sm">
+            <p className="text-sm text-gray-600">Loading bank details...</p>
+          </div>
+        </section>
+      }
+    >
+      <BankDetailsContent />
+    </Suspense>
+  );
+}
+
+function BankDetailsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
@@ -22,6 +37,7 @@ export default function BankDetailsPage() {
   const [bankVerified, setBankVerified] = useState(false);
   const [stitchStatus, setStitchStatus] = useState<"idle" | "success" | "error">("idle");
   const [stitchErrorMsg, setStitchErrorMsg] = useState("");
+  const [saving, setSaving] = useState(false);
 
   function withWizardQuery(path: string) {
     const query = searchParams.toString();
@@ -62,20 +78,22 @@ export default function BankDetailsPage() {
 
     async function loadUser() {
       try {
-        // Restore from sessionStorage first (user may have edited and navigated back)
-        const saved = sessionStorage.getItem(BANK_STORAGE_KEY);
-        if (saved) {
-          const p = JSON.parse(saved) as {
-            bankName?: string;
-            accountNumber?: string;
-            accountType?: "CHEQUE" | "SAVINGS" | "TRANSMISSION";
+        const draftResponse = await fetch("/api/loan-application-draft", { cache: "no-store" });
+        if (draftResponse.ok) {
+          const draftBody = (await draftResponse.json()) as {
+            draft?: {
+              data?: {
+                bankName?: string;
+                accountNumber?: string;
+                accountType?: "CHEQUE" | "SAVINGS" | "TRANSMISSION";
+              };
+            };
           };
+
           if (!mounted) return;
-          if (p.bankName) setBankName(p.bankName);
-          if (p.accountNumber !== undefined) setAccountNumber(p.accountNumber);
-          if (p.accountType) setAccountType(p.accountType);
-          setLoading(false);
-          return;
+          if (draftBody.draft?.data?.bankName) setBankName(draftBody.draft.data.bankName);
+          if (draftBody.draft?.data?.accountNumber !== undefined) setAccountNumber(draftBody.draft.data.accountNumber);
+          if (draftBody.draft?.data?.accountType) setAccountType(draftBody.draft.data.accountType);
         }
 
         const response = await fetch("/api/users/me", { cache: "no-store" });
@@ -110,14 +128,20 @@ export default function BankDetailsPage() {
     };
   }, []);
 
-  useEffect(() => {
-    if (loading) return;
+  async function handleNext() {
+    if (saving) return;
+    setSaving(true);
     try {
-      sessionStorage.setItem(BANK_STORAGE_KEY, JSON.stringify({ bankName, accountNumber, accountType }));
-    } catch {}
-  }, [bankName, accountNumber, accountType, loading]);
-
-  function handleNext() {
+      await fetch("/api/loan-application-draft", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data: { bankName, accountNumber, accountType } }),
+      });
+    } catch {
+      return;
+    } finally {
+      setSaving(false);
+    }
     router.push(withWizardQuery("/dashboard/lending/repayment-details"));
   }
 
@@ -245,9 +269,10 @@ export default function BankDetailsPage() {
           <button
             type="button"
             onClick={handleNext}
+            disabled={saving}
             className="inline-flex min-w-[120px] items-center justify-center rounded-xl bg-[#f5912d] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#eb8621]"
           >
-            Next
+            {saving ? "Saving..." : "Next"}
           </button>
         </div>
       </div>

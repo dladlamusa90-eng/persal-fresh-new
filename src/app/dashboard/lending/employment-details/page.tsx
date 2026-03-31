@@ -1,17 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 const employmentOptions = ["Employed", "Self-employed", "Retired/Pensioner", "Grant recipient", "Unemployed"];
 const incomeFrequencyOptions = ["Monthly", "Weekly", "Fortnightly"];
 
-const STORAGE_KEY = "wizard_employment_details";
-
 export default function EmploymentDetailsPage() {
+  return (
+    <Suspense fallback={<section className="max-w-6xl mx-auto px-4 md:px-6 py-4 md:py-6"><p className="text-sm text-gray-600">Loading...</p></section>}>
+      <EmploymentDetailsContent />
+    </Suspense>
+  );
+}
+
+function EmploymentDetailsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [hydrated, setHydrated] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [employmentStatus, setEmploymentStatus] = useState("Employed");
   const [grossIncome, setGrossIncome] = useState("");
   const [netIncome, setNetIncome] = useState("");
@@ -19,41 +26,75 @@ export default function EmploymentDetailsPage() {
   const [salaryDay, setSalaryDay] = useState("");
 
   useEffect(() => {
-    try {
-      const saved = sessionStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const p = JSON.parse(saved) as {
-          employmentStatus?: string;
-          grossIncome?: string;
-          netIncome?: string;
-          incomeFrequency?: string;
-          salaryDay?: string;
-        };
-        if (p.employmentStatus) setEmploymentStatus(p.employmentStatus);
-        if (p.grossIncome !== undefined) setGrossIncome(p.grossIncome);
-        if (p.netIncome !== undefined) setNetIncome(p.netIncome);
-        if (p.incomeFrequency) setIncomeFrequency(p.incomeFrequency);
-        if (p.salaryDay !== undefined) setSalaryDay(p.salaryDay);
-      }
-    } catch {}
-    setHydrated(true);
-  }, []);
+    let mounted = true;
 
-  useEffect(() => {
-    if (!hydrated) return;
-    try {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
-        employmentStatus, grossIncome, netIncome, incomeFrequency, salaryDay,
-      }));
-    } catch {}
-  }, [hydrated, employmentStatus, grossIncome, netIncome, incomeFrequency, salaryDay]);
+    async function loadDraft() {
+      try {
+        const response = await fetch("/api/loan-application-draft", { cache: "no-store" });
+        if (!response.ok) {
+          if (mounted) setLoading(false);
+          return;
+        }
+
+        const body = (await response.json()) as {
+          draft?: {
+            data?: {
+              employmentStatus?: string;
+              employmentGrossIncome?: string;
+              employmentNetIncome?: string;
+              incomeFrequency?: string;
+              salaryDay?: string;
+            };
+          };
+        };
+
+        const data = body.draft?.data;
+        if (!mounted || !data) return;
+        if (data.employmentStatus) setEmploymentStatus(data.employmentStatus);
+        if (data.employmentGrossIncome !== undefined) setGrossIncome(data.employmentGrossIncome);
+        if (data.employmentNetIncome !== undefined) setNetIncome(data.employmentNetIncome);
+        if (data.incomeFrequency) setIncomeFrequency(data.incomeFrequency);
+        if (data.salaryDay !== undefined) setSalaryDay(data.salaryDay);
+      } catch {
+        return;
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+
+    loadDraft();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   function withWizardQuery(path: string) {
     const query = searchParams.toString();
     return query ? `${path}?${query}` : path;
   }
 
-  function handleNext() {
+  async function handleNext() {
+    if (saving) return;
+    setSaving(true);
+    try {
+      await fetch("/api/loan-application-draft", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          data: {
+            employmentStatus,
+            employmentGrossIncome: grossIncome,
+            employmentNetIncome: netIncome,
+            incomeFrequency,
+            salaryDay,
+          },
+        }),
+      });
+    } catch {
+      return;
+    } finally {
+      setSaving(false);
+    }
     router.push(withWizardQuery("/dashboard/lending/monthly-finances"));
   }
 
@@ -76,6 +117,7 @@ export default function EmploymentDetailsPage() {
             <select
               value={employmentStatus}
               onChange={e => setEmploymentStatus(e.target.value)}
+              disabled={loading}
               className="w-full rounded-md border border-gray-200 bg-white pl-8 pr-10 py-3 text-sm text-gray-700 appearance-none focus:outline-none focus:ring-2 focus:ring-persal-blue"
             >
               {employmentOptions.map(opt => (
@@ -96,6 +138,7 @@ export default function EmploymentDetailsPage() {
               inputMode="numeric"
               value={grossIncome}
               onChange={e => setGrossIncome(e.target.value.replace(/\D/g, ""))}
+              disabled={loading}
               className="w-full rounded-md border border-gray-200 bg-white pl-12 pr-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-persal-blue"
             />
           </div>
@@ -110,6 +153,7 @@ export default function EmploymentDetailsPage() {
                 inputMode="numeric"
                 value={netIncome}
                 onChange={e => setNetIncome(e.target.value.replace(/\D/g, ""))}
+                disabled={loading}
                 className="w-full rounded-md border border-gray-200 bg-white pl-12 pr-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-persal-blue"
               />
             </div>
@@ -122,6 +166,7 @@ export default function EmploymentDetailsPage() {
             <select
               value={incomeFrequency}
               onChange={e => setIncomeFrequency(e.target.value)}
+              disabled={loading}
               className="w-full rounded-md border border-gray-200 bg-white pl-8 pr-10 py-3 text-sm text-gray-700 appearance-none focus:outline-none focus:ring-2 focus:ring-persal-blue"
             >
               {incomeFrequencyOptions.map(opt => (
@@ -141,6 +186,7 @@ export default function EmploymentDetailsPage() {
               inputMode="numeric"
               value={salaryDay}
               onChange={e => setSalaryDay(e.target.value.replace(/\D/g, "").slice(0, 2))}
+              disabled={loading}
               className="w-full rounded-md border border-gray-200 bg-white pl-8 pr-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-persal-blue"
             />
           </div>
@@ -158,9 +204,10 @@ export default function EmploymentDetailsPage() {
           <button
             type="button"
             onClick={handleNext}
+            disabled={loading || saving}
             className="inline-flex min-w-[120px] items-center justify-center rounded-xl bg-[#f5912d] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#eb8621]"
           >
-            Next
+            {saving ? "Saving..." : "Next"}
           </button>
         </div>
       </div>

@@ -33,6 +33,7 @@ export default async function AdminPage() {
           select: {
             fullName: true,
             persalNumber: true,
+            email: true,
           },
         },
       },
@@ -76,9 +77,13 @@ export default async function AdminPage() {
   const initialLoans = loans.map((loan) => ({
     id: loan.id,
     applicantName: loan.user.fullName,
+    applicantEmail: loan.applicantEmail ?? loan.user.email,
     persalNumber: loan.user.persalNumber,
     amount: loan.amount,
     termDays: loan.termDays,
+    grossSalary: loan.grossSalary,
+    disposableIncome: loan.disposableIncome,
+    disbursementSentAt: loan.disbursementSentAt?.toISOString() ?? null,
     status: loan.status,
     rejectionReason: loan.rejectionReason,
     createdAt: loan.createdAt.toISOString(),

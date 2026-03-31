@@ -33,6 +33,12 @@ function ApplyPageContent() {
   const [accountType, setAccountType] = useState("CHEQUE");
   const [branchCode, setBranchCode] = useState("");
   const [debitMandateAccepted, setDebitMandateAccepted] = useState(false);
+  const [documents, setDocuments] = useState<Record<string, { name: string; dataUrl: string; type: string; size: number } | null>>({
+    identityDocument: null,
+    proofOfIncome: null,
+    proofOfResidence: null,
+    bankStatement: null,
+  });
 
   const userLoanCap = getMaxLoanForUser(isReturningUser);
 
@@ -58,9 +64,10 @@ function ApplyPageContent() {
 
     async function loadLoanState() {
       try {
-        const [loanResponse, userResponse] = await Promise.all([
+        const [loanResponse, userResponse, draftResponse] = await Promise.all([
           fetch("/api/loans/me", { cache: "no-store" }),
           fetch("/api/users/me", { cache: "no-store" }),
+          fetch("/api/loan-application-draft", { cache: "no-store" }),
         ]);
 
         if (loanResponse.ok) {
@@ -101,6 +108,38 @@ function ApplyPageContent() {
             setAccountType(user.accountType ?? "CHEQUE");
             setBranchCode(user.branchCode ?? "");
           }
+        }
+
+        if (draftResponse.ok && mounted) {
+          const draftBody = (await draftResponse.json()) as {
+            draft?: {
+              data?: {
+                monthlyGrossIncome?: string;
+                calculatedDisposableIncome?: string;
+                requestedAmount?: number;
+                requestedTermDays?: number;
+                bankName?: string;
+                accountNumber?: string;
+                accountType?: string;
+              };
+              documents?: Record<string, { name: string; dataUrl: string; type: string; size: number } | null>;
+            };
+          };
+
+          const data = draftBody.draft?.data;
+          if (data?.monthlyGrossIncome) setSalary(Number(data.monthlyGrossIncome) || 5000);
+          if (data?.calculatedDisposableIncome) setDisposable(Number(data.calculatedDisposableIncome) || 2500);
+          if (typeof data?.requestedAmount === "number") setDesiredLoan(data.requestedAmount);
+          if (typeof data?.requestedTermDays === "number") setTerm(Math.max(1, Math.min(3, Math.floor(data.requestedTermDays / 30))));
+          if (data?.bankName) setBankName(data.bankName);
+          if (data?.accountNumber) setAccountNumber(data.accountNumber);
+          if (data?.accountType) setAccountType(data.accountType);
+          if (draftBody.draft?.documents) setDocuments({
+            identityDocument: draftBody.draft.documents.identityDocument ?? null,
+            proofOfIncome: draftBody.draft.documents.proofOfIncome ?? null,
+            proofOfResidence: draftBody.draft.documents.proofOfResidence ?? null,
+            bankStatement: draftBody.draft.documents.bankStatement ?? null,
+          });
         }
       } catch {
         return;
@@ -149,10 +188,38 @@ function ApplyPageContent() {
       return;
     }
 
+    if (!documents.identityDocument || !documents.proofOfIncome || !documents.proofOfResidence || !documents.bankStatement) {
+      setError("Please upload all required documents before submitting your application.");
+      return;
+    }
+
     setError("");
     setSubmitting(true);
 
     try {
+      await fetch("/api/loan-application-draft", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          data: {
+            requestedAmount: desiredLoan,
+            requestedTermDays: term * 30,
+            requestedGrossSalary: salary,
+            requestedDisposableIncome: disposable,
+            bankName,
+            accountNumber,
+            accountType,
+            branchCode,
+            phone,
+            idNumber,
+            persalNumber,
+          },
+          documents,
+        }),
+      });
+
       const response = await fetch("/api/loans/apply", {
         method: "POST",
         headers: {
@@ -161,6 +228,8 @@ function ApplyPageContent() {
         body: JSON.stringify({
           amount: desiredLoan,
           termDays: term * 30,
+          grossSalary: salary,
+          disposableIncome: disposable,
           phone,
           idNumber,
           persalNumber,
@@ -200,6 +269,37 @@ function ApplyPageContent() {
   // --- FORMULA BASED ON EXAMPLES ---
   const { interestMonth1, interestMonth2, interestMonth3, initiationFee, serviceFee, totalCost, totalRepayable } =
     calculateLoanCharges(desiredLoan, term * 30);
+
+  async function handleDocumentChange(field: "identityDocument" | "proofOfIncome" | "proofOfResidence" | "bankStatement", file: File | null) {
+    if (!file) return;
+
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result ?? ""));
+      reader.onerror = () => reject(new Error("Failed to read file"));
+      reader.readAsDataURL(file);
+    });
+
+    const nextDocument = {
+      name: file.name,
+      dataUrl,
+      type: file.type,
+      size: file.size,
+    };
+
+    const nextDocuments = {
+      ...documents,
+      [field]: nextDocument,
+    };
+
+    setDocuments(nextDocuments);
+
+    await fetch("/api/loan-application-draft", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ documents: { [field]: nextDocument } }),
+    });
+  }
 
   return (
     <section className="max-w-2xl mx-auto py-12">
@@ -388,19 +488,23 @@ function ApplyPageContent() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-gray-700 mb-2">Identity Document</label>
-              <input type="file" className="w-full border rounded p-2" disabled={hasActiveLoan} />
+              <input type="file" className="w-full border rounded p-2" disabled={hasActiveLoan} onChange={e => void handleDocumentChange("identityDocument", e.target.files?.[0] ?? null)} />
+              {documents.identityDocument && <p className="mt-2 text-xs text-green-700">Saved: {documents.identityDocument.name}</p>}
             </div>
             <div>
               <label className="block text-gray-700 mb-2">Proof of Income</label>
-              <input type="file" className="w-full border rounded p-2" disabled={hasActiveLoan} />
+              <input type="file" className="w-full border rounded p-2" disabled={hasActiveLoan} onChange={e => void handleDocumentChange("proofOfIncome", e.target.files?.[0] ?? null)} />
+              {documents.proofOfIncome && <p className="mt-2 text-xs text-green-700">Saved: {documents.proofOfIncome.name}</p>}
             </div>
             <div>
               <label className="block text-gray-700 mb-2">Proof of Residence</label>
-              <input type="file" className="w-full border rounded p-2" disabled={hasActiveLoan} />
+              <input type="file" className="w-full border rounded p-2" disabled={hasActiveLoan} onChange={e => void handleDocumentChange("proofOfResidence", e.target.files?.[0] ?? null)} />
+              {documents.proofOfResidence && <p className="mt-2 text-xs text-green-700">Saved: {documents.proofOfResidence.name}</p>}
             </div>
             <div>
               <label className="block text-gray-700 mb-2">Bank Statement</label>
-              <input type="file" className="w-full border rounded p-2" disabled={hasActiveLoan} />
+              <input type="file" className="w-full border rounded p-2" disabled={hasActiveLoan} onChange={e => void handleDocumentChange("bankStatement", e.target.files?.[0] ?? null)} />
+              {documents.bankStatement && <p className="mt-2 text-xs text-green-700">Saved: {documents.bankStatement.name}</p>}
             </div>
           </div>
         </div>

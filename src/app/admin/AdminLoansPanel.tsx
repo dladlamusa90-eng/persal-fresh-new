@@ -1,20 +1,23 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { LOAN_REJECTION_REASONS } from "@/lib/loanRejectionReasons";
 
 type LoanStatus = "PENDING" | "APPROVED" | "REJECTED" | "PAID";
-type LoanAction = "approve" | "reject";
 type LoanFilter = "ALL" | "PENDING" | "APPROVED" | "REJECTED";
 type ProfitRange = "7D" | "30D" | "YEAR" | "CUSTOM";
 
 type AdminLoanRow = {
   id: string;
   applicantName: string;
+  applicantEmail: string | null;
   persalNumber: string | null;
   amount: number;
   termDays: number;
+  grossSalary: number | null;
+  disposableIncome: number | null;
+  disbursementSentAt: string | null;
   status: LoanStatus;
   rejectionReason: string | null;
   createdAt: string;
@@ -33,9 +36,6 @@ export default function AdminLoansPanel({ initialLoans, totalUsers, totalAdmins 
   const [profitRange, setProfitRange] = useState<ProfitRange>("30D");
   const [customFromDate, setCustomFromDate] = useState("");
   const [customToDate, setCustomToDate] = useState("");
-  const [loadingById, setLoadingById] = useState<Record<string, LoanAction | null>>({});
-  const [errorById, setErrorById] = useState<Record<string, string>>({});
-  const [rejectionReasonById, setRejectionReasonById] = useState<Record<string, string>>({});
   const currencyFormatter = useMemo(() => new Intl.NumberFormat("en-US"), []);
 
   function calculateLoanProfit(amount: number, termDays: number) {
@@ -106,97 +106,6 @@ export default function AdminLoansPanel({ initialLoans, totalUsers, totalAdmins 
     if (loanFilter === "ALL") return loans;
     return loans.filter((loan) => loan.status === loanFilter);
   }, [loanFilter, loans]);
-
-  async function handleAction(loanId: string, action: LoanAction) {
-    const targetStatus: LoanStatus = action === "approve" ? "APPROVED" : "REJECTED";
-    const currentLoan = loans.find((loan) => loan.id === loanId);
-    if (!currentLoan) return;
-
-    if (currentLoan.status !== "PENDING") return;
-
-    const selectedReason = rejectionReasonById[loanId] ?? "";
-    if (action === "reject" && !selectedReason) {
-      setErrorById((prev) => ({ ...prev, [loanId]: "Please select a rejection reason." }));
-      return;
-    }
-
-    const previousStatus = currentLoan.status;
-    const previousReason = currentLoan.rejectionReason;
-
-    setLoadingById((prev) => ({ ...prev, [loanId]: action }));
-    setErrorById((prev) => ({ ...prev, [loanId]: "" }));
-    setLoans((prev) =>
-      prev.map((loan) =>
-        loan.id === loanId
-          ? {
-              ...loan,
-              status: targetStatus,
-              rejectionReason: action === "reject" ? selectedReason : null,
-            }
-          : loan
-      )
-    );
-
-    try {
-      const response = await fetch(`/api/admin/loans/${loanId}/${action}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: action === "reject" ? JSON.stringify({ reason: selectedReason }) : undefined,
-      });
-
-      if (!response.ok) {
-        let message = "Failed to update loan status.";
-        try {
-          const body = (await response.json()) as { error?: string };
-          if (body.error) message = body.error;
-        } catch {
-          message = "Failed to update loan status.";
-        }
-
-        setLoans((prev) =>
-          prev.map((loan) =>
-            loan.id === loanId
-              ? { ...loan, status: previousStatus, rejectionReason: previousReason }
-              : loan
-          )
-        );
-        setErrorById((prev) => ({ ...prev, [loanId]: message }));
-      } else {
-        const body = (await response.json()) as {
-          loan?: { status?: LoanStatus; rejectionReason?: string | null };
-        };
-
-        if (body.loan) {
-          setLoans((prev) =>
-            prev.map((loan) =>
-              loan.id === loanId
-                ? {
-                    ...loan,
-                    status: body.loan?.status ?? targetStatus,
-                    rejectionReason:
-                      body.loan?.rejectionReason ??
-                      (action === "reject" ? selectedReason : null),
-                  }
-                : loan
-            )
-          );
-        }
-      }
-    } catch {
-      setLoans((prev) =>
-        prev.map((loan) =>
-          loan.id === loanId
-            ? { ...loan, status: previousStatus, rejectionReason: previousReason }
-            : loan
-        )
-      );
-      setErrorById((prev) => ({ ...prev, [loanId]: "Network error. Please try again." }));
-    } finally {
-      setLoadingById((prev) => ({ ...prev, [loanId]: null }));
-    }
-  }
 
   return (
     <>
@@ -344,7 +253,7 @@ export default function AdminLoansPanel({ initialLoans, totalUsers, totalAdmins 
         <table className="min-w-full text-sm">
           <thead>
             <tr className="border-b border-gray-200 text-left text-gray-600">
-              <th className="px-4 py-3 font-semibold">Applicant Name</th>
+              <th className="px-4 py-3 font-semibold">Applicant</th>
               <th className="px-4 py-3 font-semibold">Persal Number</th>
               <th className="px-4 py-3 font-semibold">Amount</th>
               <th className="px-4 py-3 font-semibold">Term</th>
@@ -361,13 +270,14 @@ export default function AdminLoansPanel({ initialLoans, totalUsers, totalAdmins 
               </tr>
             ) : (
               filteredLoans.map((loan) => {
-                const rowLoading = loadingById[loan.id];
-                const disabled = rowLoading === "approve" || rowLoading === "reject";
                 const isPending = loan.status === "PENDING";
 
                 return (
                   <tr key={loan.id} className="border-b border-gray-100 last:border-0 align-top">
-                    <td className="px-4 py-3 text-gray-900 font-medium">{loan.applicantName}</td>
+                    <td className="px-4 py-3 text-gray-900 font-medium">
+                      <div>{loan.applicantName}</div>
+                      <div className="text-xs text-gray-500 mt-1">{loan.applicantEmail ?? "No email"}</div>
+                    </td>
                     <td className="px-4 py-3 text-gray-700">{loan.persalNumber ?? "N/A"}</td>
                     <td className="px-4 py-3 text-gray-700">R {currencyFormatter.format(loan.amount)}</td>
                     <td className="px-4 py-3 text-gray-700">{loan.termDays} days</td>
@@ -375,6 +285,12 @@ export default function AdminLoansPanel({ initialLoans, totalUsers, totalAdmins 
                       <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">
                         {loan.status}
                       </span>
+                      {loan.status === "APPROVED" && !loan.disbursementSentAt && (
+                        <p className="text-xs text-amber-600 mt-2">Awaiting transfer</p>
+                      )}
+                      {loan.status === "APPROVED" && loan.disbursementSentAt && (
+                        <p className="text-xs text-green-600 mt-2">Transferred</p>
+                      )}
                       {loan.status === "REJECTED" && loan.rejectionReason && (
                         <p className="text-xs text-red-600 mt-2">Reason: {loan.rejectionReason}</p>
                       )}
@@ -382,46 +298,39 @@ export default function AdminLoansPanel({ initialLoans, totalUsers, totalAdmins 
                     <td className="px-4 py-3">
                       {isPending ? (
                         <div className="flex flex-col gap-2">
-                          <select
-                            value={rejectionReasonById[loan.id] ?? ""}
-                            onChange={(event) =>
-                              setRejectionReasonById((prev) => ({
-                                ...prev,
-                                [loan.id]: event.target.value,
-                              }))
-                            }
-                            className="px-2 py-1.5 rounded-md border border-gray-300 text-xs text-gray-700"
-                            disabled={disabled}
+                          <Link
+                            href={`/admin/loans/${loan.id}`}
+                            className="px-3 py-1.5 rounded-md border border-gray-300 text-center text-xs font-semibold text-gray-700 hover:bg-gray-50"
                           >
-                            <option value="">Select rejection reason</option>
-                            {LOAN_REJECTION_REASONS.map((reason) => (
-                              <option key={reason} value={reason}>
-                                {reason}
-                              </option>
-                            ))}
-                          </select>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleAction(loan.id, "approve")}
-                              disabled={disabled}
-                              className="px-3 py-1.5 rounded-md bg-green-600 text-white text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              {rowLoading === "approve" ? "Approving..." : "Approve"}
-                            </button>
-                            <button
-                              onClick={() => handleAction(loan.id, "reject")}
-                              disabled={disabled}
-                              className="px-3 py-1.5 rounded-md bg-red-600 text-white text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              {rowLoading === "reject" ? "Rejecting..." : "Reject"}
-                            </button>
-                          </div>
+                            View Application (Decide)
+                          </Link>
+                          <p className="text-xs text-gray-500">Open application details to approve or reject.</p>
+                        </div>
+                      ) : loan.status === "APPROVED" && !loan.disbursementSentAt ? (
+                        <div className="flex flex-col gap-2">
+                          <Link
+                            href={`/admin/loans/${loan.id}`}
+                            className="px-3 py-1.5 rounded-md border border-gray-300 text-center text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                          >
+                            View Application
+                          </Link>
+                          <Link
+                            href={`/admin/loans/${loan.id}/transfer`}
+                            className="px-3 py-1.5 rounded-md bg-persal-blue text-center text-xs font-semibold text-white hover:bg-persal-dark"
+                          >
+                            Transfer Loan
+                          </Link>
                         </div>
                       ) : (
-                        <span className="text-xs text-gray-500 font-medium">Processed</span>
-                      )}
-                      {errorById[loan.id] && (
-                        <p className="text-xs text-red-600 mt-2">{errorById[loan.id]}</p>
+                        <div className="flex flex-col gap-2">
+                          <Link
+                            href={`/admin/loans/${loan.id}`}
+                            className="px-3 py-1.5 rounded-md border border-gray-300 text-center text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                          >
+                            View Application
+                          </Link>
+                          <span className="text-xs text-gray-500 font-medium">Processed</span>
+                        </div>
                       )}
                     </td>
                   </tr>

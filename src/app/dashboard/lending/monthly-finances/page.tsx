@@ -1,46 +1,66 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-const STORAGE_KEY = "wizard_monthly_finances";
-
 export default function MonthlyFinancesPage() {
+  return (
+    <Suspense fallback={<section className="max-w-6xl mx-auto px-4 md:px-6 py-4 md:py-6"><p className="text-sm text-gray-600">Loading...</p></section>}>
+      <MonthlyFinancesContent />
+    </Suspense>
+  );
+}
+
+function MonthlyFinancesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [hydrated, setHydrated] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [grossIncome, setGrossIncome] = useState("");
   const [netIncome, setNetIncome] = useState("");
   const [creditRepayments, setCreditRepayments] = useState("");
   const [livingExpenses, setLivingExpenses] = useState("");
 
   useEffect(() => {
-    try {
-      const saved = sessionStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const p = JSON.parse(saved) as {
-          grossIncome?: string;
-          netIncome?: string;
-          creditRepayments?: string;
-          livingExpenses?: string;
-        };
-        if (p.grossIncome !== undefined) setGrossIncome(p.grossIncome);
-        if (p.netIncome !== undefined) setNetIncome(p.netIncome);
-        if (p.creditRepayments !== undefined) setCreditRepayments(p.creditRepayments);
-        if (p.livingExpenses !== undefined) setLivingExpenses(p.livingExpenses);
-      }
-    } catch {}
-    setHydrated(true);
-  }, []);
+    let mounted = true;
 
-  useEffect(() => {
-    if (!hydrated) return;
-    try {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
-        grossIncome, netIncome, creditRepayments, livingExpenses,
-      }));
-    } catch {}
-  }, [hydrated, grossIncome, netIncome, creditRepayments, livingExpenses]);
+    async function loadDraft() {
+      try {
+        const response = await fetch("/api/loan-application-draft", { cache: "no-store" });
+        if (!response.ok) {
+          if (mounted) setLoading(false);
+          return;
+        }
+
+        const body = (await response.json()) as {
+          draft?: {
+            data?: {
+              monthlyGrossIncome?: string;
+              monthlyNetIncome?: string;
+              creditRepayments?: string;
+              livingExpenses?: string;
+            };
+          };
+        };
+
+        const data = body.draft?.data;
+        if (!mounted || !data) return;
+        if (data.monthlyGrossIncome !== undefined) setGrossIncome(data.monthlyGrossIncome);
+        if (data.monthlyNetIncome !== undefined) setNetIncome(data.monthlyNetIncome);
+        if (data.creditRepayments !== undefined) setCreditRepayments(data.creditRepayments);
+        if (data.livingExpenses !== undefined) setLivingExpenses(data.livingExpenses);
+      } catch {
+        return;
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+
+    loadDraft();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   function withWizardQuery(path: string) {
     const query = searchParams.toString();
@@ -52,7 +72,28 @@ export default function MonthlyFinancesPage() {
     (parseInt(creditRepayments || "0", 10) || 0) -
     (parseInt(livingExpenses || "0", 10) || 0);
 
-  function handleNext() {
+  async function handleNext() {
+    if (saving) return;
+    setSaving(true);
+    try {
+      await fetch("/api/loan-application-draft", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          data: {
+            monthlyGrossIncome: grossIncome,
+            monthlyNetIncome: netIncome,
+            creditRepayments,
+            livingExpenses,
+            calculatedDisposableIncome: String(disposable),
+          },
+        }),
+      });
+    } catch {
+      return;
+    } finally {
+      setSaving(false);
+    }
     router.push(withWizardQuery("/dashboard/lending/bank-details"));
   }
 
@@ -80,6 +121,7 @@ export default function MonthlyFinancesPage() {
                 inputMode="numeric"
                 value={grossIncome}
                 onChange={e => setGrossIncome(e.target.value.replace(/\D/g, ""))}
+                disabled={loading}
                 className="w-full rounded-xl bg-gray-100 border border-transparent pl-9 pr-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-persal-blue"
               />
             </div>
@@ -96,6 +138,7 @@ export default function MonthlyFinancesPage() {
                 inputMode="numeric"
                 value={netIncome}
                 onChange={e => setNetIncome(e.target.value.replace(/\D/g, ""))}
+                disabled={loading}
                 className="w-full rounded-xl bg-gray-100 border border-transparent pl-9 pr-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-persal-blue"
               />
             </div>
@@ -113,6 +156,7 @@ export default function MonthlyFinancesPage() {
                 inputMode="numeric"
                 value={creditRepayments}
                 onChange={e => setCreditRepayments(e.target.value.replace(/\D/g, ""))}
+                disabled={loading}
                 className="w-full rounded-md border border-gray-200 bg-white pl-12 pr-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-persal-blue"
               />
             </div>
@@ -130,6 +174,7 @@ export default function MonthlyFinancesPage() {
                 inputMode="numeric"
                 value={livingExpenses}
                 onChange={e => setLivingExpenses(e.target.value.replace(/\D/g, ""))}
+                disabled={loading}
                 className="w-full rounded-md border border-gray-200 bg-white pl-12 pr-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-persal-blue"
               />
             </div>
@@ -156,9 +201,10 @@ export default function MonthlyFinancesPage() {
           <button
             type="button"
             onClick={handleNext}
+            disabled={loading || saving}
             className="inline-flex min-w-[120px] items-center justify-center rounded-xl bg-[#f5912d] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#eb8621]"
           >
-            Next
+            {saving ? "Saving..." : "Next"}
           </button>
         </div>
       </div>

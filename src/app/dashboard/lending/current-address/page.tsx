@@ -1,9 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 export default function CurrentAddressPage() {
+  return (
+    <Suspense fallback={<section className="max-w-6xl mx-auto px-4 md:px-6 py-4 md:py-6"><p className="text-sm text-gray-600">Loading...</p></section>}>
+      <CurrentAddressContent />
+    </Suspense>
+  );
+}
+
+function CurrentAddressContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [address, setAddress] = useState("");
@@ -38,12 +46,20 @@ export default function CurrentAddressPage() {
   }, []);
 
   async function persistAddress() {
-    const response = await fetch("/api/users/me", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ address }),
-    });
-    return response.ok;
+    const [profileResponse, draftResponse] = await Promise.all([
+      fetch("/api/users/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ address }),
+      }),
+      fetch("/api/loan-application-draft", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data: { address } }),
+      }),
+    ]);
+
+    return profileResponse.ok && draftResponse.ok;
   }
 
   async function handleSaveAddress() {

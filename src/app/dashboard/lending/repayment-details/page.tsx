@@ -1,13 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { calculateLoanCharges } from "@/lib/loanPolicy";
 
 export default function RepaymentDetailsPage() {
+  return (
+    <Suspense fallback={<section className="max-w-6xl mx-auto px-4 md:px-6 py-4 md:py-6"><p className="text-sm text-gray-600">Loading...</p></section>}>
+      <RepaymentDetailsContent />
+    </Suspense>
+  );
+}
+
+function RepaymentDetailsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [showFeesBreakdown, setShowFeesBreakdown] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   const rawLoan = Number(searchParams.get("loan"));
   const loanAmount = Number.isFinite(rawLoan) && rawLoan >= 100 ? Math.min(5000, rawLoan) : 1500;
@@ -30,8 +40,116 @@ export default function RepaymentDetailsPage() {
     return query ? `${path}?${query}` : path;
   }
 
-  function handleContinue() {
-    router.push(withWizardQuery("/dashboard/lending/apply"));
+  async function handleContinue() {
+    if (submitting) return;
+
+    setSubmitting(true);
+    setError("");
+
+    try {
+      // If user already has an open application/loan, show status directly.
+      const loanStateResponse = await fetch("/api/loans/me", { cache: "no-store" });
+      if (loanStateResponse.ok) {
+        const loanState = (await loanStateResponse.json()) as {
+          latestLoan?: { status?: "PENDING" | "APPROVED" | "REJECTED" | "PAID" } | null;
+        };
+        const latestStatus = loanState.latestLoan?.status;
+        if (latestStatus === "PENDING" || latestStatus === "APPROVED") {
+          router.push("/dashboard/lending/application-status");
+          return;
+        }
+      }
+
+      const [userResponse, draftResponse] = await Promise.all([
+        fetch("/api/users/me", { cache: "no-store" }),
+        fetch("/api/loan-application-draft", { cache: "no-store" }),
+      ]);
+
+      if (!userResponse.ok) {
+        setError("Unable to load your profile. Please try again.");
+        return;
+      }
+
+      const userBody = (await userResponse.json()) as {
+        user?: {
+          phone?: string | null;
+          idNumber?: string | null;
+          persalNumber?: string | null;
+          bankName?: string | null;
+          accountNumber?: string | null;
+          accountType?: "CHEQUE" | "SAVINGS" | "TRANSMISSION" | null;
+          branchCode?: string | null;
+        };
+      };
+
+      const draftBody = draftResponse.ok
+        ? ((await draftResponse.json()) as {
+            draft?: {
+              data?: {
+                requestedGrossSalary?: number | string;
+                monthlyGrossIncome?: number | string;
+                employmentGrossIncome?: number | string;
+                requestedDisposableIncome?: number | string;
+                calculatedDisposableIncome?: number | string;
+                phone?: string;
+                idNumber?: string;
+                persalNumber?: string;
+                bankName?: string;
+                accountNumber?: string;
+                accountType?: "CHEQUE" | "SAVINGS" | "TRANSMISSION";
+                branchCode?: string;
+              };
+            };
+          })
+        : undefined;
+
+      const draftData = draftBody?.draft?.data ?? {};
+      const grossSalary = Number(
+        draftData.requestedGrossSalary ?? draftData.monthlyGrossIncome ?? draftData.employmentGrossIncome ?? 0
+      );
+      const disposableIncome = Number(
+        draftData.requestedDisposableIncome ?? draftData.calculatedDisposableIncome ?? 0
+      );
+
+      const phone = userBody.user?.phone ?? draftData.phone ?? "";
+      const idNumber = userBody.user?.idNumber ?? draftData.idNumber ?? "";
+      const persalNumber = userBody.user?.persalNumber ?? draftData.persalNumber ?? "";
+      const bankName = userBody.user?.bankName ?? draftData.bankName ?? "";
+      const accountNumber = userBody.user?.accountNumber ?? draftData.accountNumber ?? "";
+      const accountType = userBody.user?.accountType ?? draftData.accountType ?? "SAVINGS";
+      const branchCode = userBody.user?.branchCode ?? draftData.branchCode ?? "";
+
+      const applyResponse = await fetch("/api/loans/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: loanAmount,
+          termDays: term * 30,
+          grossSalary,
+          disposableIncome,
+          phone,
+          idNumber,
+          persalNumber,
+          bankName,
+          accountNumber,
+          accountType,
+          branchCode,
+          debitMandateAccepted: true,
+        }),
+      });
+
+      if (applyResponse.ok || applyResponse.status === 409) {
+        router.push("/dashboard/lending/application-status");
+        return;
+      }
+
+      const body = (await applyResponse.json()) as { error?: string };
+      setError(body.error ?? "Could not submit your application. Please try again.");
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -85,11 +203,13 @@ export default function RepaymentDetailsPage() {
           <button
             type="button"
             onClick={handleContinue}
+            disabled={submitting}
             className="inline-flex min-w-[120px] items-center justify-center rounded-xl bg-[#f5912d] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#eb8621]"
           >
-            Continue
+            {submitting ? "Submitting..." : "Continue"}
           </button>
         </div>
+        {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
       </div>
 
       {showFeesBreakdown && (

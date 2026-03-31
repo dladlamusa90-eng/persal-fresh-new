@@ -44,6 +44,7 @@ model User {
   burnedAt      DateTime?
   bankVerified    Boolean  @default(false)
   stitchAccountId String?
+  loanApplicationDraft LoanApplicationDraft?
   loans         Loan[]
   loginOtps     LoginOtp[]
   passwordResetOtps PasswordResetOtp[]
@@ -86,6 +87,19 @@ model Loan {
   id        String     @id @default(cuid())
   amount    Float
   termDays  Int
+  applicationData Json?
+  applicationDocuments Json?
+  grossSalary Float?
+  disposableIncome Float?
+  applicantFullName String?
+  applicantEmail String?
+  applicantPhone String?
+  applicantIdNumber String?
+  applicantPersalNumber String?
+  applicantBankName String?
+  applicantAccountNumber String?
+  applicantAccountType BankAccountType?
+  applicantBranchCode String?
   status    LoanStatus
   rejectionReason String?
   debitMandateAccepted Boolean @default(false)
@@ -103,4 +117,16 @@ model Loan {
   @@index([status])
   @@index([userId, status])
   @@index([createdAt])
+}
+
+model LoanApplicationDraft {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  data       Json?
+  documents  Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([updatedAt])
 }
