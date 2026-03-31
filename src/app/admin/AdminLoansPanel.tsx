@@ -261,13 +261,13 @@ export default function AdminLoansPanel({ initialLoans, totalAdmins }: Props) {
             <span className="h-2 w-2 rounded-full bg-amber-500" />
             Pending Review
           </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1">
-            <span className="h-2 w-2 rounded-full bg-blue-500" />
-            Awaiting Disbursement
-          </span>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-green-200 bg-green-50 px-2.5 py-1">
             <span className="h-2 w-2 rounded-full bg-green-500" />
-            Approved/Disbursed
+            Approved
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1">
+            <span className="h-2 w-2 rounded-full bg-blue-500" />
+            Disbursed
           </span>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-2.5 py-1">
             <span className="h-2 w-2 rounded-full bg-red-500" />
@@ -370,38 +370,54 @@ export default function AdminLoansPanel({ initialLoans, totalAdmins }: Props) {
           </button>
 
           {showTransferredDetails && (
-            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 space-y-3 text-sm">
-              <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2">
-                <span className="text-slate-500">Date Range</span>
-                <span className="font-semibold text-slate-900">{getRangeLabel()}</span>
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-900 via-persal-dark to-persal-blue text-sm shadow-sm">
+              <div className="px-4 py-3 border-b border-white/20">
+                <p className="text-xs uppercase tracking-[0.14em] text-slate-100/90">Disbursement Details</p>
+                <p className="mt-1 text-slate-100">Performance snapshot for the selected date range.</p>
               </div>
 
-              {transferredSummary.missingCustomRange ? (
-                <p className="text-amber-700">Select both custom dates in Profit Summary to view disbursed loan totals.</p>
-              ) : (
-                <>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500">Number of Disbursed Loans</span>
-                    <span className="font-semibold text-slate-900">{transferredSummary.count}</span>
+              <div className="p-4 space-y-3 bg-white/95">
+                <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2">
+                  <span className="text-slate-500">Date Range</span>
+                  <span className="font-semibold text-slate-900">{getRangeLabel()}</span>
+                </div>
+
+                {transferredSummary.missingCustomRange ? (
+                  <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-amber-700">
+                    Select both custom dates in Profit Summary to view disbursed loan totals.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <MetricCard
+                      label="Number of Disbursed Loans"
+                      value={String(transferredSummary.count)}
+                      tone="slate"
+                    />
+                    <MetricCard
+                      label="Number of Clients Who Paid"
+                      value={String(transferredSummary.paidClientsCount)}
+                      tone="slate"
+                    />
+                    <MetricCard
+                      label="Amount Disbursed"
+                      value={`R ${currencyFormatter.format(Math.round(transferredSummary.totalAmountGiven))}`}
+                      tone="slate"
+                    />
+                    <MetricCard
+                      label="Profit Expected"
+                      value={`R ${currencyFormatter.format(Math.round(transferredSummary.expectedProfit))}`}
+                      tone="blue"
+                    />
+                    <div className="md:col-span-2">
+                      <MetricCard
+                        label="Profit Already Made"
+                        value={`R ${currencyFormatter.format(Math.round(transferredSummary.realizedProfit))}`}
+                        tone="green"
+                      />
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500">Number of Clients Who Paid</span>
-                    <span className="font-semibold text-slate-900">{transferredSummary.paidClientsCount}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500">Amount Disbursed</span>
-                    <span className="font-semibold text-slate-900">R {currencyFormatter.format(Math.round(transferredSummary.totalAmountGiven))}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500">Profit Expected</span>
-                    <span className="font-semibold text-blue-700">R {currencyFormatter.format(Math.round(transferredSummary.expectedProfit))}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500">Profit Already Made</span>
-                    <span className="font-semibold text-green-700">R {currencyFormatter.format(Math.round(transferredSummary.realizedProfit))}</span>
-                  </div>
-                </>
-              )}
+                )}
+              </div>
             </div>
           )}
 
@@ -432,8 +448,8 @@ export default function AdminLoansPanel({ initialLoans, totalAdmins }: Props) {
           </button>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-blue-50 via-white to-blue-50 p-4 md:p-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-blue-700 flex items-center gap-1.5">
+        <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-green-50 via-white to-green-50 p-4 md:p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-green-700 flex items-center gap-1.5">
             <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M7 7h10" />
               <path d="M7 12h10" />
@@ -441,12 +457,12 @@ export default function AdminLoansPanel({ initialLoans, totalAdmins }: Props) {
             </svg>
             Disbursement Queue
           </p>
-          <p className="mt-1 text-2xl font-bold text-blue-800">{counts.awaitingTransfer}</p>
-          <p className="text-sm text-blue-700">Approved applications still waiting for disbursement.</p>
+          <p className="mt-1 text-2xl font-bold text-green-800">{counts.awaitingTransfer}</p>
+          <p className="text-sm text-green-700">Approved applications still waiting for disbursement.</p>
           <button
             type="button"
             onClick={() => setLoanFilter("APPROVED")}
-            className="mt-3 inline-flex items-center rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
+            className="mt-3 inline-flex items-center rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700"
           >
             View Approved for Disbursement
           </button>
@@ -659,5 +675,29 @@ export default function AdminLoansPanel({ initialLoans, totalAdmins }: Props) {
       </div>
 
     </>
+  );
+}
+
+function MetricCard({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone: "slate" | "blue" | "green";
+}) {
+  const toneClass =
+    tone === "blue"
+      ? "border-blue-200 bg-blue-50 text-blue-800"
+      : tone === "green"
+        ? "border-green-200 bg-green-50 text-green-800"
+        : "border-slate-200 bg-slate-50 text-slate-800";
+
+  return (
+    <div className={`rounded-xl border p-3 ${toneClass}`}>
+      <p className="text-xs opacity-80">{label}</p>
+      <p className="mt-1 text-lg font-bold">{value}</p>
+    </div>
   );
 }
