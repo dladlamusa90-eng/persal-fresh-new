@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type LoanStatus = "PENDING" | "APPROVED" | "REJECTED" | "PAID";
-type LoanFilter = "ALL" | "PENDING" | "APPROVED" | "REJECTED";
+type LoanFilter = "ALL" | "PENDING" | "APPROVED" | "TRANSFERRED" | "REJECTED";
 type ProfitRange = "7D" | "30D" | "YEAR" | "CUSTOM";
 
 type AdminLoanRow = {
@@ -83,10 +83,21 @@ export default function AdminLoansPanel({ initialLoans, totalUsers, totalAdmins 
       0
     );
 
+    const disbursedLoansOverall = loans.filter(
+      (loan) => loan.status === "PAID" || Boolean(loan.disbursementSentAt)
+    );
+
+    const totalDisbursedOverall = disbursedLoansOverall.reduce(
+      (sum, loan) => sum + loan.amount,
+      0
+    );
+
     return {
       totalProfit,
       loansCount: scopedPaidLoans.length,
       missingCustomRange: profitRange === "CUSTOM" && !hasCustomRange,
+      totalDisbursedOverall,
+      disbursedCountOverall: disbursedLoansOverall.length,
     };
   }, [customFromDate, customToDate, loans, profitRange]);
 
@@ -98,14 +109,20 @@ export default function AdminLoansPanel({ initialLoans, totalUsers, totalAdmins 
         if (loan.status === "APPROVED") acc.approved += 1;
         if (loan.status === "REJECTED") acc.rejected += 1;
         if (loan.status === "APPROVED" && !loan.disbursementSentAt) acc.awaitingTransfer += 1;
+        if (loan.disbursementSentAt) acc.transferred += 1;
         return acc;
       },
-      { total: 0, pending: 0, approved: 0, rejected: 0, awaitingTransfer: 0 }
+      { total: 0, pending: 0, approved: 0, rejected: 0, awaitingTransfer: 0, transferred: 0 }
     );
   }, [loans]);
 
   const filteredLoans = useMemo(() => {
-    const base = loanFilter === "ALL" ? loans : loans.filter((loan) => loan.status === loanFilter);
+    const base = loans.filter((loan) => {
+      if (loanFilter === "ALL") return true;
+      if (loanFilter === "TRANSFERRED") return Boolean(loan.disbursementSentAt);
+      if (loanFilter === "APPROVED") return loan.status === "APPROVED" && !loan.disbursementSentAt;
+      return loan.status === loanFilter;
+    });
     const normalizedSearch = searchTerm.trim().toLowerCase();
     if (!normalizedSearch) return base;
 
@@ -141,7 +158,10 @@ export default function AdminLoansPanel({ initialLoans, totalUsers, totalAdmins 
   return (
     <>
       <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-600">Quick Legend</p>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-600">Quick Legend</p>
+          <p className="text-xs text-slate-500">Admin accounts: <span className="font-semibold text-slate-700">{totalAdmins}</span></p>
+        </div>
         <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-700">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1">
             <span className="h-2 w-2 rounded-full bg-amber-500" />
@@ -233,13 +253,23 @@ export default function AdminLoansPanel({ initialLoans, totalUsers, totalAdmins 
             </div>
           )}
 
-          <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <p className="text-sm text-slate-500">Overall Profit (selected range)</p>
               <p className="text-2xl font-bold text-green-700">R {currencyFormatter.format(Math.round(profitSummary.totalProfit))}</p>
             </div>
-            <p className="text-sm text-slate-600">Paid Loans Count: <span className="font-semibold">{profitSummary.loansCount}</span></p>
+            <div>
+              <p className="text-sm text-slate-500">Total Loans Given (overall)</p>
+              <p className="text-2xl font-bold text-persal-dark">
+                R {currencyFormatter.format(Math.round(profitSummary.totalDisbursedOverall))}
+              </p>
+              <p className="text-xs text-slate-500 mt-1">
+                Disbursed/Paid loans: <span className="font-semibold">{profitSummary.disbursedCountOverall}</span>
+              </p>
+            </div>
           </div>
+
+          <p className="text-sm text-slate-600">Paid Loans Count (selected range): <span className="font-semibold">{profitSummary.loansCount}</span></p>
 
           {profitSummary.missingCustomRange && (
             <p className="text-xs text-amber-700">Select both dates to calculate custom profit.</p>
@@ -300,14 +330,6 @@ export default function AdminLoansPanel({ initialLoans, totalUsers, totalAdmins 
         </button>
         <button
           type="button"
-          onClick={() => router.push("/admin/users?role=ADMIN")}
-          className="bg-gradient-to-br from-white to-indigo-50/60 border border-slate-200 rounded-xl p-5 shadow-sm text-left hover:border-indigo-300 hover:bg-indigo-50 transition"
-        >
-          <p className="text-sm text-gray-500">Total Admins</p>
-          <p className="text-2xl font-bold text-indigo-700 mt-1">{totalAdmins}</p>
-        </button>
-        <button
-          type="button"
           onClick={() => setLoanFilter("ALL")}
           className={`border rounded-xl p-5 shadow-sm text-left transition ${
             loanFilter === "ALL"
@@ -340,7 +362,20 @@ export default function AdminLoansPanel({ initialLoans, totalUsers, totalAdmins 
           }`}
         >
           <p className="text-sm text-gray-500">Approved Loans</p>
-          <p className="text-2xl font-bold text-green-600 mt-1">{counts.approved}</p>
+          <p className="text-2xl font-bold text-green-600 mt-1">{counts.awaitingTransfer}</p>
+          <p className="mt-1 text-xs text-gray-500">Awaiting transfer</p>
+        </button>
+        <button
+          type="button"
+          onClick={() => setLoanFilter("TRANSFERRED")}
+          className={`border rounded-xl p-5 shadow-sm text-left transition ${
+            loanFilter === "TRANSFERRED"
+              ? "bg-blue-50 border-blue-300"
+              : "bg-white border-gray-200 hover:border-blue-200"
+          }`}
+        >
+          <p className="text-sm text-gray-500">Transferred Loans</p>
+          <p className="text-2xl font-bold text-blue-600 mt-1">{counts.transferred}</p>
         </button>
         <button
           type="button"
@@ -429,7 +464,7 @@ export default function AdminLoansPanel({ initialLoans, totalUsers, totalAdmins 
                     <td className="px-4 py-3 text-slate-600">{formatDate(loan.createdAt)}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${statusPill(loan.status)}`}>
-                        {loan.status}
+                        {loan.status === "APPROVED" && loan.disbursementSentAt ? "TRANSFERRED" : loan.status}
                       </span>
                       {loan.status === "APPROVED" && !loan.disbursementSentAt && (
                         <p className="text-xs text-amber-600 mt-2">Awaiting transfer</p>

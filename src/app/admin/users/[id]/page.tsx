@@ -33,6 +33,7 @@ async function getUserDetails(id: string) {
         status: true,
         rejectionReason: true,
         createdAt: true,
+        disbursementSentAt: true,
       },
     },
   };
@@ -86,6 +87,12 @@ export default async function AdminUserDetailsPage({ params }: Props) {
     notFound();
   }
 
+  const paidLoans = user.loans.filter((loan) => loan.status === "PAID");
+  const totalLoansGivenToUser = user.loans
+    .filter((loan) => loan.status === "PAID" || loan.disbursementSentAt != null)
+    .reduce((sum, loan) => sum + loan.amount, 0);
+  const onTimePayments = Math.min(paidLoans.length, Math.max(0, Math.floor((user.points ?? 0) / 100)));
+
   return (
     <section className="max-w-full mx-auto py-8 md:py-10 px-4 md:px-6 space-y-6">
       <div className="flex items-center justify-between gap-4">
@@ -110,6 +117,11 @@ export default async function AdminUserDetailsPage({ params }: Props) {
             <p><span className="font-semibold">Bank Name:</span> {user.bankName ?? "N/A"}</p>
             <p><span className="font-semibold">Account Number:</span> {user.accountNumber ?? "N/A"}</p>
             <p><span className="font-semibold">Date Joined:</span> {user.createdAt.toISOString().slice(0, 10)}</p>
+            <p><span className="font-semibold">Total Loans Given:</span> R {totalLoansGivenToUser.toLocaleString("en-US")}</p>
+            <p>
+              <span className="font-semibold">Paid On Time:</span> {onTimePayments}
+              <span className="text-xs text-gray-500"> (based on loyalty points and paid loans)</span>
+            </p>
             <p>
               <span className="font-semibold">Access:</span>{" "}
               <span className={user.isBurned ? "text-red-700 font-semibold" : "text-green-700 font-semibold"}>
@@ -140,13 +152,14 @@ export default async function AdminUserDetailsPage({ params }: Props) {
               <th className="px-4 py-3 font-semibold">Term</th>
               <th className="px-4 py-3 font-semibold">Status</th>
               <th className="px-4 py-3 font-semibold">Rejection Reason</th>
+              <th className="px-4 py-3 font-semibold">Disbursed</th>
               <th className="px-4 py-3 font-semibold">Created</th>
             </tr>
           </thead>
           <tbody>
             {user.loans.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-gray-500">No loans found.</td>
+                <td colSpan={7} className="px-4 py-6 text-center text-gray-500">No loans found.</td>
               </tr>
             ) : (
               user.loans.map((loan) => (
@@ -156,6 +169,7 @@ export default async function AdminUserDetailsPage({ params }: Props) {
                   <td className="px-4 py-3 text-gray-700">{loan.termDays} days</td>
                   <td className="px-4 py-3 text-gray-700">{loan.status}</td>
                   <td className="px-4 py-3 text-gray-700">{loan.rejectionReason ?? "-"}</td>
+                  <td className="px-4 py-3 text-gray-700">{loan.disbursementSentAt ? loan.disbursementSentAt.toISOString().slice(0, 10) : "-"}</td>
                   <td className="px-4 py-3 text-gray-700">{loan.createdAt.toISOString().slice(0, 10)}</td>
                 </tr>
               ))
