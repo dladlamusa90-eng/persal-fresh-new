@@ -32,6 +32,8 @@ export default function AdminLoansPanel({ initialLoans, totalAdmins }: Props) {
   const router = useRouter();
   const [loans, setLoans] = useState<AdminLoanRow[]>(initialLoans);
   const [loanFilter, setLoanFilter] = useState<LoanFilter>("ALL");
+  const [showLoanPipeline, setShowLoanPipeline] = useState(false);
+  const [showApplicationManagement, setShowApplicationManagement] = useState(false);
   const [showTransferredDetails, setShowTransferredDetails] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [profitRange, setProfitRange] = useState<ProfitRange>("30D");
@@ -273,10 +275,56 @@ export default function AdminLoansPanel({ initialLoans, totalAdmins }: Props) {
             <span className="h-2 w-2 rounded-full bg-red-500" />
             Rejected
           </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-fuchsia-200 bg-fuchsia-50 px-2.5 py-1">
+            <span className="h-2 w-2 rounded-full bg-fuchsia-500" />
+            Profit
+          </span>
         </div>
       </div>
 
       <div className="mt-6 relative overflow-hidden bg-white border border-slate-200 rounded-2xl p-5 md:p-6 shadow-sm">
+        <div className="mb-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-amber-50 via-white to-amber-50 p-4 md:p-5 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-wide text-amber-700 flex items-center gap-1.5">
+              <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 9v4" />
+                <path d="M12 17h.01" />
+                <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
+              </svg>
+              Needs Attention
+            </p>
+            <p className="mt-1 text-2xl font-bold text-amber-800">{counts.pending}</p>
+            <p className="text-sm text-amber-700">Pending applications waiting for review decision.</p>
+            <button
+              type="button"
+              onClick={() => setLoanFilter("PENDING")}
+              className="mt-3 inline-flex items-center rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700"
+            >
+              Open Pending Queue
+            </button>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-green-50 via-white to-green-50 p-4 md:p-5 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-wide text-green-700 flex items-center gap-1.5">
+              <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M7 7h10" />
+                <path d="M7 12h10" />
+                <path d="M7 17h6" />
+              </svg>
+              Disbursement Queue
+            </p>
+            <p className="mt-1 text-2xl font-bold text-green-800">{counts.awaitingTransfer}</p>
+            <p className="text-sm text-green-700">Approved applications still waiting for disbursement.</p>
+            <button
+              type="button"
+              onClick={() => setLoanFilter("APPROVED")}
+              className="mt-3 inline-flex items-center rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700"
+            >
+              View Approved for Disbursement
+            </button>
+          </div>
+        </div>
+
         <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-slate-900 via-persal-dark to-persal-blue" />
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -349,12 +397,12 @@ export default function AdminLoansPanel({ initialLoans, totalAdmins }: Props) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <p className="text-sm text-slate-500">Overall Profit (selected range)</p>
-              <p className="text-2xl font-bold text-green-700">R {currencyFormatter.format(Math.round(profitSummary.totalProfit))}</p>
+              <p className="text-sm text-slate-500">Profit (selected range)</p>
+              <p className="text-2xl font-bold text-fuchsia-700">R {currencyFormatter.format(Math.round(profitSummary.totalProfit))}</p>
             </div>
             <div>
-              <p className="text-sm text-slate-500">Total Loans Given (overall)</p>
-              <p className="text-2xl font-bold text-persal-dark">R {currencyFormatter.format(Math.round(profitSummary.totalDisbursedOverall))}</p>
+              <p className="text-sm text-slate-500">Total Loan-Amount Disbursed</p>
+              <p className="text-2xl font-bold text-blue-700">R {currencyFormatter.format(Math.round(profitSummary.totalDisbursedOverall))}</p>
               <p className="mt-1 text-xs text-slate-600">
                 Total Loans Disbursed: <span className="font-semibold">{transferredSummary.count}</span>
               </p>
@@ -406,13 +454,13 @@ export default function AdminLoansPanel({ initialLoans, totalAdmins }: Props) {
                     <MetricCard
                       label="Profit Expected"
                       value={`R ${currencyFormatter.format(Math.round(transferredSummary.expectedProfit))}`}
-                      tone="blue"
+                      tone="black"
                     />
                     <div className="md:col-span-2">
                       <MetricCard
                         label="Profit Already Made"
                         value={`R ${currencyFormatter.format(Math.round(transferredSummary.realizedProfit))}`}
-                        tone="green"
+                        tone="profit"
                       />
                     </div>
                   </div>
@@ -427,53 +475,17 @@ export default function AdminLoansPanel({ initialLoans, totalAdmins }: Props) {
         </div>
       </div>
 
-      <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-amber-50 via-white to-amber-50 p-4 md:p-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-amber-700 flex items-center gap-1.5">
-            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 9v4" />
-              <path d="M12 17h.01" />
-              <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
-            </svg>
-            Needs Attention
-          </p>
-          <p className="mt-1 text-2xl font-bold text-amber-800">{counts.pending}</p>
-          <p className="text-sm text-amber-700">Pending applications waiting for review decision.</p>
-          <button
-            type="button"
-            onClick={() => setLoanFilter("PENDING")}
-            className="mt-3 inline-flex items-center rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700"
-          >
-            Open Pending Queue
-          </button>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-green-50 via-white to-green-50 p-4 md:p-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-green-700 flex items-center gap-1.5">
-            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M7 7h10" />
-              <path d="M7 12h10" />
-              <path d="M7 17h6" />
-            </svg>
-            Disbursement Queue
-          </p>
-          <p className="mt-1 text-2xl font-bold text-green-800">{counts.awaitingTransfer}</p>
-          <p className="text-sm text-green-700">Approved applications still waiting for disbursement.</p>
-          <button
-            type="button"
-            onClick={() => setLoanFilter("APPROVED")}
-            className="mt-3 inline-flex items-center rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700"
-          >
-            View Approved for Disbursement
-          </button>
-        </div>
-      </div>
-
       <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 md:p-5 shadow-sm overflow-hidden">
-        <div className="-mx-4 md:-mx-5 -mt-4 md:-mt-5 mb-4 px-4 md:px-5 py-3 bg-gradient-to-r from-slate-900 via-persal-dark to-persal-blue">
+        <button
+          type="button"
+          onClick={() => setShowLoanPipeline((prev) => !prev)}
+          className="-mx-4 md:-mx-5 -mt-4 md:-mt-5 mb-4 w-[calc(100%+2rem)] md:w-[calc(100%+2.5rem)] px-4 md:px-5 py-3 bg-gradient-to-r from-slate-900 via-persal-dark to-persal-blue flex items-center justify-between text-left"
+        >
           <p className="text-xs uppercase tracking-[0.14em] text-slate-100/90">Loan Pipeline</p>
-        </div>
+          <span className="text-xs font-semibold text-slate-100">{showLoanPipeline ? "Collapse" : "Expand"}</span>
+        </button>
 
+        {showLoanPipeline && (
         <div className="grid grid-cols-1 xl:grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr] gap-3 items-stretch">
           <button
             type="button"
@@ -540,10 +552,15 @@ export default function AdminLoansPanel({ initialLoans, totalAdmins }: Props) {
             <p className="mt-2 text-xs text-slate-500">Applications declined during review.</p>
           </button>
         </div>
+        )}
       </div>
 
       <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-4 md:p-5 shadow-sm overflow-hidden">
-        <div className="-mx-4 md:-mx-5 -mt-4 md:-mt-5 mb-4 px-4 md:px-5 py-3 bg-gradient-to-r from-slate-900 via-persal-dark to-persal-blue">
+        <button
+          type="button"
+          onClick={() => setShowApplicationManagement((prev) => !prev)}
+          className="-mx-4 md:-mx-5 -mt-4 md:-mt-5 mb-4 w-[calc(100%+2rem)] md:w-[calc(100%+2.5rem)] px-4 md:px-5 py-3 bg-gradient-to-r from-slate-900 via-persal-dark to-persal-blue flex items-center justify-between text-left"
+        >
           <p className="text-xs uppercase tracking-[0.14em] text-slate-100/90 flex items-center gap-1.5">
             <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="4" y="3" width="16" height="18" rx="2" />
@@ -553,7 +570,11 @@ export default function AdminLoansPanel({ initialLoans, totalAdmins }: Props) {
             </svg>
             Application Management
           </p>
-        </div>
+          <span className="text-xs font-semibold text-slate-100">{showApplicationManagement ? "Collapse" : "Expand"}</span>
+        </button>
+
+        {showApplicationManagement && (
+        <>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
           <div>
             <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
@@ -672,6 +693,8 @@ export default function AdminLoansPanel({ initialLoans, totalAdmins }: Props) {
           </tbody>
         </table>
       </div>
+      </>
+      )}
       </div>
 
     </>
@@ -685,10 +708,14 @@ function MetricCard({
 }: {
   label: string;
   value: string;
-  tone: "slate" | "blue" | "green";
+  tone: "slate" | "blue" | "green" | "black" | "profit";
 }) {
   const toneClass =
-    tone === "blue"
+    tone === "black"
+      ? "border-slate-300 bg-white text-black"
+      : tone === "profit"
+        ? "border-fuchsia-200 bg-fuchsia-50 text-fuchsia-800"
+      : tone === "blue"
       ? "border-blue-200 bg-blue-50 text-blue-800"
       : tone === "green"
         ? "border-green-200 bg-green-50 text-green-800"

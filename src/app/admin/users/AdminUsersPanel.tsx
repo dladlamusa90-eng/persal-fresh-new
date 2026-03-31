@@ -31,6 +31,7 @@ function formatJoinedDate(value: string) {
 
 export default function AdminUsersPanel({ users }: Props) {
   const [rows, setRows] = useState(users);
+  const [showUserOversight, setShowUserOversight] = useState(false);
   const [query, setQuery] = useState("");
   const [accessFilter, setAccessFilter] = useState<"ALL" | "ACTIVE" | "BANNED">("ALL");
   const [loadingById, setLoadingById] = useState<Record<string, "burn" | "restore" | "clear" | null>>({});
@@ -148,7 +149,11 @@ export default function AdminUsersPanel({ users }: Props) {
 
   return (
     <div className="mt-6 rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-      <div className="px-4 md:px-5 py-3 bg-gradient-to-r from-slate-900 via-persal-dark to-persal-blue">
+      <button
+        type="button"
+        onClick={() => setShowUserOversight((prev) => !prev)}
+        className="w-full px-4 md:px-5 py-3 bg-gradient-to-r from-slate-900 via-persal-dark to-persal-blue flex items-center justify-between text-left"
+      >
         <p className="text-xs uppercase tracking-[0.14em] text-slate-100/90 flex items-center gap-1.5">
           <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
@@ -158,7 +163,11 @@ export default function AdminUsersPanel({ users }: Props) {
           </svg>
           User Oversight
         </p>
-      </div>
+        <span className="text-xs font-semibold text-slate-100">{showUserOversight ? "Collapse" : "Expand"}</span>
+      </button>
+
+      {showUserOversight && (
+      <>
 
       <div className="px-4 md:px-5 py-4 border-b border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-3 bg-white">
         <button
@@ -313,6 +322,8 @@ export default function AdminUsersPanel({ users }: Props) {
         </tbody>
       </table>
       </div>
+      </>
+      )}
     </div>
   );
 }
