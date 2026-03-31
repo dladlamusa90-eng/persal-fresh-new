@@ -157,7 +157,6 @@ export default async function AdminPage() {
 
       <AdminLoansPanel
         initialLoans={initialLoans}
-        totalUsers={totalUsers}
         totalAdmins={totalAdmins}
       />
 

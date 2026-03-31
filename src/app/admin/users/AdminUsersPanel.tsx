@@ -32,6 +32,7 @@ function formatJoinedDate(value: string) {
 export default function AdminUsersPanel({ users }: Props) {
   const [rows, setRows] = useState(users);
   const [query, setQuery] = useState("");
+  const [accessFilter, setAccessFilter] = useState<"ALL" | "ACTIVE" | "BANNED">("ALL");
   const [loadingById, setLoadingById] = useState<Record<string, "burn" | "restore" | "clear" | null>>({});
   const [errorById, setErrorById] = useState<Record<string, string>>({});
   const currencyFormatter = useMemo(() => new Intl.NumberFormat("en-US"), []);
@@ -50,9 +51,16 @@ export default function AdminUsersPanel({ users }: Props) {
 
   const filteredUsers = useMemo(() => {
     const normalized = query.trim().toLowerCase();
-    if (!normalized) return rows;
 
-    return rows.filter((user) => {
+    const accessScoped = rows.filter((user) => {
+      if (accessFilter === "ACTIVE") return !user.isBurned;
+      if (accessFilter === "BANNED") return user.isBurned;
+      return true;
+    });
+
+    if (!normalized) return accessScoped;
+
+    return accessScoped.filter((user) => {
       const joinedDate = formatJoinedDate(user.joinedAt);
 
       return [
@@ -70,7 +78,7 @@ export default function AdminUsersPanel({ users }: Props) {
         .toLowerCase()
         .includes(normalized);
     });
-  }, [rows, query]);
+  }, [rows, query, accessFilter]);
 
   async function handleToggleAccess(userId: string, role: string, isBurned: boolean) {
     if (role === "ADMIN") {
@@ -153,18 +161,36 @@ export default function AdminUsersPanel({ users }: Props) {
       </div>
 
       <div className="px-4 md:px-5 py-4 border-b border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-3 bg-white">
-        <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-3">
+        <button
+          type="button"
+          onClick={() => setAccessFilter("ALL")}
+          className={`rounded-xl border bg-gradient-to-br from-white to-slate-50 p-3 text-left transition ${
+            accessFilter === "ALL" ? "border-slate-400 ring-2 ring-slate-200" : "border-slate-200 hover:border-slate-300"
+          }`}
+        >
           <p className="text-xs text-slate-500">Total Users</p>
           <p className="text-lg font-bold text-slate-900">{stats.total}</p>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-green-50 p-3">
+        </button>
+        <button
+          type="button"
+          onClick={() => setAccessFilter("ACTIVE")}
+          className={`rounded-xl border bg-gradient-to-br from-white to-green-50 p-3 text-left transition ${
+            accessFilter === "ACTIVE" ? "border-green-400 ring-2 ring-green-100" : "border-slate-200 hover:border-green-300"
+          }`}
+        >
           <p className="text-xs text-slate-500">Active</p>
           <p className="text-lg font-bold text-green-700">{stats.active}</p>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-red-50 p-3">
+        </button>
+        <button
+          type="button"
+          onClick={() => setAccessFilter("BANNED")}
+          className={`rounded-xl border bg-gradient-to-br from-white to-red-50 p-3 text-left transition ${
+            accessFilter === "BANNED" ? "border-red-400 ring-2 ring-red-100" : "border-slate-200 hover:border-red-300"
+          }`}
+        >
           <p className="text-xs text-slate-500">Banned</p>
           <p className="text-lg font-bold text-red-700">{stats.burned}</p>
-        </div>
+        </button>
       </div>
 
       <div className="px-4 md:px-5 py-3 border-b border-slate-200 flex flex-col md:flex-row md:items-center gap-3 md:justify-between">
@@ -186,6 +212,9 @@ export default function AdminUsersPanel({ users }: Props) {
           placeholder="Search by name, email, role, ID, points, bank, persal, phone, or joined date"
           className="w-full md:w-96 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-persal-blue"
         />
+        <p className="text-xs text-slate-500">
+          Filter: <span className="font-semibold text-slate-700">{accessFilter}</span>
+        </p>
       </div>
 
       <div className="overflow-x-auto">

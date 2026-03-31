@@ -25,14 +25,14 @@ type AdminLoanRow = {
 
 type Props = {
   initialLoans: AdminLoanRow[];
-  totalUsers: number;
   totalAdmins: number;
 };
 
-export default function AdminLoansPanel({ initialLoans, totalUsers, totalAdmins }: Props) {
+export default function AdminLoansPanel({ initialLoans, totalAdmins }: Props) {
   const router = useRouter();
   const [loans, setLoans] = useState<AdminLoanRow[]>(initialLoans);
   const [loanFilter, setLoanFilter] = useState<LoanFilter>("ALL");
+  const [showTransferredDetails, setShowTransferredDetails] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [profitRange, setProfitRange] = useState<ProfitRange>("30D");
   const [customFromDate, setCustomFromDate] = useState("");
@@ -101,6 +101,63 @@ export default function AdminLoansPanel({ initialLoans, totalUsers, totalAdmins 
     };
   }, [customFromDate, customToDate, loans, profitRange]);
 
+  const transferredSummary = useMemo(() => {
+    const now = new Date();
+    const fromDate = new Date(now);
+    let hasCustomRange = false;
+
+    if (profitRange === "7D") {
+      fromDate.setDate(now.getDate() - 7);
+    } else if (profitRange === "30D") {
+      fromDate.setDate(now.getDate() - 30);
+    } else if (profitRange === "YEAR") {
+      fromDate.setFullYear(now.getFullYear() - 1);
+    } else {
+      hasCustomRange = Boolean(customFromDate && customToDate);
+    }
+
+    const customFrom = customFromDate ? new Date(`${customFromDate}T00:00:00`) : null;
+    const customTo = customToDate ? new Date(`${customToDate}T23:59:59`) : null;
+
+    const scopedTransferredLoans = loans.filter((loan) => {
+      if (!loan.disbursementSentAt) return false;
+      const transferredAt = new Date(loan.disbursementSentAt);
+
+      if (profitRange === "CUSTOM") {
+        if (!hasCustomRange || !customFrom || !customTo) return false;
+        return transferredAt >= customFrom && transferredAt <= customTo;
+      }
+
+      return transferredAt >= fromDate && transferredAt <= now;
+    });
+
+    const totalAmountGiven = scopedTransferredLoans.reduce((sum, loan) => sum + loan.amount, 0);
+    const expectedProfit = scopedTransferredLoans.reduce(
+      (sum, loan) => sum + calculateLoanProfit(loan.amount, loan.termDays),
+      0
+    );
+    const realizedProfit = scopedTransferredLoans
+      .filter((loan) => loan.status === "PAID")
+      .reduce((sum, loan) => sum + calculateLoanProfit(loan.amount, loan.termDays), 0);
+
+    const paidClientKeys = new Set(
+      scopedTransferredLoans
+        .filter((loan) => loan.status === "PAID")
+        .map((loan) =>
+          (loan.applicantEmail ?? loan.persalNumber ?? loan.applicantName).trim().toLowerCase()
+        )
+    );
+
+    return {
+      count: scopedTransferredLoans.length,
+      totalAmountGiven,
+      expectedProfit,
+      realizedProfit,
+      paidClientsCount: paidClientKeys.size,
+      missingCustomRange: profitRange === "CUSTOM" && !hasCustomRange,
+    };
+  }, [customFromDate, customToDate, loans, profitRange]);
+
   const counts = useMemo(() => {
     return loans.reduce(
       (acc, loan) => {
@@ -153,6 +210,43 @@ export default function AdminLoansPanel({ initialLoans, totalUsers, totalAdmins 
     if (status === "APPROVED") return "bg-green-50 text-green-700 border border-green-200";
     if (status === "REJECTED") return "bg-red-50 text-red-700 border border-red-200";
     return "bg-slate-100 text-slate-700 border border-slate-200";
+  }
+
+  function pipelineCardClass(active: boolean, tone: "amber" | "green" | "blue" | "red") {
+    if (tone === "amber") {
+      return active
+        ? "border-amber-300 bg-amber-50 shadow-sm"
+        : "border-slate-200 bg-white hover:border-amber-200 hover:bg-amber-50/50";
+    }
+
+    if (tone === "green") {
+      return active
+        ? "border-green-300 bg-green-50 shadow-sm"
+        : "border-slate-200 bg-white hover:border-green-200 hover:bg-green-50/50";
+    }
+
+    if (tone === "blue") {
+      return active
+        ? "border-blue-300 bg-blue-50 shadow-sm"
+        : "border-slate-200 bg-white hover:border-blue-200 hover:bg-blue-50/50";
+    }
+
+    return active
+      ? "border-red-300 bg-red-50 shadow-sm"
+      : "border-slate-200 bg-white hover:border-red-200 hover:bg-red-50/50";
+  }
+
+  function getRangeLabel() {
+    if (profitRange === "7D") return "Last 7 days";
+    if (profitRange === "30D") return "Last 30 days";
+    if (profitRange === "YEAR") return "Last 12 months";
+    if (profitRange === "CUSTOM") {
+      if (customFromDate && customToDate) {
+        return `${customFromDate} to ${customToDate}`;
+      }
+      return "Custom range (incomplete)";
+    }
+    return "Current range";
   }
 
   return (
@@ -260,16 +354,56 @@ export default function AdminLoansPanel({ initialLoans, totalUsers, totalAdmins 
             </div>
             <div>
               <p className="text-sm text-slate-500">Total Loans Given (overall)</p>
-              <p className="text-2xl font-bold text-persal-dark">
-                R {currencyFormatter.format(Math.round(profitSummary.totalDisbursedOverall))}
-              </p>
-              <p className="text-xs text-slate-500 mt-1">
-                Disbursed/Paid loans: <span className="font-semibold">{profitSummary.disbursedCountOverall}</span>
+              <p className="text-2xl font-bold text-persal-dark">R {currencyFormatter.format(Math.round(profitSummary.totalDisbursedOverall))}</p>
+              <p className="mt-1 text-xs text-slate-600">
+                Total Loans Transferred: <span className="font-semibold">{transferredSummary.count}</span>
               </p>
             </div>
           </div>
 
-          <p className="text-sm text-slate-600">Paid Loans Count (selected range): <span className="font-semibold">{profitSummary.loansCount}</span></p>
+          <button
+            type="button"
+            onClick={() => setShowTransferredDetails((prev) => !prev)}
+            className="self-start text-sm text-slate-600 underline underline-offset-2 hover:text-persal-blue"
+          >
+            {showTransferredDetails ? "Collapse" : "Expand"}
+          </button>
+
+          {showTransferredDetails && (
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 space-y-3 text-sm">
+              <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2">
+                <span className="text-slate-500">Date Range</span>
+                <span className="font-semibold text-slate-900">{getRangeLabel()}</span>
+              </div>
+
+              {transferredSummary.missingCustomRange ? (
+                <p className="text-amber-700">Select both custom dates in Profit Summary to view transferred loan totals.</p>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Number of Transferred Loans</span>
+                    <span className="font-semibold text-slate-900">{transferredSummary.count}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Number of Clients Who Paid</span>
+                    <span className="font-semibold text-slate-900">{transferredSummary.paidClientsCount}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Amount Given</span>
+                    <span className="font-semibold text-slate-900">R {currencyFormatter.format(Math.round(transferredSummary.totalAmountGiven))}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Profit Expected</span>
+                    <span className="font-semibold text-blue-700">R {currencyFormatter.format(Math.round(transferredSummary.expectedProfit))}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Profit Already Made</span>
+                    <span className="font-semibold text-green-700">R {currencyFormatter.format(Math.round(transferredSummary.realizedProfit))}</span>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
 
           {profitSummary.missingCustomRange && (
             <p className="text-xs text-amber-700">Select both dates to calculate custom profit.</p>
@@ -319,76 +453,77 @@ export default function AdminLoansPanel({ initialLoans, totalUsers, totalAdmins 
         </div>
       </div>
 
-      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
-        <button
-          type="button"
-          onClick={() => router.push("/admin/users?role=USER")}
-          className="bg-gradient-to-br from-white to-teal-50/60 border border-slate-200 rounded-xl p-5 shadow-sm text-left hover:border-teal-300 hover:bg-teal-50 transition"
-        >
-          <p className="text-sm text-gray-500">Total Users</p>
-          <p className="text-2xl font-bold text-teal-700 mt-1">{totalUsers}</p>
-        </button>
-        <button
-          type="button"
-          onClick={() => setLoanFilter("ALL")}
-          className={`border rounded-xl p-5 shadow-sm text-left transition ${
-            loanFilter === "ALL"
-              ? "bg-gray-100 border-gray-400"
-              : "bg-white border-gray-200 hover:border-gray-300"
-          }`}
-        >
-          <p className="text-sm text-gray-500">Total Loans</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{counts.total}</p>
-        </button>
-        <button
-          type="button"
-          onClick={() => setLoanFilter("PENDING")}
-          className={`border rounded-xl p-5 shadow-sm text-left transition ${
-            loanFilter === "PENDING"
-              ? "bg-amber-50 border-amber-300"
-              : "bg-white border-gray-200 hover:border-amber-200"
-          }`}
-        >
-          <p className="text-sm text-gray-500">Pending Loans</p>
-          <p className="text-2xl font-bold text-amber-600 mt-1">{counts.pending}</p>
-        </button>
-        <button
-          type="button"
-          onClick={() => setLoanFilter("APPROVED")}
-          className={`border rounded-xl p-5 shadow-sm text-left transition ${
-            loanFilter === "APPROVED"
-              ? "bg-green-50 border-green-300"
-              : "bg-white border-gray-200 hover:border-green-200"
-          }`}
-        >
-          <p className="text-sm text-gray-500">Approved Loans</p>
-          <p className="text-2xl font-bold text-green-600 mt-1">{counts.awaitingTransfer}</p>
-          <p className="mt-1 text-xs text-gray-500">Awaiting transfer</p>
-        </button>
-        <button
-          type="button"
-          onClick={() => setLoanFilter("TRANSFERRED")}
-          className={`border rounded-xl p-5 shadow-sm text-left transition ${
-            loanFilter === "TRANSFERRED"
-              ? "bg-blue-50 border-blue-300"
-              : "bg-white border-gray-200 hover:border-blue-200"
-          }`}
-        >
-          <p className="text-sm text-gray-500">Transferred Loans</p>
-          <p className="text-2xl font-bold text-blue-600 mt-1">{counts.transferred}</p>
-        </button>
-        <button
-          type="button"
-          onClick={() => setLoanFilter("REJECTED")}
-          className={`border rounded-xl p-5 shadow-sm text-left transition ${
-            loanFilter === "REJECTED"
-              ? "bg-red-50 border-red-300"
-              : "bg-white border-gray-200 hover:border-red-200"
-          }`}
-        >
-          <p className="text-sm text-gray-500">Rejected Loans</p>
-          <p className="text-2xl font-bold text-red-600 mt-1">{counts.rejected}</p>
-        </button>
+      <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 md:p-5 shadow-sm overflow-hidden">
+        <div className="-mx-4 md:-mx-5 -mt-4 md:-mt-5 mb-4 px-4 md:px-5 py-3 bg-gradient-to-r from-slate-900 via-persal-dark to-persal-blue">
+          <p className="text-xs uppercase tracking-[0.14em] text-slate-100/90">Loan Pipeline</p>
+        </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr] gap-3 items-stretch">
+          <button
+            type="button"
+            onClick={() => setLoanFilter("PENDING")}
+            className={`rounded-2xl border p-4 text-left transition ${pipelineCardClass(loanFilter === "PENDING", "amber")}`}
+          >
+            <p className="text-[11px] uppercase tracking-[0.14em] text-amber-700">Step 1</p>
+            <p className="mt-1 text-lg font-bold text-slate-900">Pending</p>
+            <p className="mt-1 text-3xl font-bold text-amber-600">{counts.pending}</p>
+            <p className="mt-2 text-xs text-slate-500">Applications waiting for admin review.</p>
+          </button>
+
+          <div className="hidden xl:flex items-center justify-center text-slate-300">
+            <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M5 12h14" />
+              <path d="m13 6 6 6-6 6" />
+            </svg>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setLoanFilter("APPROVED")}
+            className={`rounded-2xl border p-4 text-left transition ${pipelineCardClass(loanFilter === "APPROVED", "green")}`}
+          >
+            <p className="text-[11px] uppercase tracking-[0.14em] text-green-700">Step 2</p>
+            <p className="mt-1 text-lg font-bold text-slate-900">Approved</p>
+            <p className="mt-1 text-3xl font-bold text-green-600">{counts.awaitingTransfer}</p>
+            <p className="mt-2 text-xs text-slate-500">Accepted and waiting for transfer.</p>
+          </button>
+
+          <div className="hidden xl:flex items-center justify-center text-slate-300">
+            <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M5 12h14" />
+              <path d="m13 6 6 6-6 6" />
+            </svg>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setLoanFilter("TRANSFERRED")}
+            className={`rounded-2xl border p-4 text-left transition ${pipelineCardClass(loanFilter === "TRANSFERRED", "blue")}`}
+          >
+            <p className="text-[11px] uppercase tracking-[0.14em] text-blue-700">Step 3</p>
+            <p className="mt-1 text-lg font-bold text-slate-900">Transferred</p>
+            <p className="mt-1 text-3xl font-bold text-blue-600">{counts.transferred}</p>
+            <p className="mt-2 text-xs text-slate-500">Funds sent and transfer recorded.</p>
+          </button>
+
+          <div className="hidden xl:flex items-center justify-center text-slate-300">
+            <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M5 12h14" />
+              <path d="m13 6 6 6-6 6" />
+            </svg>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setLoanFilter("REJECTED")}
+            className={`rounded-2xl border p-4 text-left transition ${pipelineCardClass(loanFilter === "REJECTED", "red")}`}
+          >
+            <p className="text-[11px] uppercase tracking-[0.14em] text-red-700">Outcome</p>
+            <p className="mt-1 text-lg font-bold text-slate-900">Rejected</p>
+            <p className="mt-1 text-3xl font-bold text-red-600">{counts.rejected}</p>
+            <p className="mt-2 text-xs text-slate-500">Applications declined during review.</p>
+          </button>
+        </div>
       </div>
 
       <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-4 md:p-5 shadow-sm overflow-hidden">
@@ -522,6 +657,7 @@ export default function AdminLoansPanel({ initialLoans, totalUsers, totalAdmins 
         </table>
       </div>
       </div>
+
     </>
   );
 }
