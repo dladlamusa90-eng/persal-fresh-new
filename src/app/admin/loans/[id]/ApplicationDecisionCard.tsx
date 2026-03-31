@@ -84,10 +84,10 @@ export default function ApplicationDecisionCard({
           <p className="mt-3 text-sm text-red-600">Reason: {rejectionReason}</p>
         )}
         {status === "APPROVED" && !disbursementSentAt && (
-          <p className="mt-3 text-sm text-amber-600">Approved and waiting for transfer.</p>
+          <p className="mt-3 text-sm text-amber-600">Approved and waiting for disbursement.</p>
         )}
         {status === "APPROVED" && disbursementSentAt && (
-          <p className="mt-3 text-sm text-green-600">Transferred: {disbursementReference ?? "Recorded"}</p>
+          <p className="mt-3 text-sm text-green-600">Disbursed: {disbursementReference ?? "Recorded"}</p>
         )}
       </div>
 
@@ -111,7 +111,7 @@ export default function ApplicationDecisionCard({
             disabled={Boolean(loading)}
             className="inline-flex w-full items-center justify-center rounded-xl bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50"
           >
-            {loading === "approve" ? "Approving..." : "Approve and Continue to Transfer"}
+            {loading === "approve" ? "Approving..." : "Approve and Continue to Disbursement"}
           </button>
 
           <button
@@ -132,7 +132,7 @@ export default function ApplicationDecisionCard({
             onClick={() => router.push(`/admin/loans/${loanId}/transfer`)}
             className="inline-flex w-full items-center justify-center rounded-xl bg-persal-blue px-4 py-2.5 text-sm font-semibold text-white hover:bg-persal-dark"
           >
-            Open Transfer Screen
+            Open Disbursement Screen
           </button>
         </div>
       )}

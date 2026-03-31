@@ -49,7 +49,7 @@ export default function TransferLoanForm({
 
       const body = (await response.json()) as { error?: string };
       if (!response.ok) {
-        setError(body.error ?? "Failed to record transfer.");
+        setError(body.error ?? "Failed to record disbursement.");
         return;
       }
 
@@ -64,8 +64,8 @@ export default function TransferLoanForm({
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-gray-900">Transfer Loan</h2>
-      <p className="mt-2 text-sm text-gray-600">Transfer the approved loan to the applicant using the exact requested amount captured from the application.</p>
+      <h2 className="text-lg font-semibold text-gray-900">Disburse Loan</h2>
+      <p className="mt-2 text-sm text-gray-600">Disburse the approved loan to the applicant using the exact requested amount captured from the application.</p>
 
       <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
         <TransferField label="Applicant" value={applicantName || "N/A"} />
@@ -76,7 +76,7 @@ export default function TransferLoanForm({
 
       <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
         <label className="block">
-          <span className="text-sm font-medium text-gray-700">Transfer Amount</span>
+          <span className="text-sm font-medium text-gray-700">Disbursement Amount</span>
           <input
             type="number"
             value={amount}
@@ -85,7 +85,7 @@ export default function TransferLoanForm({
           />
         </label>
         <label className="block">
-          <span className="text-sm font-medium text-gray-700">Transfer Reference</span>
+          <span className="text-sm font-medium text-gray-700">Disbursement Reference</span>
           <input
             type="text"
             value={reference}
@@ -105,7 +105,7 @@ export default function TransferLoanForm({
           disabled={alreadyTransferred || saving}
           className="inline-flex items-center justify-center rounded-xl bg-persal-blue px-5 py-2.5 text-sm font-semibold text-white hover:bg-persal-dark disabled:opacity-50"
         >
-          {alreadyTransferred ? "Transfer Recorded" : saving ? "Recording Transfer..." : "Record Transfer"}
+          {alreadyTransferred ? "Disbursement Recorded" : saving ? "Recording Disbursement..." : "Record Disbursement"}
         </button>
       </div>
     </div>

@@ -133,7 +133,7 @@ export default async function AdminPage() {
               <p className="text-xs md:text-sm uppercase tracking-[0.18em] text-slate-200/90">Operations Center</p>
               <h1 className="mt-2 text-3xl md:text-4xl font-bold text-white">Admin Dashboard</h1>
               <p className="mt-2 text-sm md:text-base text-slate-100/90 max-w-2xl">
-                Review applications, make decisions confidently, and complete transfers from one place.
+                Review applications, make decisions confidently, and complete disbursements from one place.
               </p>
             </div>
 

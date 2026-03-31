@@ -263,11 +263,11 @@ export default function AdminLoansPanel({ initialLoans, totalAdmins }: Props) {
           </span>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1">
             <span className="h-2 w-2 rounded-full bg-blue-500" />
-            Awaiting Transfer
+            Awaiting Disbursement
           </span>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-green-200 bg-green-50 px-2.5 py-1">
             <span className="h-2 w-2 rounded-full bg-green-500" />
-            Approved/Transferred
+            Approved/Disbursed
           </span>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-2.5 py-1">
             <span className="h-2 w-2 rounded-full bg-red-500" />
@@ -356,7 +356,7 @@ export default function AdminLoansPanel({ initialLoans, totalAdmins }: Props) {
               <p className="text-sm text-slate-500">Total Loans Given (overall)</p>
               <p className="text-2xl font-bold text-persal-dark">R {currencyFormatter.format(Math.round(profitSummary.totalDisbursedOverall))}</p>
               <p className="mt-1 text-xs text-slate-600">
-                Total Loans Transferred: <span className="font-semibold">{transferredSummary.count}</span>
+                Total Loans Disbursed: <span className="font-semibold">{transferredSummary.count}</span>
               </p>
             </div>
           </div>
@@ -377,11 +377,11 @@ export default function AdminLoansPanel({ initialLoans, totalAdmins }: Props) {
               </div>
 
               {transferredSummary.missingCustomRange ? (
-                <p className="text-amber-700">Select both custom dates in Profit Summary to view transferred loan totals.</p>
+                <p className="text-amber-700">Select both custom dates in Profit Summary to view disbursed loan totals.</p>
               ) : (
                 <>
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-500">Number of Transferred Loans</span>
+                    <span className="text-slate-500">Number of Disbursed Loans</span>
                     <span className="font-semibold text-slate-900">{transferredSummary.count}</span>
                   </div>
                   <div className="flex items-center justify-between">
@@ -389,7 +389,7 @@ export default function AdminLoansPanel({ initialLoans, totalAdmins }: Props) {
                     <span className="font-semibold text-slate-900">{transferredSummary.paidClientsCount}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-500">Amount Given</span>
+                    <span className="text-slate-500">Amount Disbursed</span>
                     <span className="font-semibold text-slate-900">R {currencyFormatter.format(Math.round(transferredSummary.totalAmountGiven))}</span>
                   </div>
                   <div className="flex items-center justify-between">
@@ -439,16 +439,16 @@ export default function AdminLoansPanel({ initialLoans, totalAdmins }: Props) {
               <path d="M7 12h10" />
               <path d="M7 17h6" />
             </svg>
-            Transfer Queue
+            Disbursement Queue
           </p>
           <p className="mt-1 text-2xl font-bold text-blue-800">{counts.awaitingTransfer}</p>
-          <p className="text-sm text-blue-700">Approved applications still waiting for transfer.</p>
+          <p className="text-sm text-blue-700">Approved applications still waiting for disbursement.</p>
           <button
             type="button"
             onClick={() => setLoanFilter("APPROVED")}
             className="mt-3 inline-flex items-center rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
           >
-            View Approved Applications
+            View Approved for Disbursement
           </button>
         </div>
       </div>
@@ -485,7 +485,7 @@ export default function AdminLoansPanel({ initialLoans, totalAdmins }: Props) {
             <p className="text-[11px] uppercase tracking-[0.14em] text-green-700">Step 2</p>
             <p className="mt-1 text-lg font-bold text-slate-900">Approved</p>
             <p className="mt-1 text-3xl font-bold text-green-600">{counts.awaitingTransfer}</p>
-            <p className="mt-2 text-xs text-slate-500">Accepted and waiting for transfer.</p>
+            <p className="mt-2 text-xs text-slate-500">Accepted and waiting for disbursement.</p>
           </button>
 
           <div className="hidden xl:flex items-center justify-center text-slate-300">
@@ -501,9 +501,9 @@ export default function AdminLoansPanel({ initialLoans, totalAdmins }: Props) {
             className={`rounded-2xl border p-4 text-left transition ${pipelineCardClass(loanFilter === "TRANSFERRED", "blue")}`}
           >
             <p className="text-[11px] uppercase tracking-[0.14em] text-blue-700">Step 3</p>
-            <p className="mt-1 text-lg font-bold text-slate-900">Transferred</p>
+            <p className="mt-1 text-lg font-bold text-slate-900">Disbursed</p>
             <p className="mt-1 text-3xl font-bold text-blue-600">{counts.transferred}</p>
-            <p className="mt-2 text-xs text-slate-500">Funds sent and transfer recorded.</p>
+            <p className="mt-2 text-xs text-slate-500">Funds disbursed and record captured.</p>
           </button>
 
           <div className="hidden xl:flex items-center justify-center text-slate-300">
@@ -599,13 +599,13 @@ export default function AdminLoansPanel({ initialLoans, totalAdmins }: Props) {
                     <td className="px-4 py-3 text-slate-600">{formatDate(loan.createdAt)}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${statusPill(loan.status)}`}>
-                        {loan.status === "APPROVED" && loan.disbursementSentAt ? "TRANSFERRED" : loan.status}
+                        {loan.status === "APPROVED" && loan.disbursementSentAt ? "DISBURSED" : loan.status}
                       </span>
                       {loan.status === "APPROVED" && !loan.disbursementSentAt && (
-                        <p className="text-xs text-amber-600 mt-2">Awaiting transfer</p>
+                        <p className="text-xs text-amber-600 mt-2">Awaiting disbursement</p>
                       )}
                       {loan.status === "APPROVED" && loan.disbursementSentAt && (
-                        <p className="text-xs text-green-600 mt-2">Transferred</p>
+                        <p className="text-xs text-green-600 mt-2">Disbursed</p>
                       )}
                       {loan.status === "REJECTED" && loan.rejectionReason && (
                         <p className="text-xs text-red-600 mt-2">Reason: {loan.rejectionReason}</p>
@@ -634,7 +634,7 @@ export default function AdminLoansPanel({ initialLoans, totalAdmins }: Props) {
                             href={`/admin/loans/${loan.id}/transfer`}
                             className="px-3 py-1.5 rounded-lg bg-persal-blue text-center text-xs font-semibold text-white hover:bg-persal-dark"
                           >
-                            Transfer Loan
+                            Disburse Loan
                           </Link>
                         </div>
                       ) : (

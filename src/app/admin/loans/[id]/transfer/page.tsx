@@ -42,8 +42,8 @@ export default async function TransferLoanPage({ params }: PageProps) {
     <section className="max-w-4xl mx-auto px-4 md:px-6 py-8 md:py-10">
       <div className="flex items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-persal-blue">Loan Transfer</h1>
-          <p className="mt-2 text-sm text-gray-600">Complete the transfer after approving the application.</p>
+          <h1 className="text-3xl font-bold text-persal-blue">Loan Disbursement</h1>
+          <p className="mt-2 text-sm text-gray-600">Complete the disbursement after approving the application.</p>
         </div>
         <Link
           href={`/admin/loans/${id}`}
