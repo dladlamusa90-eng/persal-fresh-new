@@ -126,21 +126,32 @@ export default async function AdminPage() {
 
   return (
     <section className="max-w-full mx-auto py-8 md:py-10 px-4 md:px-6">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-3xl font-bold text-persal-blue">Admin Dashboard</h1>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/admin/users?role=USER"
-            className="px-4 py-2 rounded-lg bg-persal-blue text-white text-sm font-semibold hover:bg-persal-dark transition"
-          >
-            Paginated Users View
-          </Link>
-          <Link
-            href="/"
-            className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm font-semibold hover:bg-gray-50 transition"
-          >
-            Logout
-          </Link>
+      <div className="rounded-3xl overflow-hidden border border-slate-200 shadow-sm bg-gradient-to-r from-slate-900 via-persal-dark to-persal-blue">
+        <div className="px-6 md:px-8 py-7 md:py-9">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+            <div>
+              <p className="text-xs md:text-sm uppercase tracking-[0.18em] text-slate-200/90">Operations Center</p>
+              <h1 className="mt-2 text-3xl md:text-4xl font-bold text-white">Admin Dashboard</h1>
+              <p className="mt-2 text-sm md:text-base text-slate-100/90 max-w-2xl">
+                Review applications, make decisions confidently, and complete transfers from one place.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <Link
+                href="/admin/users?role=USER"
+                className="inline-flex items-center rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-persal-dark hover:bg-slate-100 transition"
+              >
+                Open Users Directory
+              </Link>
+              <Link
+                href="/"
+                className="inline-flex items-center rounded-xl border border-white/35 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white hover:bg-white/20 transition"
+              >
+                Exit Admin
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
 

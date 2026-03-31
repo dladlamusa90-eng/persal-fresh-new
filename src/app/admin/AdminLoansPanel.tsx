@@ -33,6 +33,7 @@ export default function AdminLoansPanel({ initialLoans, totalUsers, totalAdmins 
   const router = useRouter();
   const [loans, setLoans] = useState<AdminLoanRow[]>(initialLoans);
   const [loanFilter, setLoanFilter] = useState<LoanFilter>("ALL");
+  const [searchTerm, setSearchTerm] = useState("");
   const [profitRange, setProfitRange] = useState<ProfitRange>("30D");
   const [customFromDate, setCustomFromDate] = useState("");
   const [customToDate, setCustomToDate] = useState("");
@@ -96,49 +97,82 @@ export default function AdminLoansPanel({ initialLoans, totalUsers, totalAdmins 
         if (loan.status === "PENDING") acc.pending += 1;
         if (loan.status === "APPROVED") acc.approved += 1;
         if (loan.status === "REJECTED") acc.rejected += 1;
+        if (loan.status === "APPROVED" && !loan.disbursementSentAt) acc.awaitingTransfer += 1;
         return acc;
       },
-      { total: 0, pending: 0, approved: 0, rejected: 0 }
+      { total: 0, pending: 0, approved: 0, rejected: 0, awaitingTransfer: 0 }
     );
   }, [loans]);
 
   const filteredLoans = useMemo(() => {
-    if (loanFilter === "ALL") return loans;
-    return loans.filter((loan) => loan.status === loanFilter);
-  }, [loanFilter, loans]);
+    const base = loanFilter === "ALL" ? loans : loans.filter((loan) => loan.status === loanFilter);
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+    if (!normalizedSearch) return base;
+
+    return base.filter((loan) => {
+      return [
+        loan.applicantName,
+        loan.applicantEmail ?? "",
+        loan.persalNumber ?? "",
+        String(loan.amount),
+        loan.status,
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(normalizedSearch);
+    });
+  }, [loanFilter, loans, searchTerm]);
+
+  function formatDate(value: string) {
+    return new Date(value).toLocaleDateString("en-ZA", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  }
+
+  function statusPill(status: LoanStatus) {
+    if (status === "PENDING") return "bg-amber-50 text-amber-700 border border-amber-200";
+    if (status === "APPROVED") return "bg-green-50 text-green-700 border border-green-200";
+    if (status === "REJECTED") return "bg-red-50 text-red-700 border border-red-200";
+    return "bg-slate-100 text-slate-700 border border-slate-200";
+  }
 
   return (
     <>
-      <div className="mt-6 bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+      <div className="mt-6 bg-white border border-slate-200 rounded-2xl p-5 md:p-6 shadow-sm">
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between gap-3 flex-wrap">
-            <h2 className="text-base font-semibold text-gray-900">Profit Summary</h2>
+            <div>
+              <h2 className="text-base font-semibold text-slate-900">Profit Summary</h2>
+              <p className="text-xs text-slate-500 mt-1">Quick business performance across paid loans.</p>
+            </div>
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={() => setProfitRange("7D")}
-                className={`px-3 py-1.5 rounded-md border text-sm font-medium ${profitRange === "7D" ? "bg-teal-50 border-teal-300 text-teal-700" : "border-gray-300 text-gray-700 hover:bg-gray-50"}`}
+                className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition ${profitRange === "7D" ? "bg-teal-50 border-teal-300 text-teal-700" : "border-slate-300 text-slate-700 hover:bg-slate-50"}`}
               >
                 7 days
               </button>
               <button
                 type="button"
                 onClick={() => setProfitRange("30D")}
-                className={`px-3 py-1.5 rounded-md border text-sm font-medium ${profitRange === "30D" ? "bg-teal-50 border-teal-300 text-teal-700" : "border-gray-300 text-gray-700 hover:bg-gray-50"}`}
+                className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition ${profitRange === "30D" ? "bg-teal-50 border-teal-300 text-teal-700" : "border-slate-300 text-slate-700 hover:bg-slate-50"}`}
               >
                 30 days
               </button>
               <button
                 type="button"
                 onClick={() => setProfitRange("YEAR")}
-                className={`px-3 py-1.5 rounded-md border text-sm font-medium ${profitRange === "YEAR" ? "bg-teal-50 border-teal-300 text-teal-700" : "border-gray-300 text-gray-700 hover:bg-gray-50"}`}
+                className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition ${profitRange === "YEAR" ? "bg-teal-50 border-teal-300 text-teal-700" : "border-slate-300 text-slate-700 hover:bg-slate-50"}`}
               >
                 Yearly
               </button>
               <button
                 type="button"
                 onClick={() => setProfitRange("CUSTOM")}
-                className={`px-3 py-1.5 rounded-md border text-sm font-medium ${profitRange === "CUSTOM" ? "bg-teal-50 border-teal-300 text-teal-700" : "border-gray-300 text-gray-700 hover:bg-gray-50"}`}
+                className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition ${profitRange === "CUSTOM" ? "bg-teal-50 border-teal-300 text-teal-700" : "border-slate-300 text-slate-700 hover:bg-slate-50"}`}
               >
                 Custom
               </button>
@@ -170,15 +204,43 @@ export default function AdminLoansPanel({ initialLoans, totalUsers, totalAdmins 
 
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div>
-              <p className="text-sm text-gray-500">Overall Profit (selected range)</p>
+              <p className="text-sm text-slate-500">Overall Profit (selected range)</p>
               <p className="text-2xl font-bold text-green-700">R {currencyFormatter.format(Math.round(profitSummary.totalProfit))}</p>
             </div>
-            <p className="text-sm text-gray-600">Paid Loans Count: <span className="font-semibold">{profitSummary.loansCount}</span></p>
+            <p className="text-sm text-slate-600">Paid Loans Count: <span className="font-semibold">{profitSummary.loansCount}</span></p>
           </div>
 
           {profitSummary.missingCustomRange && (
             <p className="text-xs text-amber-700">Select both dates to calculate custom profit.</p>
           )}
+        </div>
+      </div>
+
+      <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 md:p-5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Needs Attention</p>
+          <p className="mt-1 text-2xl font-bold text-amber-800">{counts.pending}</p>
+          <p className="text-sm text-amber-700">Pending applications waiting for review decision.</p>
+          <button
+            type="button"
+            onClick={() => setLoanFilter("PENDING")}
+            className="mt-3 inline-flex items-center rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700"
+          >
+            Open Pending Queue
+          </button>
+        </div>
+
+        <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 md:p-5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">Transfer Queue</p>
+          <p className="mt-1 text-2xl font-bold text-blue-800">{counts.awaitingTransfer}</p>
+          <p className="text-sm text-blue-700">Approved applications still waiting for transfer.</p>
+          <button
+            type="button"
+            onClick={() => setLoanFilter("APPROVED")}
+            className="mt-3 inline-flex items-center rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
+          >
+            View Approved Applications
+          </button>
         </div>
       </div>
 
@@ -249,14 +311,32 @@ export default function AdminLoansPanel({ initialLoans, totalUsers, totalAdmins 
         </button>
       </div>
 
-      <div className="mt-8 bg-white border border-gray-200 rounded-xl shadow-sm overflow-x-auto">
+      <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-4 md:p-5 shadow-sm">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+          <div>
+            <h3 className="text-base font-semibold text-slate-900">Applications</h3>
+            <p className="text-xs text-slate-500 mt-1">Search by applicant, email, persal number, status, or amount.</p>
+          </div>
+          <div className="w-full md:w-80">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Search applications..."
+              className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-persal-blue"
+            />
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
         <table className="min-w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-200 text-left text-gray-600">
+            <tr className="border-b border-slate-200 text-left text-slate-600">
               <th className="px-4 py-3 font-semibold">Applicant</th>
               <th className="px-4 py-3 font-semibold">Persal Number</th>
               <th className="px-4 py-3 font-semibold">Amount</th>
               <th className="px-4 py-3 font-semibold">Term</th>
+              <th className="px-4 py-3 font-semibold">Submitted</th>
               <th className="px-4 py-3 font-semibold">Status</th>
               <th className="px-4 py-3 font-semibold">Actions</th>
             </tr>
@@ -264,7 +344,7 @@ export default function AdminLoansPanel({ initialLoans, totalUsers, totalAdmins 
           <tbody>
             {filteredLoans.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-gray-500">
+                <td colSpan={7} className="px-4 py-6 text-center text-slate-500">
                   No loans found.
                 </td>
               </tr>
@@ -273,16 +353,17 @@ export default function AdminLoansPanel({ initialLoans, totalUsers, totalAdmins 
                 const isPending = loan.status === "PENDING";
 
                 return (
-                  <tr key={loan.id} className="border-b border-gray-100 last:border-0 align-top">
-                    <td className="px-4 py-3 text-gray-900 font-medium">
+                  <tr key={loan.id} className="border-b border-slate-100 last:border-0 align-top hover:bg-slate-50/70">
+                    <td className="px-4 py-3 text-slate-900 font-medium">
                       <div>{loan.applicantName}</div>
-                      <div className="text-xs text-gray-500 mt-1">{loan.applicantEmail ?? "No email"}</div>
+                      <div className="text-xs text-slate-500 mt-1">{loan.applicantEmail ?? "No email"}</div>
                     </td>
-                    <td className="px-4 py-3 text-gray-700">{loan.persalNumber ?? "N/A"}</td>
-                    <td className="px-4 py-3 text-gray-700">R {currencyFormatter.format(loan.amount)}</td>
-                    <td className="px-4 py-3 text-gray-700">{loan.termDays} days</td>
+                    <td className="px-4 py-3 text-slate-700">{loan.persalNumber ?? "N/A"}</td>
+                    <td className="px-4 py-3 text-slate-700 font-semibold">R {currencyFormatter.format(loan.amount)}</td>
+                    <td className="px-4 py-3 text-slate-700">{loan.termDays} days</td>
+                    <td className="px-4 py-3 text-slate-600">{formatDate(loan.createdAt)}</td>
                     <td className="px-4 py-3">
-                      <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${statusPill(loan.status)}`}>
                         {loan.status}
                       </span>
                       {loan.status === "APPROVED" && !loan.disbursementSentAt && (
@@ -300,23 +381,23 @@ export default function AdminLoansPanel({ initialLoans, totalUsers, totalAdmins 
                         <div className="flex flex-col gap-2">
                           <Link
                             href={`/admin/loans/${loan.id}`}
-                            className="px-3 py-1.5 rounded-md border border-gray-300 text-center text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                            className="px-3 py-1.5 rounded-lg border border-slate-300 text-center text-xs font-semibold text-slate-700 hover:bg-slate-50"
                           >
                             View Application (Decide)
                           </Link>
-                          <p className="text-xs text-gray-500">Open application details to approve or reject.</p>
+                          <p className="text-xs text-slate-500">Open application details to approve or reject.</p>
                         </div>
                       ) : loan.status === "APPROVED" && !loan.disbursementSentAt ? (
                         <div className="flex flex-col gap-2">
                           <Link
                             href={`/admin/loans/${loan.id}`}
-                            className="px-3 py-1.5 rounded-md border border-gray-300 text-center text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                            className="px-3 py-1.5 rounded-lg border border-slate-300 text-center text-xs font-semibold text-slate-700 hover:bg-slate-50"
                           >
                             View Application
                           </Link>
                           <Link
                             href={`/admin/loans/${loan.id}/transfer`}
-                            className="px-3 py-1.5 rounded-md bg-persal-blue text-center text-xs font-semibold text-white hover:bg-persal-dark"
+                            className="px-3 py-1.5 rounded-lg bg-persal-blue text-center text-xs font-semibold text-white hover:bg-persal-dark"
                           >
                             Transfer Loan
                           </Link>
@@ -325,11 +406,11 @@ export default function AdminLoansPanel({ initialLoans, totalUsers, totalAdmins 
                         <div className="flex flex-col gap-2">
                           <Link
                             href={`/admin/loans/${loan.id}`}
-                            className="px-3 py-1.5 rounded-md border border-gray-300 text-center text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                            className="px-3 py-1.5 rounded-lg border border-slate-300 text-center text-xs font-semibold text-slate-700 hover:bg-slate-50"
                           >
                             View Application
                           </Link>
-                          <span className="text-xs text-gray-500 font-medium">Processed</span>
+                          <span className="text-xs text-slate-500 font-medium">Processed</span>
                         </div>
                       )}
                     </td>
@@ -339,6 +420,7 @@ export default function AdminLoansPanel({ initialLoans, totalUsers, totalAdmins 
             )}
           </tbody>
         </table>
+      </div>
       </div>
     </>
   );
