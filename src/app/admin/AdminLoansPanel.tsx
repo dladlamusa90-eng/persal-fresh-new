@@ -475,86 +475,6 @@ export default function AdminLoansPanel({ initialLoans, totalAdmins }: Props) {
         </div>
       </div>
 
-      <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 md:p-5 shadow-sm overflow-hidden">
-        <button
-          type="button"
-          onClick={() => setShowLoanPipeline((prev) => !prev)}
-          className="-mx-4 md:-mx-5 -mt-4 md:-mt-5 mb-4 w-[calc(100%+2rem)] md:w-[calc(100%+2.5rem)] px-4 md:px-5 py-3 bg-gradient-to-r from-slate-900 via-persal-dark to-persal-blue flex items-center justify-between text-left"
-        >
-          <p className="text-xs uppercase tracking-[0.14em] text-slate-100/90">Loan Pipeline</p>
-          <span className="text-xs font-semibold text-slate-100">{showLoanPipeline ? "Collapse" : "Expand"}</span>
-        </button>
-
-        {showLoanPipeline && (
-        <div className="grid grid-cols-1 xl:grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr] gap-3 items-stretch">
-          <button
-            type="button"
-            onClick={() => setLoanFilter("PENDING")}
-            className={`rounded-2xl border p-4 text-left transition ${pipelineCardClass(loanFilter === "PENDING", "amber")}`}
-          >
-            <p className="text-[11px] uppercase tracking-[0.14em] text-amber-700">Step 1</p>
-            <p className="mt-1 text-lg font-bold text-slate-900">Pending</p>
-            <p className="mt-1 text-3xl font-bold text-amber-600">{counts.pending}</p>
-            <p className="mt-2 text-xs text-slate-500">Applications waiting for admin review.</p>
-          </button>
-
-          <div className="hidden xl:flex items-center justify-center text-slate-300">
-            <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M5 12h14" />
-              <path d="m13 6 6 6-6 6" />
-            </svg>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setLoanFilter("APPROVED")}
-            className={`rounded-2xl border p-4 text-left transition ${pipelineCardClass(loanFilter === "APPROVED", "green")}`}
-          >
-            <p className="text-[11px] uppercase tracking-[0.14em] text-green-700">Step 2</p>
-            <p className="mt-1 text-lg font-bold text-slate-900">Approved</p>
-            <p className="mt-1 text-3xl font-bold text-green-600">{counts.awaitingTransfer}</p>
-            <p className="mt-2 text-xs text-slate-500">Accepted and waiting for disbursement.</p>
-          </button>
-
-          <div className="hidden xl:flex items-center justify-center text-slate-300">
-            <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M5 12h14" />
-              <path d="m13 6 6 6-6 6" />
-            </svg>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setLoanFilter("TRANSFERRED")}
-            className={`rounded-2xl border p-4 text-left transition ${pipelineCardClass(loanFilter === "TRANSFERRED", "blue")}`}
-          >
-            <p className="text-[11px] uppercase tracking-[0.14em] text-blue-700">Step 3</p>
-            <p className="mt-1 text-lg font-bold text-slate-900">Disbursed</p>
-            <p className="mt-1 text-3xl font-bold text-blue-600">{counts.transferred}</p>
-            <p className="mt-2 text-xs text-slate-500">Funds disbursed and record captured.</p>
-          </button>
-
-          <div className="hidden xl:flex items-center justify-center text-slate-300">
-            <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M5 12h14" />
-              <path d="m13 6 6 6-6 6" />
-            </svg>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setLoanFilter("REJECTED")}
-            className={`rounded-2xl border p-4 text-left transition ${pipelineCardClass(loanFilter === "REJECTED", "red")}`}
-          >
-            <p className="text-[11px] uppercase tracking-[0.14em] text-red-700">Outcome</p>
-            <p className="mt-1 text-lg font-bold text-slate-900">Rejected</p>
-            <p className="mt-1 text-3xl font-bold text-red-600">{counts.rejected}</p>
-            <p className="mt-2 text-xs text-slate-500">Applications declined during review.</p>
-          </button>
-        </div>
-        )}
-      </div>
-
       <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-4 md:p-5 shadow-sm overflow-hidden">
         <button
           type="button"
@@ -575,6 +495,79 @@ export default function AdminLoansPanel({ initialLoans, totalAdmins }: Props) {
 
         {showApplicationManagement && (
         <>
+        <div className="mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-3 md:p-4">
+          <button
+            type="button"
+            onClick={() => setShowLoanPipeline((prev) => !prev)}
+            className="mb-3 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 flex items-center justify-between text-left"
+          >
+            <p className="text-xs uppercase tracking-[0.14em] text-slate-700">Loan Pipeline</p>
+            <span className="text-xs font-semibold text-slate-700">{showLoanPipeline ? "Collapse" : "Expand"}</span>
+          </button>
+
+          {showLoanPipeline && (
+          <div className="grid grid-cols-1 xl:grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr] gap-3 items-stretch">
+            <button
+              type="button"
+              onClick={() => setLoanFilter("PENDING")}
+              className={`rounded-2xl border p-4 text-left transition ${pipelineCardClass(loanFilter === "PENDING", "amber")}`}
+            >
+              <p className="text-[11px] uppercase tracking-[0.14em] text-amber-700">Step 1</p>
+              <p className="mt-1 text-lg font-bold text-slate-900">Pending</p>
+              <p className="mt-1 text-3xl font-bold text-amber-600">{counts.pending}</p>
+              <p className="mt-2 text-xs text-slate-500">Applications waiting for admin review.</p>
+            </button>
+
+            <div className="hidden xl:flex items-center justify-center text-slate-300">
+              <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M5 12h14" />
+                <path d="m13 6 6 6-6 6" />
+              </svg>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setLoanFilter("APPROVED")}
+              className={`rounded-2xl border p-4 text-left transition ${pipelineCardClass(loanFilter === "APPROVED", "green")}`}
+            >
+              <p className="text-[11px] uppercase tracking-[0.14em] text-green-700">Step 2</p>
+              <p className="mt-1 text-lg font-bold text-slate-900">Approved</p>
+              <p className="mt-1 text-3xl font-bold text-green-600">{counts.awaitingTransfer}</p>
+              <p className="mt-2 text-xs text-slate-500">Accepted and waiting for disbursement.</p>
+            </button>
+
+            <div className="hidden xl:flex items-center justify-center text-slate-300">
+              <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M5 12h14" />
+                <path d="m13 6 6 6-6 6" />
+              </svg>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setLoanFilter("TRANSFERRED")}
+              className={`rounded-2xl border p-4 text-left transition ${pipelineCardClass(loanFilter === "TRANSFERRED", "blue")}`}
+            >
+              <p className="text-[11px] uppercase tracking-[0.14em] text-blue-700">Step 3</p>
+              <p className="mt-1 text-lg font-bold text-slate-900">Disbursed</p>
+              <p className="mt-1 text-3xl font-bold text-blue-600">{counts.transferred}</p>
+              <p className="mt-2 text-xs text-slate-500">Funds disbursed and record captured.</p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setLoanFilter("REJECTED")}
+              className={`rounded-2xl border p-4 text-left transition ${pipelineCardClass(loanFilter === "REJECTED", "red")}`}
+            >
+              <p className="text-[11px] uppercase tracking-[0.14em] text-red-700">Outcome</p>
+              <p className="mt-1 text-lg font-bold text-slate-900">Rejected</p>
+              <p className="mt-1 text-3xl font-bold text-red-600">{counts.rejected}</p>
+              <p className="mt-2 text-xs text-slate-500">Applications declined during review.</p>
+            </button>
+          </div>
+          )}
+        </div>
+
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
           <div>
             <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
