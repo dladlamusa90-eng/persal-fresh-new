@@ -295,13 +295,12 @@ export default function AdminLoansPanel({ initialLoans, totalAdmins }: Props) {
             </p>
             <p className="mt-1 text-2xl font-bold text-amber-800">{counts.pending}</p>
             <p className="text-sm text-amber-700">Pending applications waiting for review decision.</p>
-            <button
-              type="button"
-              onClick={() => setLoanFilter("PENDING")}
+            <Link
+              href="/admin/pending-applications"
               className="mt-3 inline-flex items-center rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700"
             >
               Open Pending Queue
-            </button>
+            </Link>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-green-50 via-white to-green-50 p-4 md:p-5 shadow-sm">

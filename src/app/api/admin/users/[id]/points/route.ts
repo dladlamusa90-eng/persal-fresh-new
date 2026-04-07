@@ -35,13 +35,50 @@ export async function PATCH(req: Request, context: RouteContext) {
       );
     }
 
-    const updatedUser = await prisma.user.update({
+    const currentUser = await prisma.user.findUnique({
       where: { id },
-      data: { points },
-      select: {
-        id: true,
-        points: true,
-      },
+      select: { id: true, points: true },
+    });
+
+    if (!currentUser) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    const pointsDelta = points - currentUser.points;
+
+    const updatedUser = await prisma.$transaction(async (tx) => {
+      const userRecord = await tx.user.update({
+        where: { id },
+        data: { points },
+        select: {
+          id: true,
+          points: true,
+        },
+      });
+
+      if (pointsDelta !== 0) {
+        try {
+          await tx.userPointsEvent.create({
+            data: {
+              userId: id,
+              type: "ADMIN_ADJUSTMENT",
+              pointsDelta,
+              balanceAfter: userRecord.points,
+              description: "Adjusted by admin",
+              actorUserId: session.user.id ?? null,
+            },
+          });
+        } catch (eventError) {
+          console.warn("[warn] admin-points-event-log-failed", {
+            targetUserId: id,
+            actorUserId: session.user.id,
+            at: new Date().toISOString(),
+            error: eventError instanceof Error ? eventError.message : "unknown",
+          });
+        }
+      }
+
+      return userRecord;
     });
 
     console.info("[audit] admin-user-points-update", {

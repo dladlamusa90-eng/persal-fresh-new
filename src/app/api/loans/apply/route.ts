@@ -228,54 +228,66 @@ export async function POST(req: Request) {
       });
     }
 
-    const loan = await prisma.loan.create({
-      data: {
-        userId: user.id,
-        amount,
-        termDays,
-        applicationData: {
-          ...(((applicationDraft?.data as Record<string, unknown> | null) ?? {})),
-          requestedAmount: amount,
-          requestedTermDays: termDays,
-          requestedGrossSalary: grossSalary,
-          requestedDisposableIncome: disposableIncome,
-          address: (((applicationDraft?.data as Record<string, unknown> | null) ?? {}).address as string | undefined) ?? user.address ?? null,
-          phone: resolvedPhone,
-          idNumber: resolvedIdNumber,
-          persalNumber: resolvedPersalNumber,
-          bankName: resolvedBankName,
-          accountNumber: resolvedAccountNumber,
-          accountType: resolvedAccountType,
-          branchCode: resolvedBranchCode,
-        } as Prisma.InputJsonValue,
-        applicationDocuments: (((applicationDraft?.documents as Record<string, unknown> | null) ?? {}) as Prisma.InputJsonValue),
-        grossSalary,
-        disposableIncome,
-        applicantFullName: user.fullName,
-        applicantEmail: user.email,
-        applicantPhone: resolvedPhone,
-        applicantIdNumber: resolvedIdNumber,
-        applicantPersalNumber: resolvedPersalNumber,
-        applicantBankName: resolvedBankName,
-        applicantAccountNumber: resolvedAccountNumber,
-        applicantAccountType: resolvedAccountType,
-        applicantBranchCode: resolvedBranchCode,
-        status: "PENDING",
-        debitMandateAccepted,
-        debitMandateAcceptedAt: debitMandateAccepted ? now : null,
-        debitMandateReference: mandateReference,
-      },
-      select: {
-        id: true,
-        amount: true,
-        termDays: true,
-        status: true,
-        createdAt: true,
-        grossSalary: true,
-        disposableIncome: true,
-        debitMandateReference: true,
-      },
-    });
+    let loan;
+    try {
+      loan = await prisma.loan.create({
+        data: {
+          userId: user.id,
+          amount,
+          termDays,
+          applicationData: {
+            ...(((applicationDraft?.data as Record<string, unknown> | null) ?? {})),
+            requestedAmount: amount,
+            requestedTermDays: termDays,
+            requestedGrossSalary: grossSalary,
+            requestedDisposableIncome: disposableIncome,
+            address: (((applicationDraft?.data as Record<string, unknown> | null) ?? {}).address as string | undefined) ?? user.address ?? null,
+            phone: resolvedPhone,
+            idNumber: resolvedIdNumber,
+            persalNumber: resolvedPersalNumber,
+            bankName: resolvedBankName,
+            accountNumber: resolvedAccountNumber,
+            accountType: resolvedAccountType,
+            branchCode: resolvedBranchCode,
+          } as Prisma.InputJsonValue,
+          applicationDocuments: (((applicationDraft?.documents as Record<string, unknown> | null) ?? {}) as Prisma.InputJsonValue),
+          grossSalary,
+          disposableIncome,
+          applicantFullName: user.fullName,
+          applicantEmail: user.email,
+          applicantPhone: resolvedPhone,
+          applicantIdNumber: resolvedIdNumber,
+          applicantPersalNumber: resolvedPersalNumber,
+          applicantBankName: resolvedBankName,
+          applicantAccountNumber: resolvedAccountNumber,
+          applicantAccountType: resolvedAccountType,
+          applicantBranchCode: resolvedBranchCode,
+          status: "PENDING",
+          debitMandateAccepted,
+          debitMandateAcceptedAt: debitMandateAccepted ? now : null,
+          debitMandateReference: mandateReference,
+        },
+        select: {
+          id: true,
+          amount: true,
+          termDays: true,
+          status: true,
+          createdAt: true,
+          grossSalary: true,
+          disposableIncome: true,
+          debitMandateReference: true,
+        },
+      });
+    } catch (error) {
+      if (error instanceof Error && error.message.includes("loan_one_open_per_user_idx")) {
+        return NextResponse.json(
+          { error: "You already have an active or pending loan" },
+          { status: 409 }
+        );
+      }
+
+      throw error;
+    }
 
     console.info("[audit] debit-mandate-captured", {
       userId: user.id,

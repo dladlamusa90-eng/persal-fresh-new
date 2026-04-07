@@ -8,6 +8,7 @@ export default function DashboardHomePage() {
   const maxLoan = 5000;
   const [desiredLoan, setDesiredLoan] = useState(1500);
   const [selectedDays, setSelectedDays] = useState(60);
+  const [hasActiveLoan, setHasActiveLoan] = useState(false);
   const [error, setError] = useState("");
   const [showFeeBreakdown, setShowFeeBreakdown] = useState(false);
   const [activeMyLoanSection, setActiveMyLoanSection] = useState<"summary" | "documents">("summary");
@@ -15,12 +16,18 @@ export default function DashboardHomePage() {
   const repayDateInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    fetch("/api/users/me")
-      .then((r) => r.json())
-      .then((data) => {
-        if (data?.user?.fullName) {
-          setFirstName(data.user.fullName.trim().split(" ")[0]);
+    Promise.all([
+      fetch("/api/users/me").then((r) => (r.ok ? r.json() : null)),
+      fetch("/api/loans/me").then((r) => (r.ok ? r.json() : null)),
+    ])
+      .then(([userData, loanData]) => {
+        if (userData?.user?.fullName) {
+          setFirstName(userData.user.fullName.trim().split(" ")[0]);
         }
+
+        const status = loanData?.latestLoan?.status;
+        // Pay Now is only for users with an active payable loan.
+        setHasActiveLoan(status === "APPROVED");
       })
       .catch(() => {});
   }, []);
@@ -58,6 +65,7 @@ export default function DashboardHomePage() {
   const dayPercent = ((termDays - 6) / (90 - 6)) * 100;
   const amountKnobPercent = Math.min(97, Math.max(3, amountPercent));
   const dayKnobPercent = Math.min(97, Math.max(3, dayPercent));
+  const canApply = !hasActiveLoan && !error && desiredLoan >= 100 && desiredLoan <= maxLoan;
 
   const repayDate = new Date();
   repayDate.setDate(repayDate.getDate() + termDays);
@@ -389,8 +397,9 @@ export default function DashboardHomePage() {
                   </div>
                   <div className="text-center md:text-right">
                     <Link
-                        href={!error && desiredLoan >= 100 && desiredLoan <= maxLoan ? `/dashboard/lending/verify-number?loan=${desiredLoan}&term=${term}&termDays=${termDays}` : "#"}
-                      className={`inline-block px-4 py-2 rounded-lg font-semibold text-base transition text-center ${!error && desiredLoan >= 100 && desiredLoan <= maxLoan ? "bg-orange-500 text-white hover:bg-orange-600 cursor-pointer" : "bg-gray-300 text-gray-400 cursor-not-allowed pointer-events-none"}`}
+                      href={canApply ? `/dashboard/lending/verify-number?loan=${desiredLoan}&term=${term}&termDays=${termDays}` : "#"}
+                      className={`inline-block px-4 py-2 rounded-lg font-semibold text-base transition text-center ${canApply ? "bg-orange-500 text-white hover:bg-orange-600 cursor-pointer" : "bg-gray-300 text-gray-400 cursor-not-allowed pointer-events-none"}`}
+                      title={hasActiveLoan ? "You have an active loan. Settle it before applying again." : undefined}
                     >
                       Apply Now
                     </Link>
@@ -406,6 +415,18 @@ export default function DashboardHomePage() {
               Our <Link href="/how-it-works" className="text-persal-blue hover:underline">short term loans</Link> help people manage their cash flow. If you need a quick loan to tide you over for a short while, we&apos;re here for you. Our personal loan process is simple and easy to understand. To find out more, visit <Link href="/how-to-apply" className="text-persal-blue hover:underline">how it works.</Link>
             </p>
           </div>
+
+          {hasActiveLoan && (
+            <div className="mt-4 text-center">
+              <Link
+                href="/dashboard/lending/pay-now"
+                className="inline-flex items-center justify-center rounded-lg bg-persal-blue px-4 py-2 text-base font-semibold text-white transition hover:bg-persal-dark"
+                title="Open mock payment screen"
+              >
+                Pay Now
+              </Link>
+            </div>
+          )}
           </>
           )}
 

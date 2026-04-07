@@ -68,28 +68,57 @@ export async function POST(
     const fullRepayable = calculateLoanCharges(loan.amount, loan.termDays).totalRepayable;
     const amountPaid = earlyPayment ? firstMonthRepayable : fullRepayable;
 
-    const updatedLoan = await prisma.loan.update({
-      where: { id: loan.id },
-      data: { status: "PAID" },
-      select: {
-        id: true,
-        status: true,
-        amount: true,
-        termDays: true,
-        createdAt: true,
-      },
-    });
+    const { updatedLoan, updatedUser } = await prisma.$transaction(async (tx) => {
+      const paidLoan = await tx.loan.update({
+        where: { id: loan.id },
+        data: { status: "PAID" },
+        select: {
+          id: true,
+          status: true,
+          amount: true,
+          termDays: true,
+          createdAt: true,
+        },
+      });
 
-    const updatedUser = paidOnTime
-      ? await prisma.user.update({
-          where: { id: user.id },
-          data: { points: { increment: 100 } },
-          select: { points: true },
-        })
-      : await prisma.user.findUnique({
-          where: { id: user.id },
-          select: { points: true },
-        });
+      const pointsUser = paidOnTime
+        ? await tx.user.update({
+            where: { id: user.id },
+            data: { points: { increment: 100 } },
+            select: { points: true },
+          })
+        : await tx.user.findUnique({
+            where: { id: user.id },
+            select: { points: true },
+          });
+
+      if (paidOnTime && pointsUser) {
+        try {
+          await tx.userPointsEvent.create({
+            data: {
+              userId: user.id,
+              type: "ON_TIME_REPAYMENT",
+              pointsDelta: 100,
+              balanceAfter: pointsUser.points,
+              description: "On-time loan repayment reward",
+              loanId: loan.id,
+            },
+          });
+        } catch (eventError) {
+          console.warn("[warn] points-event-log-failed", {
+            userId: user.id,
+            loanId: loan.id,
+            at: new Date().toISOString(),
+            error: eventError instanceof Error ? eventError.message : "unknown",
+          });
+        }
+      }
+
+      return {
+        updatedLoan: paidLoan,
+        updatedUser: pointsUser,
+      };
+    });
 
     console.info("[audit] user-loan-payment", {
       userId: user.id,
