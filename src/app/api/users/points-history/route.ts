@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/nextAuth";
 import prisma from "@/lib/prisma";
+import { calculatePointsForRepayment } from "@/lib/loanPolicy";
 
 export async function GET() {
   try {
@@ -61,7 +62,7 @@ export async function GET() {
           where: { userId: user.id, status: "PAID" },
           orderBy: { createdAt: "desc" },
           take: 12,
-          select: { id: true, createdAt: true },
+          select: { id: true, createdAt: true, amount: true },
         }),
       ]);
 
@@ -70,15 +71,16 @@ export async function GET() {
         let runningBalance = currentPoints;
 
         events = paidLoans.map((loan) => {
+          const inferredPoints = calculatePointsForRepayment(loan.amount);
           const event = {
             id: `legacy-${loan.id}`,
             type: "ON_TIME_REPAYMENT" as const,
-            pointsDelta: 100,
+            pointsDelta: inferredPoints,
             balanceAfter: runningBalance,
             description: "On-time repayment reward (inferred)",
             createdAt: loan.createdAt,
           };
-          runningBalance = Math.max(0, runningBalance - 100);
+          runningBalance = Math.max(0, runningBalance - inferredPoints);
           return event;
         });
       }

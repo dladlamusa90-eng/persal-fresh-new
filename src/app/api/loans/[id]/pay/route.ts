@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/nextAuth";
 import prisma from "@/lib/prisma";
-import { calculateLoanCharges, getTermEndDate } from "@/lib/loanPolicy";
+import { calculateLoanCharges, calculatePointsForRepayment, getTermEndDate } from "@/lib/loanPolicy";
 
 export async function POST(
   _req: Request,
@@ -63,6 +63,7 @@ export async function POST(
 
     const earlyPayment = now < firstMonthDate;
     const paidOnTime = now <= fullDueDate;
+    const pointsAwarded = paidOnTime ? calculatePointsForRepayment(loan.amount) : 0;
 
     const firstMonthRepayable = calculateLoanCharges(loan.amount, 30).totalRepayable;
     const fullRepayable = calculateLoanCharges(loan.amount, loan.termDays).totalRepayable;
@@ -84,7 +85,7 @@ export async function POST(
       const pointsUser = paidOnTime
         ? await tx.user.update({
             where: { id: user.id },
-            data: { points: { increment: 100 } },
+            data: { points: { increment: pointsAwarded } },
             select: { points: true },
           })
         : await tx.user.findUnique({
@@ -98,7 +99,7 @@ export async function POST(
             data: {
               userId: user.id,
               type: "ON_TIME_REPAYMENT",
-              pointsDelta: 100,
+              pointsDelta: pointsAwarded,
               balanceAfter: pointsUser.points,
               description: "On-time loan repayment reward",
               loanId: loan.id,
@@ -125,7 +126,7 @@ export async function POST(
       loanId: loan.id,
       earlyPayment,
       paidOnTime,
-      pointsAwarded: paidOnTime ? 100 : 0,
+      pointsAwarded,
       amountPaid,
       at: now.toISOString(),
     });
@@ -141,7 +142,7 @@ export async function POST(
           fullDueDate: fullDueDate.toISOString(),
           firstMonthDate: firstMonthDate.toISOString(),
         },
-        pointsAwarded: paidOnTime ? 100 : 0,
+        pointsAwarded,
         userPoints: updatedUser?.points ?? 0,
       },
       { status: 200 }

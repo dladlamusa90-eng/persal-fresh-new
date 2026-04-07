@@ -61,3 +61,9 @@ export function getTermEndDate(startDate: Date, termDays: number) {
   result.setDate(result.getDate() + termDays);
   return result;
 }
+
+export function calculatePointsForRepayment(amount: number) {
+  if (amount >= 1000) return 300;
+  if (amount >= 500) return 200;
+  return 100;
+}
