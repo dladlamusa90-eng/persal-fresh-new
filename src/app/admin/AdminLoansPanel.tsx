@@ -138,9 +138,11 @@ export default function AdminLoansPanel({ initialLoans, totalAdmins }: Props) {
       (sum, loan) => sum + calculateLoanProfit(loan.amount, loan.termDays),
       0
     );
-    const realizedProfit = scopedTransferredLoans
-      .filter((loan) => loan.status === "PAID")
-      .reduce((sum, loan) => sum + calculateLoanProfit(loan.amount, loan.termDays), 0);
+    const paidTransferredLoans = scopedTransferredLoans.filter((loan) => loan.status === "PAID");
+    const realizedProfit = paidTransferredLoans.reduce(
+      (sum, loan) => sum + calculateLoanProfit(loan.amount, loan.termDays),
+      0
+    );
 
     const paidClientKeys = new Set(
       scopedTransferredLoans
@@ -155,6 +157,7 @@ export default function AdminLoansPanel({ initialLoans, totalAdmins }: Props) {
       totalAmountGiven,
       expectedProfit,
       realizedProfit,
+      paidLoanCount: paidTransferredLoans.length,
       paidClientsCount: paidClientKeys.size,
       missingCustomRange: profitRange === "CUSTOM" && !hasCustomRange,
     };
@@ -446,6 +449,11 @@ export default function AdminLoansPanel({ initialLoans, totalAdmins }: Props) {
                       tone="slate"
                     />
                     <MetricCard
+                      label="Number of Loan Payments"
+                      value={String(transferredSummary.paidLoanCount)}
+                      tone="slate"
+                    />
+                    <MetricCard
                       label="Amount Disbursed"
                       value={`R ${currencyFormatter.format(Math.round(transferredSummary.totalAmountGiven))}`}
                       tone="slate"
@@ -455,13 +463,11 @@ export default function AdminLoansPanel({ initialLoans, totalAdmins }: Props) {
                       value={`R ${currencyFormatter.format(Math.round(transferredSummary.expectedProfit))}`}
                       tone="black"
                     />
-                    <div className="md:col-span-2">
-                      <MetricCard
-                        label="Profit Already Made"
-                        value={`R ${currencyFormatter.format(Math.round(transferredSummary.realizedProfit))}`}
-                        tone="profit"
-                      />
-                    </div>
+                    <MetricCard
+                      label="Profit Already Made"
+                      value={`R ${currencyFormatter.format(Math.round(transferredSummary.realizedProfit))}`}
+                      tone="profit"
+                    />
                   </div>
                 )}
               </div>
