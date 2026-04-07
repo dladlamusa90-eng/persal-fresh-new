@@ -52,6 +52,7 @@ export async function POST(req: NextRequest) {
           id: true,
           phone: true,
           isBurned: true,
+          isDeleted: true,
         },
       });
 
@@ -61,6 +62,10 @@ export async function POST(req: NextRequest) {
 
       if (user.isBurned) {
         return NextResponse.json({ error: "This account is blocked." }, { status: 403 });
+      }
+
+      if (user.isDeleted) {
+        return NextResponse.json({ error: "This account was deleted. Please register again." }, { status: 403 });
       }
 
       if (!user.phone) {
@@ -122,6 +127,7 @@ export async function POST(req: NextRequest) {
           email: true,
           role: true,
           isBurned: true,
+          isDeleted: true,
         },
       });
 
@@ -131,6 +137,10 @@ export async function POST(req: NextRequest) {
 
       if (user.isBurned) {
         return NextResponse.json({ error: "This account is blocked." }, { status: 403 });
+      }
+
+      if (user.isDeleted) {
+        return NextResponse.json({ error: "This account was deleted. Please register again." }, { status: 403 });
       }
 
       const otpRecord = await prisma.loginOtp.findFirst({
@@ -202,7 +212,7 @@ export async function POST(req: NextRequest) {
       where: usingId
         ? { idNumber: normalizedId }
         : { email: { equals: normalizedEmail, mode: "insensitive" } },
-      select: { id: true, email: true, password: true, isBurned: true },
+      select: { id: true, email: true, password: true, isBurned: true, isDeleted: true },
     });
 
     if (!user) {
@@ -212,6 +222,10 @@ export async function POST(req: NextRequest) {
 
     if (user.isBurned) {
       return NextResponse.json({ error: "This account is blocked" }, { status: 403 });
+    }
+
+    if (user.isDeleted) {
+      return NextResponse.json({ error: "This account was deleted. Please register again." }, { status: 403 });
     }
 
     const ok = await verifyPassword(password, user.password);

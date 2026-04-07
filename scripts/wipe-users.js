@@ -1,10 +1,6 @@
 const { Client } = require("pg");
-const bcrypt = require("bcrypt");
-const { randomUUID } = require("crypto");
 
-const ADMIN_EMAIL = "admin@persal.co.za";
-const ADMIN_PASSWORD = "Admin@12345";
-const ADMIN_NAME = "Persal Admin";
+const ADMIN_ROLE = "ADMIN";
 
 async function main() {
   const connectionString = process.env.DATABASE_URL;
@@ -14,21 +10,39 @@ async function main() {
   await client.connect();
 
   try {
-    // Wipe all users (cascades to loans, notifications, etc.)
-    const del = await client.query('DELETE FROM "User"');
-    console.log(`Deleted ${del.rowCount} user(s).`);
-
-    // Recreate admin
-    const hashed = await bcrypt.hash(ADMIN_PASSWORD, 12);
-    const id = randomUUID();
+    await client.query("BEGIN");
 
     await client.query(
-      `INSERT INTO "User" ("id","fullName","email","password","role","isBurned","isDeleted","createdAt")
-       VALUES ($1,$2,$3,$4,'ADMIN',false,false,NOW())`,
-      [id, ADMIN_NAME, ADMIN_EMAIL, hashed]
+      'DELETE FROM "Loan" WHERE "userId" IN (SELECT "id" FROM "User" WHERE "role" <> $1)',
+      [ADMIN_ROLE]
     );
+    await client.query(
+      'DELETE FROM "LoanApplicationDraft" WHERE "userId" IN (SELECT "id" FROM "User" WHERE "role" <> $1)',
+      [ADMIN_ROLE]
+    );
+    await client.query(
+      'DELETE FROM "AdminNotification" WHERE "userId" IN (SELECT "id" FROM "User" WHERE "role" <> $1)',
+      [ADMIN_ROLE]
+    );
+    await client.query(
+      'DELETE FROM "UserPointsEvent" WHERE "userId" IN (SELECT "id" FROM "User" WHERE "role" <> $1)',
+      [ADMIN_ROLE]
+    );
+    await client.query(
+      'DELETE FROM "LoginOtp" WHERE "userId" IN (SELECT "id" FROM "User" WHERE "role" <> $1)',
+      [ADMIN_ROLE]
+    );
+    await client.query(
+      'DELETE FROM "PasswordResetOtp" WHERE "userId" IN (SELECT "id" FROM "User" WHERE "role" <> $1)',
+      [ADMIN_ROLE]
+    );
+    const del = await client.query('DELETE FROM "User" WHERE "role" <> $1', [ADMIN_ROLE]);
 
-    console.log(`Admin recreated: ${ADMIN_EMAIL}`);
+    await client.query("COMMIT");
+    console.log(`Deleted ${del.rowCount} non-admin user(s).`);
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
   } finally {
     await client.end();
   }

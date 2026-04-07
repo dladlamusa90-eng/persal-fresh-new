@@ -25,6 +25,12 @@ type Props = {
   users: AdminUserRow[];
 };
 
+type DeleteDialogState = {
+  userId: string;
+  role: string;
+  name: string;
+} | null;
+
 function formatJoinedDate(value: string) {
   return value.slice(0, 10);
 }
@@ -34,8 +40,9 @@ export default function AdminUsersPanel({ users }: Props) {
   const [showUserOversight, setShowUserOversight] = useState(false);
   const [query, setQuery] = useState("");
   const [accessFilter, setAccessFilter] = useState<"ALL" | "ACTIVE" | "BANNED">("ALL");
-  const [loadingById, setLoadingById] = useState<Record<string, "burn" | "restore" | "delete" | null>>({});
+  const [loadingById, setLoadingById] = useState<Record<string, "burn" | "restore" | "delete" | "clearRecords" | null>>({});
   const [errorById, setErrorById] = useState<Record<string, string>>({});
+  const [deleteDialog, setDeleteDialog] = useState<DeleteDialogState>(null);
   const currencyFormatter = useMemo(() => new Intl.NumberFormat("en-US"), []);
 
   const stats = useMemo(() => {
@@ -116,18 +123,20 @@ export default function AdminUsersPanel({ users }: Props) {
     }
   }
 
-  async function handleDeleteUser(userId: string, role: string, name: string) {
+  function handleDeleteUser(userId: string, role: string, name: string) {
     if (role === "ADMIN") {
       setErrorById((prev) => ({ ...prev, [userId]: "Admin accounts cannot be deleted." }));
       return;
     }
 
-    const confirmed = window.confirm(`Delete user ${name}?`);
-    if (!confirmed) return;
+    setDeleteDialog({ userId, role, name });
+  }
 
-    const preserveProfitRecords = window.confirm(
-      "Keep this user's loan records in Profit Summary? Click OK to keep records, or Cancel to remove all records."
-    );
+  async function confirmDeleteUser(preserveProfitRecords: boolean) {
+    if (!deleteDialog) return;
+
+    const { userId } = deleteDialog;
+    setDeleteDialog(null);
 
     setLoadingById((prev) => ({ ...prev, [userId]: "delete" }));
     setErrorById((prev) => ({ ...prev, [userId]: "" }));
@@ -146,6 +155,54 @@ export default function AdminUsersPanel({ users }: Props) {
       }
 
       setRows((prev) => prev.filter((user) => user.id !== userId));
+    } catch {
+      setErrorById((prev) => ({ ...prev, [userId]: "Network error. Please try again." }));
+    } finally {
+      setLoadingById((prev) => ({ ...prev, [userId]: null }));
+    }
+  }
+
+  async function handleClearUserRecords(userId: string, role: string, name: string) {
+    if (role === "ADMIN") {
+      setErrorById((prev) => ({ ...prev, [userId]: "Admin accounts cannot be cleared." }));
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Are you sure you want to clear ${name}'s records only? This will remove loans, notifications, points history, and application drafts but keep the user account.`
+    );
+
+    if (!confirmed) return;
+
+    setLoadingById((prev) => ({ ...prev, [userId]: "clearRecords" }));
+    setErrorById((prev) => ({ ...prev, [userId]: "" }));
+
+    try {
+      const response = await fetch(`/api/admin/users/${userId}/clear`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clearRecordsOnly: true }),
+      });
+
+      const body = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        setErrorById((prev) => ({ ...prev, [userId]: body.error ?? "Failed to clear user records." }));
+        return;
+      }
+
+      setRows((prev) =>
+        prev.map((user) =>
+          user.id === userId
+            ? {
+                ...user,
+                points: 0,
+                paidLoanCount: 0,
+                profitTotal: 0,
+                profit30Days: 0,
+              }
+            : user
+        )
+      );
     } catch {
       setErrorById((prev) => ({ ...prev, [userId]: "Network error. Please try again." }));
     } finally {
@@ -287,19 +344,29 @@ export default function AdminUsersPanel({ users }: Props) {
                 <td className="px-4 py-3 text-slate-700">{formatJoinedDate(user.joinedAt)}</td>
                 <td className="px-4 py-3">
                   <div className="flex flex-col gap-2">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Link
                         href={`/admin/users/${user.id}`}
-                        className="inline-flex items-center px-3 py-1.5 rounded-lg bg-persal-blue text-white text-xs font-semibold hover:bg-persal-dark"
+                        className="inline-flex items-center rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-200"
                       >
                         View
                       </Link>
                       <button
                         type="button"
+                        onClick={() => handleClearUserRecords(user.id, user.role, user.fullName)}
+                        disabled={Boolean(loadingById[user.id]) || user.role === "ADMIN"}
+                        className="inline-flex items-center rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 shadow-sm transition hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-200 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {loadingById[user.id] === "clearRecords" ? "Clearing..." : "Clear Records"}
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => handleToggleAccess(user.id, user.role, user.isBurned)}
                         disabled={Boolean(loadingById[user.id]) || user.role === "ADMIN"}
-                        className={`inline-flex items-center px-3 py-1.5 rounded-md text-white text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed ${
-                          user.isBurned ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"
+                        className={`inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50 ${
+                          user.isBurned
+                            ? "bg-emerald-600 hover:bg-emerald-700 focus:ring-emerald-200"
+                            : "bg-orange-500 hover:bg-orange-600 focus:ring-orange-200"
                         }`}
                       >
                         {loadingById[user.id] === "burn" || loadingById[user.id] === "restore"
@@ -312,7 +379,7 @@ export default function AdminUsersPanel({ users }: Props) {
                         type="button"
                         onClick={() => handleDeleteUser(user.id, user.role, user.fullName)}
                         disabled={Boolean(loadingById[user.id]) || user.role === "ADMIN"}
-                        className="inline-flex items-center px-3 py-1.5 rounded-md bg-gray-800 hover:bg-black text-white text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="inline-flex items-center rounded-lg border border-rose-300 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 shadow-sm transition hover:bg-rose-100 focus:outline-none focus:ring-2 focus:ring-rose-200 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {loadingById[user.id] === "delete" ? "Deleting..." : "Delete"}
                       </button>
@@ -329,6 +396,41 @@ export default function AdminUsersPanel({ users }: Props) {
       </table>
       </div>
       </>
+      )}
+
+      {deleteDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4" role="dialog" aria-modal="true" aria-label="Delete user options">
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl">
+            <h3 className="text-base font-semibold text-slate-900">Delete {deleteDialog.name}?</h3>
+            <p className="mt-2 text-sm text-slate-600">
+              Choose how to handle this user's historical data after deleting the account.
+            </p>
+
+            <div className="mt-4 grid gap-2">
+              <button
+                type="button"
+                onClick={() => void confirmDeleteUser(true)}
+                className="inline-flex items-center justify-center rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800 hover:bg-amber-100"
+              >
+                Keep Records
+              </button>
+              <button
+                type="button"
+                onClick={() => void confirmDeleteUser(false)}
+                className="inline-flex items-center justify-center rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100"
+              >
+                Erase Records (Full Delete)
+              </button>
+              <button
+                type="button"
+                onClick={() => setDeleteDialog(null)}
+                className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/nextAuth";
+import { getAuthCookieName, verifyAuthToken } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import {
   getBankAccountConstraintLabel,
@@ -21,18 +22,44 @@ function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-export async function GET() {
-  try {
-    const session = await getServerSession(authOptions);
+async function resolveAuthenticatedIdentity(req: NextRequest) {
+  const session = await getServerSession(authOptions);
 
-    if (!session?.user?.id && !session?.user?.email) {
+  if (session?.user?.id || session?.user?.email) {
+    return {
+      id: session.user.id ?? null,
+      email: session.user.email ? String(session.user.email) : null,
+    };
+  }
+
+  const authToken = req.cookies.get(getAuthCookieName())?.value;
+  if (!authToken) {
+    return null;
+  }
+
+  const payload = verifyAuthToken(authToken);
+  if (!payload?.email) {
+    return null;
+  }
+
+  return {
+    id: null,
+    email: payload.email,
+  };
+}
+
+export async function GET(req: NextRequest) {
+  try {
+    const identity = await resolveAuthenticatedIdentity(req);
+
+    if (!identity?.id && !identity?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const user = await prisma.user.findUnique({
-      where: session.user.id
-        ? { id: session.user.id }
-        : { email: String(session.user.email ?? "") },
+      where: identity.id
+        ? { id: identity.id }
+        : { email: String(identity.email ?? "") },
       select: {
         id: true,
         fullName: true,
@@ -68,11 +95,11 @@ export async function GET() {
   }
 }
 
-export async function PATCH(req: Request) {
+export async function PATCH(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const identity = await resolveAuthenticatedIdentity(req);
 
-    if (!session?.user?.id && !session?.user?.email) {
+    if (!identity?.id && !identity?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -93,7 +120,7 @@ export async function PATCH(req: Request) {
     // Address-only partial update
     if (Object.keys(body).length === 1 && "address" in body) {
       const currentUser = await prisma.user.findUnique({
-        where: session.user.id ? { id: session.user.id } : { email: String(session.user.email ?? "") },
+        where: identity.id ? { id: identity.id } : { email: String(identity.email ?? "") },
         select: { id: true },
       });
       if (!currentUser) return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -161,9 +188,9 @@ export async function PATCH(req: Request) {
     }
 
     const currentUser = await prisma.user.findUnique({
-      where: session.user.id
-        ? { id: session.user.id }
-        : { email: String(session.user.email ?? "") },
+      where: identity.id
+        ? { id: identity.id }
+        : { email: String(identity.email ?? "") },
       select: { id: true, email: true, isBurned: true, isDeleted: true },
     });
 

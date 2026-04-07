@@ -34,6 +34,8 @@ export async function POST(req: NextRequest) {
 
     const data = await req.json();
     const { fullName, email, persalNumber, password, phone, idNumber, bankName, accountNumber, address } = data;
+    const normalizedFullName = String(fullName ?? "").trim().replace(/\s+/g, " ");
+    const normalizedAddress = String(address ?? "").trim();
 
     const normalizedEmail = String(email ?? "").trim().toLowerCase();
     const normalizedPersal = normalizePersalNumber(String(persalNumber ?? "").trim());
@@ -42,7 +44,7 @@ export async function POST(req: NextRequest) {
     const normalizedAccountNumber = normalizeAccountNumber(String(accountNumber ?? "").trim());
     const normalizedBankName = String(bankName ?? "").trim();
 
-    if (!fullName || !email || !persalNumber || !password || !normalizedPhone || !normalizedIdNumber) {
+    if (!normalizedFullName || !email || !persalNumber || !password || !normalizedPhone || !normalizedIdNumber) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
@@ -146,7 +148,7 @@ export async function POST(req: NextRequest) {
     const hashedPassword = await hash(password);
     const user = await prisma.user.create({
       data: {
-        fullName,
+        fullName: normalizedFullName,
         email: normalizedEmail,
         persalNumber: normalizedPersal,
         password: hashedPassword,
@@ -154,7 +156,7 @@ export async function POST(req: NextRequest) {
         idNumber: normalizedIdNumber,
         bankName: normalizedBankName || null,
         accountNumber: normalizedAccountNumber || null,
-        address: String(address ?? "").trim() || null,
+        address: normalizedAddress || null,
       },
     });
     return NextResponse.json({ message: "User created", user: { id: user.id, email: user.email } }, { status: 201 });
