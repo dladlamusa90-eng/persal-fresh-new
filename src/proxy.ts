@@ -5,7 +5,7 @@ import { getAuthSecret } from "@/lib/authSecret";
 
 const AUTH_SECRET = getAuthSecret();
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   if (!pathname.startsWith("/admin") && !pathname.startsWith("/dashboard") && !pathname.startsWith("/api/admin")) {
