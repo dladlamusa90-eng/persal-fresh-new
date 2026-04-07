@@ -7,7 +7,7 @@ type RouteContext = {
   params: Promise<{ id: string }>;
 };
 
-export async function DELETE(_: Request, context: RouteContext) {
+export async function DELETE(req: Request, context: RouteContext) {
   try {
     const session = await getServerSession(authOptions);
 
@@ -42,16 +42,59 @@ export async function DELETE(_: Request, context: RouteContext) {
       return NextResponse.json({ error: "Admin accounts cannot be cleared" }, { status: 400 });
     }
 
-    await prisma.$transaction([
-      prisma.loginOtp.deleteMany({ where: { userId: id } }),
-      prisma.passwordResetOtp.deleteMany({ where: { userId: id } }),
-      prisma.loan.deleteMany({ where: { userId: id } }),
-      prisma.user.delete({ where: { id } }),
-    ]);
+    let preserveProfitRecords = false;
+
+    try {
+      const body = (await req.json()) as { preserveProfitRecords?: boolean };
+      preserveProfitRecords = Boolean(body?.preserveProfitRecords);
+    } catch {
+      preserveProfitRecords = false;
+    }
+
+    if (preserveProfitRecords) {
+      const deletedEmail = `deleted+${id}@deleted.local`;
+
+      await prisma.$transaction([
+        prisma.loginOtp.deleteMany({ where: { userId: id } }),
+        prisma.passwordResetOtp.deleteMany({ where: { userId: id } }),
+        prisma.loanApplicationDraft.deleteMany({ where: { userId: id } }),
+        prisma.userPointsEvent.deleteMany({ where: { userId: id } }),
+        prisma.user.update({
+          where: { id },
+          data: {
+            fullName: "Deleted User",
+            email: deletedEmail,
+            persalNumber: null,
+            phone: null,
+            idNumber: null,
+            bankName: null,
+            accountNumber: null,
+            accountType: null,
+            branchCode: null,
+            profileImage: null,
+            address: null,
+            points: 0,
+            isBurned: true,
+            burnedAt: new Date(),
+            isDeleted: true,
+            deletedAt: new Date(),
+            password: `deleted-${id}-${Date.now()}`,
+          } as any,
+        }),
+      ]);
+    } else {
+      await prisma.$transaction([
+        prisma.loginOtp.deleteMany({ where: { userId: id } }),
+        prisma.passwordResetOtp.deleteMany({ where: { userId: id } }),
+        prisma.loan.deleteMany({ where: { userId: id } }),
+        prisma.user.delete({ where: { id } }),
+      ]);
+    }
 
     console.info("[audit] admin-user-clear", {
       actorUserId: session.user.id,
       targetUserId: id,
+      preserveProfitRecords,
       at: new Date().toISOString(),
     });
 

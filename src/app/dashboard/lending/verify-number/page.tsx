@@ -17,6 +17,8 @@ function VerifyNumberContent() {
   const searchParams = useSearchParams();
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
 
   function withWizardQuery(path: string) {
     const query = searchParams.toString();
@@ -56,7 +58,24 @@ function VerifyNumberContent() {
     };
   }, []);
 
-  function handleNext() {
+  async function handleNext() {
+    if (loading || saving) return;
+
+    setSaving(true);
+    setSaveMessage("");
+
+    try {
+      await fetch("/api/loan-application-draft", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data: { phone } }),
+      });
+    } catch {
+      setSaveMessage("Could not save number. You can still continue.");
+    } finally {
+      setSaving(false);
+    }
+
     router.push(withWizardQuery("/dashboard/lending/my-details"));
   }
 
@@ -83,15 +102,23 @@ function VerifyNumberContent() {
           </div>
 
           <div>
-            <div className="rounded-xl bg-gray-100 px-4 py-4 text-base text-gray-700">
-              {loading ? "Loading..." : phone || "No cellphone number saved"}
+            <input
+              type="text"
+              value={loading ? "" : phone}
+              onChange={(event) => setPhone(event.target.value)}
+              placeholder={loading ? "Loading..." : "Enter cellphone number"}
+              disabled={loading || saving}
+              className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-base text-gray-700 focus:outline-none focus:ring-2 focus:ring-persal-blue disabled:opacity-60"
+            />
+            <div className="mt-2 flex items-center gap-4">
+              <Link
+                href="/dashboard/profile"
+                className="inline-block text-sm text-[#0f9a9a] transition hover:underline"
+              >
+                Update full profile
+              </Link>
+              {saveMessage && <span className="text-xs text-amber-700">{saveMessage}</span>}
             </div>
-            <Link
-              href="/dashboard/profile"
-              className="mt-3 inline-block text-sm text-[#0f9a9a] transition hover:underline"
-            >
-              Change cellphone number
-            </Link>
           </div>
         </div>
 
@@ -107,9 +134,10 @@ function VerifyNumberContent() {
           <button
             type="button"
             onClick={handleNext}
+            disabled={loading || saving}
             className="inline-flex min-w-[120px] items-center justify-center rounded-xl bg-[#ff972b] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#f58a17]"
           >
-            Next
+            {saving ? "Saving..." : "Next"}
           </button>
         </div>
       </div>

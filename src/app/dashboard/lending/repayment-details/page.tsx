@@ -111,13 +111,18 @@ function RepaymentDetailsContent() {
         draftData.requestedDisposableIncome ?? draftData.calculatedDisposableIncome ?? 0
       );
 
-      const phone = userBody.user?.phone ?? draftData.phone ?? "";
-      const idNumber = userBody.user?.idNumber ?? draftData.idNumber ?? "";
-      const persalNumber = userBody.user?.persalNumber ?? draftData.persalNumber ?? "";
-      const bankName = userBody.user?.bankName ?? draftData.bankName ?? "";
-      const accountNumber = userBody.user?.accountNumber ?? draftData.accountNumber ?? "";
-      const accountType = userBody.user?.accountType ?? draftData.accountType ?? "SAVINGS";
-      const branchCode = userBody.user?.branchCode ?? draftData.branchCode ?? "";
+      const resolvedPhone = draftData.phone ?? userBody.user?.phone ?? "";
+      const resolvedIdNumber = draftData.idNumber ?? userBody.user?.idNumber ?? "";
+      const resolvedPersalNumber = draftData.persalNumber ?? userBody.user?.persalNumber ?? "";
+      const resolvedBankName = draftData.bankName ?? userBody.user?.bankName ?? "";
+      const resolvedAccountNumber = draftData.accountNumber ?? userBody.user?.accountNumber ?? "";
+      const resolvedAccountType = draftData.accountType ?? userBody.user?.accountType ?? "SAVINGS";
+      const resolvedBranchCode = draftData.branchCode ?? userBody.user?.branchCode ?? "";
+
+      if (!resolvedPhone || !resolvedIdNumber || !resolvedPersalNumber || !resolvedBankName || !resolvedAccountNumber || !resolvedBranchCode) {
+        setError("Please complete your profile and banking details before submitting.");
+        return;
+      }
 
       const applyResponse = await fetch("/api/loans/apply", {
         method: "POST",
@@ -127,13 +132,13 @@ function RepaymentDetailsContent() {
           termDays: term * 30,
           grossSalary,
           disposableIncome,
-          phone,
-          idNumber,
-          persalNumber,
-          bankName,
-          accountNumber,
-          accountType,
-          branchCode,
+          phone: resolvedPhone,
+          idNumber: resolvedIdNumber,
+          persalNumber: resolvedPersalNumber,
+          bankName: resolvedBankName,
+          accountNumber: resolvedAccountNumber,
+          accountType: resolvedAccountType,
+          branchCode: resolvedBranchCode,
           debitMandateAccepted: true,
         }),
       });

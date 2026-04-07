@@ -21,6 +21,14 @@ type Props = {
   searchParams: Promise<{ role?: string; page?: string }>;
 };
 
+function isMissingIsDeletedColumn(error: unknown) {
+  const message = error instanceof Error ? error.message.toLowerCase() : "";
+  const code = typeof (error as { code?: unknown })?.code === "string"
+    ? String((error as { code?: string }).code)
+    : "";
+  return code === "P2022" || message.includes("isdeleted") || message.includes("unknown argument `isdeleted`");
+}
+
 export default async function AdminUsersPage({ searchParams }: Props) {
   const session = await getServerSession(authOptions);
 
@@ -36,42 +44,84 @@ export default async function AdminUsersPage({ searchParams }: Props) {
   const roleFilter: Role = roleParam === "ADMIN" ? "ADMIN" : "USER";
   const currentPage = Math.max(1, Number.parseInt(pageParam ?? "1", 10) || 1);
 
-  const where = { role: roleFilter };
+  const baseWhere = { role: roleFilter } as const;
+  let supportsIsDeleted = true;
+  let totalUsers: number;
 
-  const totalUsers = await prisma.user.count({ where });
+  try {
+    totalUsers = await prisma.user.count({ where: { ...baseWhere, isDeleted: false } as any });
+  } catch (error) {
+    if (!isMissingIsDeletedColumn(error)) {
+      throw error;
+    }
+    supportsIsDeleted = false;
+    totalUsers = await prisma.user.count({ where: baseWhere });
+  }
   const totalPages = Math.max(1, Math.ceil(totalUsers / PAGE_SIZE));
   const safePage = Math.min(currentPage, totalPages);
 
-  const users = await prisma.user.findMany({
-    where,
-    select: {
-      id: true,
-      fullName: true,
-      email: true,
-      role: true,
-      points: true,
-      persalNumber: true,
-      phone: true,
-      idNumber: true,
-      bankName: true,
-      accountNumber: true,
-      isBurned: true,
-      createdAt: true,
-      loans: {
+  const users = supportsIsDeleted
+    ? await prisma.user.findMany({
+        where: { ...baseWhere, isDeleted: false } as any,
         select: {
-          amount: true,
-          termDays: true,
-          status: true,
+          id: true,
+          fullName: true,
+          email: true,
+          role: true,
+          points: true,
+          persalNumber: true,
+          phone: true,
+          idNumber: true,
+          bankName: true,
+          accountNumber: true,
+          isBurned: true,
+          isDeleted: true,
           createdAt: true,
+          loans: {
+            select: {
+              amount: true,
+              termDays: true,
+              status: true,
+              createdAt: true,
+            },
+          },
+        } as any,
+        orderBy: {
+          createdAt: "desc",
         },
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-    skip: (safePage - 1) * PAGE_SIZE,
-    take: PAGE_SIZE,
-  });
+        skip: (safePage - 1) * PAGE_SIZE,
+        take: PAGE_SIZE,
+      })
+    : await prisma.user.findMany({
+        where: baseWhere,
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          role: true,
+          points: true,
+          persalNumber: true,
+          phone: true,
+          idNumber: true,
+          bankName: true,
+          accountNumber: true,
+          isBurned: true,
+          createdAt: true,
+          loans: {
+            select: {
+              amount: true,
+              termDays: true,
+              status: true,
+              createdAt: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        skip: (safePage - 1) * PAGE_SIZE,
+        take: PAGE_SIZE,
+      });
 
   const usersData = users.map((user) => {
     const paidLoans = user.loans.filter((loan) => loan.status === "PAID");
@@ -101,6 +151,7 @@ export default async function AdminUsersPage({ searchParams }: Props) {
       bankName: user.bankName,
       accountNumber: user.accountNumber,
       isBurned: user.isBurned,
+      isDeleted: Boolean((user as any).isDeleted),
       paidLoanCount: paidLoans.length,
       profitTotal,
       profit30Days,

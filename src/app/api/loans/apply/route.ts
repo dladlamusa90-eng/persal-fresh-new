@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { Prisma } from "@prisma/client";
 import { authOptions } from "@/lib/nextAuth";
 import prisma from "@/lib/prisma";
+import { formatRand, sendSystemNotification } from "@/lib/systemNotifications";
 import { ALLOWED_TERM_DAYS, FIRST_TIME_MAX_LOAN, MIN_LOAN_AMOUNT, RETURNING_MAX_LOAN, getMaxLoanForUser } from "@/lib/loanPolicy";
 import {
   getBankAccountConstraintLabel,
@@ -151,20 +152,32 @@ export async function POST(req: Request) {
       },
     });
 
-    const openLoan = await prisma.loan.findFirst({
+    const approvedLoan = await prisma.loan.findFirst({
       where: {
         userId: user.id,
-        status: { in: ["PENDING", "APPROVED"] },
+        status: "APPROVED",
       },
       select: { id: true },
     });
 
-    if (openLoan) {
+    if (approvedLoan) {
       return NextResponse.json(
         { error: "You already have an active or pending loan" },
         { status: 409 }
       );
     }
+
+    // Users may submit a new application while pending; previous pending entries are cancelled.
+    await prisma.loan.updateMany({
+      where: {
+        userId: user.id,
+        status: "PENDING",
+      },
+      data: {
+        status: "REJECTED",
+        rejectionReason: "Cancelled and replaced by a newer application",
+      },
+    });
 
     const previousLoanCount = await prisma.loan.count({
       where: { userId: user.id },
@@ -296,6 +309,13 @@ export async function POST(req: Request) {
       ipAddress,
       at: now.toISOString(),
     });
+
+    // Automatic notification: loan pending
+    void sendSystemNotification(
+      user.id,
+      "Loan Application Received",
+      `Your application for ${formatRand(amount)} over ${termDays} days has been received and is currently under review. We will notify you once a decision has been made.`
+    );
 
     return NextResponse.json({ message: "Loan application submitted", loan }, { status: 201 });
   } catch {

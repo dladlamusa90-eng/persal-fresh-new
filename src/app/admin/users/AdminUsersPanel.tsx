@@ -34,7 +34,7 @@ export default function AdminUsersPanel({ users }: Props) {
   const [showUserOversight, setShowUserOversight] = useState(false);
   const [query, setQuery] = useState("");
   const [accessFilter, setAccessFilter] = useState<"ALL" | "ACTIVE" | "BANNED">("ALL");
-  const [loadingById, setLoadingById] = useState<Record<string, "burn" | "restore" | "clear" | null>>({});
+  const [loadingById, setLoadingById] = useState<Record<string, "burn" | "restore" | "delete" | null>>({});
   const [errorById, setErrorById] = useState<Record<string, string>>({});
   const currencyFormatter = useMemo(() => new Intl.NumberFormat("en-US"), []);
 
@@ -116,26 +116,32 @@ export default function AdminUsersPanel({ users }: Props) {
     }
   }
 
-  async function handleClearUser(userId: string, role: string, name: string) {
+  async function handleDeleteUser(userId: string, role: string, name: string) {
     if (role === "ADMIN") {
-      setErrorById((prev) => ({ ...prev, [userId]: "Admin accounts cannot be cleared." }));
+      setErrorById((prev) => ({ ...prev, [userId]: "Admin accounts cannot be deleted." }));
       return;
     }
 
-    const confirmed = window.confirm(`Clear user ${name}? This permanently deletes user and loan records.`);
+    const confirmed = window.confirm(`Delete user ${name}?`);
     if (!confirmed) return;
 
-    setLoadingById((prev) => ({ ...prev, [userId]: "clear" }));
+    const preserveProfitRecords = window.confirm(
+      "Keep this user's loan records in Profit Summary? Click OK to keep records, or Cancel to remove all records."
+    );
+
+    setLoadingById((prev) => ({ ...prev, [userId]: "delete" }));
     setErrorById((prev) => ({ ...prev, [userId]: "" }));
 
     try {
       const response = await fetch(`/api/admin/users/${userId}/clear`, {
         method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ preserveProfitRecords }),
       });
 
       const body = (await response.json()) as { error?: string };
       if (!response.ok) {
-        setErrorById((prev) => ({ ...prev, [userId]: body.error ?? "Failed to clear user." }));
+        setErrorById((prev) => ({ ...prev, [userId]: body.error ?? "Failed to delete user." }));
         return;
       }
 
@@ -304,11 +310,11 @@ export default function AdminUsersPanel({ users }: Props) {
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleClearUser(user.id, user.role, user.fullName)}
+                        onClick={() => handleDeleteUser(user.id, user.role, user.fullName)}
                         disabled={Boolean(loadingById[user.id]) || user.role === "ADMIN"}
                         className="inline-flex items-center px-3 py-1.5 rounded-md bg-gray-800 hover:bg-black text-white text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {loadingById[user.id] === "clear" ? "Clearing..." : "Clear"}
+                        {loadingById[user.id] === "delete" ? "Deleting..." : "Delete"}
                       </button>
                     </div>
                     {errorById[user.id] && (

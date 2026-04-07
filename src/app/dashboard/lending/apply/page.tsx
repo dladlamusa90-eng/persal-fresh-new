@@ -14,6 +14,7 @@ import { SOUTH_AFRICAN_BANK_NAMES } from "@/lib/validators/auth";
 function ApplyPageContent() {
   const router = useRouter();
   const [hasActiveLoan, setHasActiveLoan] = useState(false);
+  const [hasPendingLoan, setHasPendingLoan] = useState(false);
   const [isReturningUser, setIsReturningUser] = useState(false);
   // Eligibility/calculation state
   const searchParams = useSearchParams();
@@ -79,8 +80,9 @@ function ApplyPageContent() {
           const status = loanBody.latestLoan?.status;
           if (mounted) {
             setIsReturningUser(Boolean(loanBody.isReturningUser));
+            setHasPendingLoan(status === "PENDING");
           }
-          if (mounted && (status === "PENDING" || status === "APPROVED")) {
+          if (mounted && status === "APPROVED") {
             setHasActiveLoan(true);
           }
         }
@@ -313,6 +315,11 @@ function ApplyPageContent() {
       {hasActiveLoan && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded text-red-800 text-sm font-semibold">
           You already have an active loan. You cannot apply for another loan until your current loan is settled.
+        </div>
+      )}
+      {!hasActiveLoan && hasPendingLoan && (
+        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded text-amber-800 text-sm font-semibold">
+          You already have a pending application. If you continue and submit a new one, your previous pending application will be cancelled and replaced.
         </div>
       )}
       <form className="space-y-8" onSubmit={handleSubmit}>

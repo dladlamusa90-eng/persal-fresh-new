@@ -3,12 +3,18 @@
 import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import { Lightbulb } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function DashboardHomePage() {
+  const router = useRouter();
   const maxLoan = 5000;
   const [desiredLoan, setDesiredLoan] = useState(1500);
   const [selectedDays, setSelectedDays] = useState(60);
   const [hasActiveLoan, setHasActiveLoan] = useState(false);
+  const [hasPendingLoan, setHasPendingLoan] = useState(false);
+  const [showPendingLoanModal, setShowPendingLoanModal] = useState(false);
+  const [overrideSubmitting, setOverrideSubmitting] = useState(false);
+  const [overrideError, setOverrideError] = useState("");
   const [error, setError] = useState("");
   const [showFeeBreakdown, setShowFeeBreakdown] = useState(false);
   const [activeMyLoanSection, setActiveMyLoanSection] = useState<"summary" | "documents">("summary");
@@ -26,6 +32,7 @@ export default function DashboardHomePage() {
         }
 
         const status = loanData?.latestLoan?.status;
+        setHasPendingLoan(status === "PENDING");
         // Pay Now is only for users with an active payable loan.
         setHasActiveLoan(status === "APPROVED");
       })
@@ -77,6 +84,45 @@ export default function DashboardHomePage() {
   const repayDateISO = repayDate.toISOString().split("T")[0];
   const repayDateDisplay = repayDateISO.replace(/-/g, "/");
   const repayDateLabelCompact = repayDateLabel.replace(/\s+/g, "");
+  const applyNowHref = `/dashboard/lending/verify-number?loan=${desiredLoan}&term=${term}&termDays=${termDays}`;
+
+  function handleApplyNowClick(event: React.MouseEvent<HTMLAnchorElement>) {
+    if (!canApply) {
+      event.preventDefault();
+      return;
+    }
+
+    if (hasPendingLoan) {
+      event.preventDefault();
+      setOverrideError("");
+      setShowPendingLoanModal(true);
+    }
+  }
+
+  async function handleOverwriteApplication() {
+    setOverrideError("");
+    setOverrideSubmitting(true);
+
+    try {
+      const response = await fetch("/api/loans/pending/override", {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        const body = (await response.json()) as { error?: string };
+        setOverrideError(body.error ?? "Failed to override pending application.");
+        return;
+      }
+
+      setHasPendingLoan(false);
+      setShowPendingLoanModal(false);
+      router.push(applyNowHref);
+    } catch {
+      setOverrideError("Network error while overriding pending application.");
+    } finally {
+      setOverrideSubmitting(false);
+    }
+  }
 
   function setDaysFromRepayDate(value: string) {
     if (!value) return;
@@ -121,7 +167,7 @@ export default function DashboardHomePage() {
           </div>
 
           {activeMyLoanSection === "summary" && (
-          <>
+          <div>
           <div id="calc" className="bg-white rounded-2xl shadow-[0_-10px_18px_-16px_rgba(2,12,27,0.35),0_22px_42px_-22px_rgba(2,12,27,0.58),0_10px_18px_-14px_rgba(2,12,27,0.35)] overflow-hidden">
             <div className="grid grid-cols-1 md:grid-cols-12">
               <aside className="md:col-span-4 bg-persal-dark text-white">
@@ -397,7 +443,8 @@ export default function DashboardHomePage() {
                   </div>
                   <div className="text-center md:text-right">
                     <Link
-                      href={canApply ? `/dashboard/lending/verify-number?loan=${desiredLoan}&term=${term}&termDays=${termDays}` : "#"}
+                      href={canApply ? applyNowHref : "#"}
+                      onClick={handleApplyNowClick}
                       className={`inline-block px-4 py-2 rounded-lg font-semibold text-base transition text-center ${canApply ? "bg-orange-500 text-white hover:bg-orange-600 cursor-pointer" : "bg-gray-300 text-gray-400 cursor-not-allowed pointer-events-none"}`}
                       title={hasActiveLoan ? "You have an active loan. Settle it before applying again." : undefined}
                     >
@@ -427,7 +474,7 @@ export default function DashboardHomePage() {
               </Link>
             </div>
           )}
-          </>
+          </div>
           )}
 
           {activeMyLoanSection === "documents" && (
@@ -490,6 +537,40 @@ export default function DashboardHomePage() {
                 <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between text-persal-blue font-semibold">
                   <span>Total to repay</span>
                   <span>R{totalRepayable.toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {showPendingLoanModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" role="dialog" aria-modal="true" aria-label="Pending application overwrite confirmation">
+              <div className="w-full max-w-md rounded-xl bg-white border border-slate-200 shadow-xl p-5">
+                <h3 className="text-lg font-semibold text-slate-900">Ongoing Loan Application</h3>
+                <p className="mt-2 text-sm text-slate-600">
+                  You already have a pending loan application. If you continue, your previous pending application will be cancelled and replaced.
+                </p>
+                {overrideError && (
+                  <p className="mt-2 text-sm text-red-600">{overrideError}</p>
+                )}
+                <div className="mt-5 flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (overrideSubmitting) return;
+                      setShowPendingLoanModal(false);
+                    }}
+                    className="px-3 py-2 rounded-lg border border-slate-300 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleOverwriteApplication}
+                    disabled={overrideSubmitting}
+                    className="px-3 py-2 rounded-lg bg-orange-500 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
+                  >
+                    {overrideSubmitting ? "Overriding..." : "Overwrite Application"}
+                  </button>
                 </div>
               </div>
             </div>

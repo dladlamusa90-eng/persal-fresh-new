@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/nextAuth";
 import prisma from "@/lib/prisma";
 import { calculateLoanCharges, calculatePointsForRepayment, getTermEndDate } from "@/lib/loanPolicy";
+import { formatRand, sendSystemNotification } from "@/lib/systemNotifications";
 
 export async function POST(
   _req: Request,
@@ -130,6 +131,22 @@ export async function POST(
       amountPaid,
       at: now.toISOString(),
     });
+
+    // Automatic notification: payment received
+    void sendSystemNotification(
+      user.id,
+      "Payment Received",
+      `Your repayment of ${formatRand(amountPaid)} has been successfully recorded. Your loan is now marked as paid. Thank you!`
+    );
+
+    // Automatic notification: points earned (only on time-repayment)
+    if (pointsAwarded > 0) {
+      void sendSystemNotification(
+        user.id,
+        `You Earned ${pointsAwarded} Points!`,
+        `You earned ${pointsAwarded} loyalty points for your on-time repayment. Your new points balance is ${updatedUser?.points ?? 0} points.`
+      );
+    }
 
     return NextResponse.json(
       {

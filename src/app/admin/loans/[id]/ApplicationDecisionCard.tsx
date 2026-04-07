@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LOAN_REJECTION_REASONS } from "@/lib/loanRejectionReasons";
 
@@ -23,6 +23,35 @@ export default function ApplicationDecisionCard({
   const [selectedReason, setSelectedReason] = useState("");
   const [loading, setLoading] = useState<"approve" | "reject" | null>(null);
   const [error, setError] = useState("");
+  const [showOverridePopup, setShowOverridePopup] = useState(false);
+
+  const isOverriddenByUser =
+    status === "REJECTED" &&
+    rejectionReason === "Cancelled and replaced by a newer application";
+
+  useEffect(() => {
+    if (status !== "PENDING") {
+      return;
+    }
+
+    const intervalId = setInterval(() => {
+      router.refresh();
+    }, 1500);
+
+    return () => clearInterval(intervalId);
+  }, [router, status]);
+
+  useEffect(() => {
+    if (isOverriddenByUser) {
+      setShowOverridePopup(true);
+    }
+  }, [isOverriddenByUser]);
+
+  function closeOverridePopupAndExit() {
+    setShowOverridePopup(false);
+    router.push("/admin/pending-applications");
+    router.refresh();
+  }
 
   async function handleApprove() {
     setLoading("approve");
@@ -30,8 +59,17 @@ export default function ApplicationDecisionCard({
 
     try {
       const response = await fetch(`/api/admin/loans/${loanId}/approve`, { method: "PATCH" });
-      const body = (await response.json()) as { error?: string; transferUrl?: string };
+      const body = (await response.json()) as {
+        error?: string;
+        transferUrl?: string;
+        code?: "APPLICATION_OVERRIDDEN" | "LOAN_NOT_PENDING";
+      };
       if (!response.ok) {
+        if (response.status === 409 && body.code === "APPLICATION_OVERRIDDEN") {
+          setShowOverridePopup(true);
+          return;
+        }
+
         setError(body.error ?? "Failed to approve loan.");
         return;
       }
@@ -75,69 +113,92 @@ export default function ApplicationDecisionCard({
   }
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm h-fit">
-      <h2 className="text-lg font-semibold text-gray-900">Decision</h2>
-      <div className="mt-4 rounded-xl bg-gray-50 border border-gray-200 p-4">
-        <p className="text-xs text-gray-500">Current Status</p>
-        <p className="mt-1 text-base font-semibold text-gray-900">{status}</p>
-        {status === "REJECTED" && rejectionReason && (
-          <p className="mt-3 text-sm text-red-600">Reason: {rejectionReason}</p>
+    <>
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm h-fit">
+        <h2 className="text-lg font-semibold text-gray-900">Decision</h2>
+        <div className="mt-4 rounded-xl bg-gray-50 border border-gray-200 p-4">
+          <p className="text-xs text-gray-500">Current Status</p>
+          <p className="mt-1 text-base font-semibold text-gray-900">{status}</p>
+          {status === "REJECTED" && rejectionReason && (
+            <p className="mt-3 text-sm text-red-600">Reason: {rejectionReason}</p>
+          )}
+          {status === "APPROVED" && !disbursementSentAt && (
+            <p className="mt-3 text-sm text-amber-600">Approved and waiting for disbursement.</p>
+          )}
+          {status === "APPROVED" && disbursementSentAt && (
+            <p className="mt-3 text-sm text-green-600">Disbursed: {disbursementReference ?? "Recorded"}</p>
+          )}
+        </div>
+
+        {status === "PENDING" && (
+          <div className="mt-4 space-y-3">
+            <select
+              value={selectedReason}
+              onChange={(event) => setSelectedReason(event.target.value)}
+              className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm text-gray-700"
+              disabled={Boolean(loading)}
+            >
+              <option value="">Select rejection reason</option>
+              {LOAN_REJECTION_REASONS.map((reason) => (
+                <option key={reason} value={reason}>{reason}</option>
+              ))}
+            </select>
+
+            <button
+              type="button"
+              onClick={handleApprove}
+              disabled={Boolean(loading)}
+              className="inline-flex w-full items-center justify-center rounded-xl bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50"
+            >
+              {loading === "approve" ? "Approving..." : "Approve and Continue to Disbursement"}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleReject}
+              disabled={Boolean(loading)}
+              className="inline-flex w-full items-center justify-center rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+            >
+              {loading === "reject" ? "Rejecting..." : "Reject Application"}
+            </button>
+          </div>
         )}
+
         {status === "APPROVED" && !disbursementSentAt && (
-          <p className="mt-3 text-sm text-amber-600">Approved and waiting for disbursement.</p>
+          <div className="mt-4">
+            <button
+              type="button"
+              onClick={() => router.push(`/admin/loans/${loanId}/transfer`)}
+              className="inline-flex w-full items-center justify-center rounded-xl bg-persal-blue px-4 py-2.5 text-sm font-semibold text-white hover:bg-persal-dark"
+            >
+              Open Disbursement Screen
+            </button>
+          </div>
         )}
-        {status === "APPROVED" && disbursementSentAt && (
-          <p className="mt-3 text-sm text-green-600">Disbursed: {disbursementReference ?? "Recorded"}</p>
-        )}
+
+        {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
       </div>
 
-      {status === "PENDING" && (
-        <div className="mt-4 space-y-3">
-          <select
-            value={selectedReason}
-            onChange={(event) => setSelectedReason(event.target.value)}
-            className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm text-gray-700"
-            disabled={Boolean(loading)}
-          >
-            <option value="">Select rejection reason</option>
-            {LOAN_REJECTION_REASONS.map((reason) => (
-              <option key={reason} value={reason}>{reason}</option>
-            ))}
-          </select>
-
-          <button
-            type="button"
-            onClick={handleApprove}
-            disabled={Boolean(loading)}
-            className="inline-flex w-full items-center justify-center rounded-xl bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50"
-          >
-            {loading === "approve" ? "Approving..." : "Approve and Continue to Disbursement"}
-          </button>
-
-          <button
-            type="button"
-            onClick={handleReject}
-            disabled={Boolean(loading)}
-            className="inline-flex w-full items-center justify-center rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
-          >
-            {loading === "reject" ? "Rejecting..." : "Reject Application"}
-          </button>
+      {showOverridePopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
+            <h3 className="text-lg font-bold text-slate-900">Application Overridden</h3>
+            <p className="mt-2 text-sm text-slate-600">
+              The user has just overridden this loan application, so it can no longer be approved.
+              It has been removed from the pending queue.
+            </p>
+            <div className="mt-5 flex justify-end">
+              <button
+                type="button"
+                onClick={closeOverridePopupAndExit}
+                className="rounded-lg bg-persal-blue px-3 py-2 text-sm font-semibold text-white hover:bg-persal-dark"
+              >
+                Back to Pending Queue
+              </button>
+            </div>
+          </div>
         </div>
       )}
-
-      {status === "APPROVED" && !disbursementSentAt && (
-        <div className="mt-4">
-          <button
-            type="button"
-            onClick={() => router.push(`/admin/loans/${loanId}/transfer`)}
-            className="inline-flex w-full items-center justify-center rounded-xl bg-persal-blue px-4 py-2.5 text-sm font-semibold text-white hover:bg-persal-dark"
-          >
-            Open Disbursement Screen
-          </button>
-        </div>
-      )}
-
-      {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
-    </div>
+    </>
   );
 }

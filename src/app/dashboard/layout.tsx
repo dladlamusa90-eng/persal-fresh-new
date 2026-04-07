@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import ChatWidget from "@/app/components/ChatWidget";
 import LoanStatusBadge from "@/app/components/LoanStatusBadge";
 import AppFooter from "@/app/components/AppFooter";
+import NotificationsBell from "@/app/components/NotificationsBell";
 import { signOut } from "next-auth/react";
 import SessionTimeoutDialog from "@/app/components/SessionTimeoutDialog";
 
@@ -136,10 +137,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   React.useEffect(() => {
     let mounted = true;
+    let signedOut = false;
 
-    async function loadProfile() {
+    function forceSignOut() {
+      if (signedOut) return;
+      signedOut = true;
+      signOut({ callbackUrl: "/auth/login" });
+    }
+
+    async function loadProfileAndGuardSession() {
       try {
         const response = await fetch("/api/users/me", { cache: "no-store" });
+
+        if (response.status === 401 || response.status === 403 || response.status === 404) {
+          forceSignOut();
+          return;
+        }
+
         if (!response.ok) return;
 
         const body = (await response.json()) as {
@@ -155,10 +169,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       }
     }
 
-    loadProfile();
+    loadProfileAndGuardSession();
+    const intervalId = setInterval(loadProfileAndGuardSession, 2000);
 
     return () => {
       mounted = false;
+      clearInterval(intervalId);
     };
   }, []);
   return (
@@ -175,17 +191,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <span className="text-xl leading-none">☰</span>
               </button>
               <h1 className="text-base font-semibold text-persal-dark">Dashboard</h1>
-              <Link
-                href="/dashboard/profile"
-                aria-label="Profile"
-                className="h-10 w-10 flex items-center justify-center rounded-full border border-gray-200 text-sm font-semibold text-persal-dark overflow-hidden bg-gray-100"
-              >
-                {profileImage ? (
-                  <img src={profileImage} alt="Profile" className="h-full w-full object-cover" />
-                ) : (
-                  getProfileInitial(profileName)
-                )}
-              </Link>
+              <div className="flex items-center gap-2">
+                <NotificationsBell />
+                <Link
+                  href="/dashboard/profile"
+                  aria-label="Profile"
+                  className="h-10 w-10 flex items-center justify-center rounded-full border border-gray-200 text-sm font-semibold text-persal-dark overflow-hidden bg-gray-100"
+                >
+                  {profileImage ? (
+                    <img src={profileImage} alt="Profile" className="h-full w-full object-cover" />
+                  ) : (
+                    getProfileInitial(profileName)
+                  )}
+                </Link>
+              </div>
             </nav>
 
             <div
@@ -290,6 +309,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 >
                   Logout
                 </button>
+                <NotificationsBell />
                 </div>
               </div>
             </nav>

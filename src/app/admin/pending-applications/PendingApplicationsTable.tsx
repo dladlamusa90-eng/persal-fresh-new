@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 type PendingLoanRow = {
   id: string;
@@ -21,6 +22,15 @@ export default function PendingApplicationsTable({ loans }: Props) {
   const [minAmount, setMinAmount] = useState("");
   const [maxAmount, setMaxAmount] = useState("");
 
+  const router = useRouter();
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      router.refresh();
+    }, 2000);
+
+    return () => clearInterval(intervalId);
+  }, [router]);
   const filteredLoans = useMemo(() => {
     const min = minAmount.trim() === "" ? null : Number(minAmount);
     const max = maxAmount.trim() === "" ? null : Number(maxAmount);

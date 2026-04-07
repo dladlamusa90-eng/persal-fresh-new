@@ -317,13 +317,12 @@ export default function AdminLoansPanel({ initialLoans, totalAdmins }: Props) {
             </p>
             <p className="mt-1 text-2xl font-bold text-green-800">{counts.awaitingTransfer}</p>
             <p className="text-sm text-green-700">Approved applications still waiting for disbursement.</p>
-            <button
-              type="button"
-              onClick={() => setLoanFilter("APPROVED")}
+            <Link
+              href="/admin/approved-for-disbursement"
               className="mt-3 inline-flex items-center rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700"
             >
               View Approved for Disbursement
-            </button>
+            </Link>
           </div>
         </div>
 

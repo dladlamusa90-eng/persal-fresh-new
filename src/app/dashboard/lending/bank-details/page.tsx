@@ -34,6 +34,7 @@ function BankDetailsContent() {
   const [bankName, setBankName] = useState("Capitec");
   const [accountNumber, setAccountNumber] = useState("");
   const [accountType, setAccountType] = useState<(typeof accountTypeOptions)[number]["value"]>("SAVINGS");
+  const [branchCode, setBranchCode] = useState("");
   const [bankVerified, setBankVerified] = useState(false);
   const [stitchStatus, setStitchStatus] = useState<"idle" | "success" | "error">("idle");
   const [stitchErrorMsg, setStitchErrorMsg] = useState("");
@@ -57,6 +58,7 @@ function BankDetailsContent() {
           if (body.user?.bankName) setBankName(body.user.bankName);
           if (body.user?.accountNumber) setAccountNumber(body.user.accountNumber);
           if (body.user?.accountType) setAccountType(body.user.accountType);
+          if (body.user?.branchCode) setBranchCode(body.user.branchCode);
           if (body.user?.bankVerified) setBankVerified(true);
         })
         .catch(() => {});
@@ -86,6 +88,7 @@ function BankDetailsContent() {
                 bankName?: string;
                 accountNumber?: string;
                 accountType?: "CHEQUE" | "SAVINGS" | "TRANSMISSION";
+                branchCode?: string;
               };
             };
           };
@@ -94,6 +97,7 @@ function BankDetailsContent() {
           if (draftBody.draft?.data?.bankName) setBankName(draftBody.draft.data.bankName);
           if (draftBody.draft?.data?.accountNumber !== undefined) setAccountNumber(draftBody.draft.data.accountNumber);
           if (draftBody.draft?.data?.accountType) setAccountType(draftBody.draft.data.accountType);
+          if (draftBody.draft?.data?.branchCode !== undefined) setBranchCode(draftBody.draft.data.branchCode);
         }
 
         const response = await fetch("/api/users/me", { cache: "no-store" });
@@ -107,6 +111,7 @@ function BankDetailsContent() {
             bankName?: string | null;
             accountNumber?: string | null;
             accountType?: "CHEQUE" | "SAVINGS" | "TRANSMISSION" | null;
+            branchCode?: string | null;
             bankVerified?: boolean;
           };
         };
@@ -115,6 +120,7 @@ function BankDetailsContent() {
         if (body.user?.bankName) setBankName(body.user.bankName);
         if (body.user?.accountNumber) setAccountNumber(body.user.accountNumber);
         if (body.user?.accountType) setAccountType(body.user.accountType);
+        if (body.user?.branchCode) setBranchCode(body.user.branchCode);
         if (body.user?.bankVerified) setBankVerified(true);
         setLoading(false);
       } catch {
@@ -135,7 +141,7 @@ function BankDetailsContent() {
       await fetch("/api/loan-application-draft", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ data: { bankName, accountNumber, accountType } }),
+        body: JSON.stringify({ data: { bankName, accountNumber, accountType, branchCode } }),
       });
     } catch {
       return;
@@ -254,6 +260,19 @@ function BankDetailsContent() {
             <svg className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-persal-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <polyline points="6 9 12 15 18 9" />
             </svg>
+          </div>
+
+          <label className="text-sm font-medium text-gray-700">Branch Code</label>
+          <div className="relative">
+            <div className="absolute left-0 top-0 h-full w-1 rounded-l-md bg-lime-500" />
+            <input
+              type="text"
+              inputMode="numeric"
+              value={branchCode}
+              onChange={(e) => setBranchCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              disabled={loading}
+              className="w-full rounded-xl border border-gray-200 bg-white pl-8 pr-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-persal-blue disabled:opacity-60"
+            />
           </div>
         </div>
 

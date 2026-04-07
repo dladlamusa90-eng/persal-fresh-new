@@ -29,6 +29,10 @@ enum PointsEventType {
   ADMIN_ADJUSTMENT
 }
 
+enum AdminNotificationType {
+  MESSAGE
+}
+
 model User {
   id           String   @id @default(uuid())
   fullName     String
@@ -47,6 +51,8 @@ model User {
   role          Role     @default(USER)
   isBurned      Boolean  @default(false)
   burnedAt      DateTime?
+  isDeleted     Boolean  @default(false)
+  deletedAt     DateTime?
   bankVerified    Boolean  @default(false)
   stitchAccountId String?
   loanApplicationDraft LoanApplicationDraft?
@@ -54,11 +60,28 @@ model User {
   loginOtps     LoginOtp[]
   passwordResetOtps PasswordResetOtp[]
   pointEvents   UserPointsEvent[]
+  notifications AdminNotification[]
   createdAt     DateTime @default(now())
 
   @@index([role])
   @@index([isBurned])
+  @@index([isDeleted])
   @@index([createdAt])
+}
+
+model AdminNotification {
+  id          String                @id @default(cuid())
+  userId      String
+  user        User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        AdminNotificationType @default(MESSAGE)
+  title       String
+  body        String
+  readAt      DateTime?
+  createdAt   DateTime              @default(now())
+  createdById String?
+
+  @@index([userId, createdAt])
+  @@index([userId, readAt])
 }
 
 model UserPointsEvent {

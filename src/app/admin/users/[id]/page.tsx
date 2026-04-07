@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/nextAuth";
 import prisma from "@/lib/prisma";
 import BurnUserButton from "../BurnUserButton";
 import UpdateUserPointsForm from "./UpdateUserPointsForm";
+import SendUserMessageForm from "./SendUserMessageForm";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -44,11 +45,18 @@ async function getUserDetails(id: string) {
       select: {
         ...baseSelect,
         points: true,
+        isDeleted: true,
+        deletedAt: true,
       },
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
-    if (!message.includes("Unknown field `points`")) {
+    const code = typeof (error as { code?: unknown })?.code === "string"
+      ? String((error as { code?: string }).code)
+      : "";
+    const missingDeletedField = code === "P2022" || message.toLowerCase().includes("isdeleted");
+
+    if (!message.includes("Unknown field `points`") && !missingDeletedField) {
       throw error;
     }
 
@@ -64,6 +72,8 @@ async function getUserDetails(id: string) {
     return {
       ...fallbackUser,
       points: 0,
+      isDeleted: false,
+      deletedAt: null,
     };
   }
 }
@@ -128,14 +138,24 @@ export default async function AdminUserDetailsPage({ params }: Props) {
                 {user.isBurned ? "Burned" : "Active"}
               </span>
             </p>
+            <p>
+              <span className="font-semibold">Deleted:</span>{" "}
+              <span className={user.isDeleted ? "text-red-700 font-semibold" : "text-green-700 font-semibold"}>
+                {user.isDeleted ? "Yes" : "No"}
+              </span>
+            </p>
             {user.burnedAt && (
               <p><span className="font-semibold">Burned At:</span> {user.burnedAt.toISOString().slice(0, 10)}</p>
+            )}
+            {user.deletedAt && (
+              <p><span className="font-semibold">Deleted At:</span> {user.deletedAt.toISOString().slice(0, 10)}</p>
             )}
           </div>
 
           <div className="flex flex-col gap-3 w-full md:w-auto">
             <UpdateUserPointsForm userId={user.id} initialPoints={user.points} />
             <BurnUserButton userId={user.id} role={user.role} initialBurned={user.isBurned} />
+            <SendUserMessageForm userId={user.id} isDeleted={Boolean(user.isDeleted)} isAdmin={user.role === "ADMIN"} />
           </div>
         </div>
       </div>

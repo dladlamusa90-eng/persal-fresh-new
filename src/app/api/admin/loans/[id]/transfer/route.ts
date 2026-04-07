@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/nextAuth";
 import prisma from "@/lib/prisma";
+import { formatRand, sendSystemNotification } from "@/lib/systemNotifications";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -86,6 +87,13 @@ export async function POST(req: Request, context: RouteContext) {
       mode: updatedLoan.disbursementMode,
       transferredAt: updatedLoan.disbursementSentAt?.toISOString(),
     });
+
+    // Automatic notification: funds disbursed
+    void sendSystemNotification(
+      updatedLoan.userId,
+      "Funds Disbursed",
+      `${formatRand(updatedLoan.amount)} has been sent to your account (ref: ${updatedLoan.disbursementReference}). Please allow up to 1 business day for the funds to reflect. Your repayment schedule is now active.`
+    );
 
     return NextResponse.json({ message: "Loan transfer recorded", loan: updatedLoan }, { status: 200 });
   } catch {

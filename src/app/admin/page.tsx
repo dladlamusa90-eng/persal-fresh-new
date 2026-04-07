@@ -6,6 +6,14 @@ import prisma from "@/lib/prisma";
 import AdminLoansPanel from "@/app/admin/AdminLoansPanel";
 import AdminUsersPanel from "@/app/admin/users/AdminUsersPanel";
 
+function isMissingIsDeletedColumn(error: unknown) {
+  const message = error instanceof Error ? error.message.toLowerCase() : "";
+  const code = typeof (error as { code?: unknown })?.code === "string"
+    ? String((error as { code?: string }).code)
+    : "";
+  return code === "P2022" || message.includes("isdeleted") || message.includes("unknown argument `isdeleted`");
+}
+
 function calculateLoanProfit(amount: number, termDays: number) {
   const interest1 = amount * 0.05;
   const interest2 = termDays >= 60 ? amount * 0.03 : 0;
@@ -26,8 +34,7 @@ export default async function AdminPage() {
     redirect("/dashboard");
   }
 
-  const [loans, users] = await Promise.all([
-    prisma.loan.findMany({
+  const loansPromise = prisma.loan.findMany({
       include: {
         user: {
           select: {
@@ -40,35 +47,76 @@ export default async function AdminPage() {
       orderBy: {
         createdAt: "desc",
       },
-    }),
-    prisma.user.findMany({
-      select: {
-        id: true,
-        fullName: true,
-        email: true,
-        role: true,
-        points: true,
-        persalNumber: true,
-        phone: true,
-        idNumber: true,
-        bankName: true,
-        accountNumber: true,
-        isBurned: true,
-        createdAt: true,
-        loans: {
-          select: {
-            amount: true,
-            termDays: true,
-            status: true,
-            createdAt: true,
+    });
+
+  const usersPromise = (async () => {
+    try {
+      return await prisma.user.findMany({
+        where: {
+          isDeleted: false,
+        } as any,
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          role: true,
+          points: true,
+          persalNumber: true,
+          phone: true,
+          idNumber: true,
+          bankName: true,
+          accountNumber: true,
+          isBurned: true,
+          createdAt: true,
+          loans: {
+            select: {
+              amount: true,
+              termDays: true,
+              status: true,
+              createdAt: true,
+            },
           },
         },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    }),
-  ]);
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+    } catch (error) {
+      if (!isMissingIsDeletedColumn(error)) {
+        throw error;
+      }
+
+      return await prisma.user.findMany({
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          role: true,
+          points: true,
+          persalNumber: true,
+          phone: true,
+          idNumber: true,
+          bankName: true,
+          accountNumber: true,
+          isBurned: true,
+          createdAt: true,
+          loans: {
+            select: {
+              amount: true,
+              termDays: true,
+              status: true,
+              createdAt: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+    }
+  })();
+
+  const [loans, users] = await Promise.all([loansPromise, usersPromise]);
 
   const nonAdminUsers = users.filter((user) => user.role === "USER");
   const totalUsers = nonAdminUsers.length;

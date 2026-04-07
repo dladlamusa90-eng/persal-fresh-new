@@ -16,15 +16,51 @@ async function main() {
   });
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { email: ADMIN_EMAIL },
-      select: {
-        id: true,
-        email: true,
-        role: true,
-        password: true,
-      },
-    });
+    let user: {
+      id: string;
+      email: string;
+      role: string;
+      password: string;
+      isBurned: boolean;
+      isDeleted: boolean;
+    } | null = null;
+
+    try {
+      user = await prisma.user.findUnique({
+        where: { email: ADMIN_EMAIL },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          password: true,
+          isBurned: true,
+          isDeleted: true,
+        } as any,
+      }) as any;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      if (!message.toLowerCase().includes("isdeleted")) {
+        throw error;
+      }
+
+      const legacyUser = await prisma.user.findUnique({
+        where: { email: ADMIN_EMAIL },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          password: true,
+          isBurned: true,
+        },
+      });
+
+      user = legacyUser
+        ? {
+            ...legacyUser,
+            isDeleted: false,
+          }
+        : null;
+    }
 
     if (!user) {
       console.log("Admin user not found");
@@ -41,6 +77,8 @@ async function main() {
           id: user.id,
           email: user.email,
           role: user.role,
+          isBurned: user.isBurned,
+          isDeleted: user.isDeleted,
           passwordPrefix: user.password.slice(0, 4),
           isBcryptFormat,
           bcryptMatch,

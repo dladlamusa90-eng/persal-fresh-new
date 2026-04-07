@@ -49,11 +49,17 @@ export async function GET() {
         address: true,
         points: true,
         role: true,
+        isBurned: true,
+        isDeleted: true,
       } as any,
     });
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    if ((user as any).isBurned || (user as any).isDeleted) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     return NextResponse.json({ user }, { status: 200 });
@@ -158,11 +164,15 @@ export async function PATCH(req: Request) {
       where: session.user.id
         ? { id: session.user.id }
         : { email: String(session.user.email ?? "") },
-      select: { id: true, email: true },
+      select: { id: true, email: true, isBurned: true, isDeleted: true },
     });
 
     if (!currentUser) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    if (currentUser.isBurned || currentUser.isDeleted) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const conflictingUser = await prisma.user.findFirst({

@@ -10,6 +10,110 @@ import { isSouthAfricanIdNumber, normalizeIdNumber } from "@/lib/validators/auth
 
 const AUTH_SECRET = getAuthSecret();
 
+async function findAuthUser(identifier: { normalizedId: string; usingId: boolean; normalizedEmail: string }) {
+  try {
+    const user = await prisma.user.findFirst({
+      where: identifier.usingId
+        ? { idNumber: identifier.normalizedId }
+        : { email: { equals: identifier.normalizedEmail, mode: "insensitive" } },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        password: true,
+        role: true,
+        isBurned: true,
+        isDeleted: true,
+      },
+    });
+
+    return user;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    const code = typeof (error as { code?: unknown })?.code === "string"
+      ? String((error as { code?: string }).code)
+      : "";
+
+    if (code !== "P2022" && !message.toLowerCase().includes("isdeleted")) {
+      throw error;
+    }
+
+    const legacyUser = await prisma.user.findFirst({
+      where: identifier.usingId
+        ? { idNumber: identifier.normalizedId }
+        : { email: { equals: identifier.normalizedEmail, mode: "insensitive" } },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        password: true,
+        role: true,
+        isBurned: true,
+      },
+    });
+
+    if (!legacyUser) {
+      return null;
+    }
+
+    return {
+      ...legacyUser,
+      isDeleted: false,
+    };
+  }
+}
+
+async function findSessionUser(tokenUserId: string | null, tokenEmail: string | null) {
+  try {
+    const user = await prisma.user.findFirst({
+      where: tokenUserId
+        ? { id: tokenUserId }
+        : { email: { equals: String(tokenEmail ?? ""), mode: "insensitive" } },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        role: true,
+        isBurned: true,
+        isDeleted: true,
+      },
+    });
+
+    return user;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    const code = typeof (error as { code?: unknown })?.code === "string"
+      ? String((error as { code?: string }).code)
+      : "";
+
+    if (code !== "P2022" && !message.toLowerCase().includes("isdeleted")) {
+      throw error;
+    }
+
+    const legacyUser = await prisma.user.findFirst({
+      where: tokenUserId
+        ? { id: tokenUserId }
+        : { email: { equals: String(tokenEmail ?? ""), mode: "insensitive" } },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        role: true,
+        isBurned: true,
+      },
+    });
+
+    if (!legacyUser) {
+      return null;
+    }
+
+    return {
+      ...legacyUser,
+      isDeleted: false,
+    };
+  }
+}
+
 export const authOptions: NextAuthOptions = {
   secret: AUTH_SECRET,
   session: {
@@ -36,25 +140,13 @@ export const authOptions: NextAuthOptions = {
         const lock = isAuthLocked(lockKey);
         if (lock.locked) return null;
 
-        const user = await prisma.user.findFirst({
-          where: usingId
-            ? { idNumber: normalizedId }
-            : { email: { equals: normalizedEmail, mode: "insensitive" } },
-          select: {
-            id: true,
-            email: true,
-            fullName: true,
-            password: true,
-            role: true,
-            isBurned: true,
-          },
-        });
+        const user = await findAuthUser({ normalizedId, usingId, normalizedEmail });
 
         if (!user) {
           registerAuthFailure(lockKey);
           return null;
         }
-        if (user.isBurned) {
+        if (user.isBurned || user.isDeleted) {
           registerAuthFailure(lockKey);
           return null;
         }
@@ -88,24 +180,53 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async jwt({ token, user }) {
+      const mutableToken = token as any;
+
       if (user?.id) {
-        token.id = user.id;
+        mutableToken.id = user.id;
       }
 
       if (user?.email) {
-        token.email = user.email;
+        mutableToken.email = user.email;
       }
 
       if (user?.name) {
-        token.name = user.name;
+        mutableToken.name = user.name;
       }
 
       if (isRole(user?.role)) {
-        token.role = user.role;
+        mutableToken.role = user.role;
       }
-      return token;
+
+      const tokenUserId = typeof mutableToken.id === "string" ? mutableToken.id : null;
+      const tokenEmail = typeof mutableToken.email === "string" ? mutableToken.email : null;
+
+      if (tokenUserId || tokenEmail) {
+        const dbUser = await findSessionUser(tokenUserId, tokenEmail);
+
+        if (!dbUser || dbUser.isBurned || dbUser.isDeleted) {
+          mutableToken.invalidated = true;
+          delete mutableToken.id;
+          delete mutableToken.email;
+          delete mutableToken.name;
+          delete mutableToken.role;
+          return mutableToken;
+        }
+
+        mutableToken.invalidated = false;
+        mutableToken.id = dbUser.id;
+        mutableToken.email = dbUser.email;
+        mutableToken.name = dbUser.fullName;
+        mutableToken.role = dbUser.role;
+      }
+
+      return mutableToken;
     },
     async session({ session, token }) {
+      if ((token as any).invalidated) {
+        return null as any;
+      }
+
       if (session.user && isRole(token.role)) {
         session.user.role = token.role;
         session.user.id = typeof token.id === "string" ? token.id : "";
