@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/nextAuth";
 import prisma from "@/lib/prisma";
+import { sendSystemNotification } from "@/lib/systemNotifications";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -87,6 +88,16 @@ export async function PATCH(req: Request, context: RouteContext) {
       points,
       at: new Date().toISOString(),
     });
+
+    if (pointsDelta !== 0) {
+      const direction = pointsDelta > 0 ? "increased" : "reduced";
+      const abs = Math.abs(pointsDelta);
+      await sendSystemNotification(
+        id,
+        "Points updated",
+        `Your points were ${direction} by ${abs}. New balance: ${points} point${points !== 1 ? "s" : ""}.`
+      );
+    }
 
     return NextResponse.json({ user: updatedUser }, { status: 200 });
   } catch {

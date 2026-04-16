@@ -10,6 +10,8 @@ type Props = {
   rejectionReason: string | null;
   disbursementSentAt: string | null;
   disbursementReference: string | null;
+  canApprove: boolean;
+  eligibilityNote: string;
 };
 
 export default function ApplicationDecisionCard({
@@ -18,6 +20,8 @@ export default function ApplicationDecisionCard({
   rejectionReason,
   disbursementSentAt,
   disbursementReference,
+  canApprove,
+  eligibilityNote,
 }: Props) {
   const router = useRouter();
   const [selectedReason, setSelectedReason] = useState("");
@@ -62,7 +66,7 @@ export default function ApplicationDecisionCard({
       const body = (await response.json()) as {
         error?: string;
         transferUrl?: string;
-        code?: "APPLICATION_OVERRIDDEN" | "LOAN_NOT_PENDING";
+        code?: "APPLICATION_OVERRIDDEN" | "LOAN_NOT_PENDING" | "INSUFFICIENT_DISPOSABLE_INCOME";
       };
       if (!response.ok) {
         if (response.status === 409 && body.code === "APPLICATION_OVERRIDDEN") {
@@ -132,6 +136,15 @@ export default function ApplicationDecisionCard({
 
         {status === "PENDING" && (
           <div className="mt-4 space-y-3">
+            <div
+              className={`rounded-xl border px-3 py-2 text-sm ${canApprove
+                ? "border-green-200 bg-green-50 text-green-700"
+                : "border-red-200 bg-red-50 text-red-700"
+                }`}
+            >
+              {eligibilityNote}
+            </div>
+
             <select
               value={selectedReason}
               onChange={(event) => setSelectedReason(event.target.value)}
@@ -147,10 +160,14 @@ export default function ApplicationDecisionCard({
             <button
               type="button"
               onClick={handleApprove}
-              disabled={Boolean(loading)}
+              disabled={Boolean(loading) || !canApprove}
               className="inline-flex w-full items-center justify-center rounded-xl bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50"
             >
-              {loading === "approve" ? "Approving..." : "Approve and Continue to Disbursement"}
+              {!canApprove
+                ? "Not Eligible for Approval"
+                : loading === "approve"
+                  ? "Approving..."
+                  : "Approve and Continue to Disbursement"}
             </button>
 
             <button

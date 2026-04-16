@@ -3,7 +3,12 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/nextAuth";
 import prisma from "@/lib/prisma";
-import { getTermMonths } from "@/lib/loanPolicy";
+import {
+  MIN_DISPOSABLE_INCOME_FOR_LOAN,
+  getDisposableIncomeEligibility,
+  getMaxLoanForUser,
+  getTermMonths,
+} from "@/lib/loanPolicy";
 import ApplicationDecisionCard from "./ApplicationDecisionCard";
 
 type PageProps = {
@@ -22,6 +27,7 @@ export default async function AdminLoanApplicationPage({ params }: PageProps) {
     where: { id },
     select: {
       id: true,
+      userId: true,
       amount: true,
       termDays: true,
       applicationData: true,
@@ -66,6 +72,18 @@ export default async function AdminLoanApplicationPage({ params }: PageProps) {
     month: "short",
     year: "numeric",
   });
+
+  const previousLoanCount = await prisma.loan.count({
+    where: { userId: loan.userId },
+  });
+  const maxByProfile = getMaxLoanForUser(previousLoanCount > 1);
+  const affordability = getDisposableIncomeEligibility(loan.disposableIncome ?? 0, loan.amount, maxByProfile);
+  const eligibilityNote =
+    (loan.disposableIncome ?? 0) < MIN_DISPOSABLE_INCOME_FOR_LOAN
+      ? `Not eligible: disposable income is below R${MIN_DISPOSABLE_INCOME_FOR_LOAN}.`
+      : affordability.eligible
+        ? `Eligible by disposable income rule. Max allowed is R${affordability.maxAllowed.toLocaleString()} (25% of disposable income).`
+        : `Not eligible: requested amount exceeds affordability cap. Max allowed is R${affordability.maxAllowed.toLocaleString()} (25% of disposable income).`;
 
   return (
     <section className="max-w-6xl mx-auto px-4 md:px-6 py-8 md:py-10">
@@ -178,6 +196,8 @@ export default async function AdminLoanApplicationPage({ params }: PageProps) {
           rejectionReason={loan.rejectionReason}
           disbursementSentAt={loan.disbursementSentAt?.toISOString() ?? null}
           disbursementReference={loan.disbursementReference}
+          canApprove={affordability.eligible}
+          eligibilityNote={eligibilityNote}
         />
       </div>
     </section>

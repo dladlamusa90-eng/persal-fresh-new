@@ -3,6 +3,11 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/nextAuth";
 import prisma from "@/lib/prisma";
 import { formatRand, sendSystemNotification } from "@/lib/systemNotifications";
+import {
+  MIN_DISPOSABLE_INCOME_FOR_LOAN,
+  getDisposableIncomeEligibility,
+  getMaxLoanForUser,
+} from "@/lib/loanPolicy";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -32,6 +37,9 @@ export async function PATCH(_: Request, context: RouteContext) {
         id: true,
         status: true,
         rejectionReason: true,
+        amount: true,
+        disposableIncome: true,
+        userId: true,
       },
     });
     if (!loan) {
@@ -49,6 +57,31 @@ export async function PATCH(_: Request, context: RouteContext) {
             ? "This application was just overridden by the user and is no longer available for approval."
             : "Only pending loans can be approved",
           code: wasOverriddenByUser ? "APPLICATION_OVERRIDDEN" : "LOAN_NOT_PENDING",
+        },
+        { status: 409 }
+      );
+    }
+
+    const previousLoanCount = await prisma.loan.count({
+      where: {
+        userId: loan.userId,
+      },
+    });
+    const maxByProfile = getMaxLoanForUser(previousLoanCount > 1);
+    const affordability = getDisposableIncomeEligibility(
+      loan.disposableIncome ?? 0,
+      loan.amount,
+      maxByProfile
+    );
+
+    if (!affordability.eligible) {
+      const notEnoughDisposable = (loan.disposableIncome ?? 0) < MIN_DISPOSABLE_INCOME_FOR_LOAN;
+      return NextResponse.json(
+        {
+          error: notEnoughDisposable
+            ? "This customer is not eligible for a loan: disposable income is below R1000. Reject with 'Insufficient disposable income'."
+            : `This customer is not eligible for this amount. Max allowed is R${affordability.maxAllowed.toLocaleString()} (25% of disposable income). Reject with 'Insufficient disposable income'.`,
+          code: "INSUFFICIENT_DISPOSABLE_INCOME",
         },
         { status: 409 }
       );
@@ -98,6 +131,7 @@ export async function PATCH(_: Request, context: RouteContext) {
         amount: true,
         termDays: true,
         userId: true,
+        disposableIncome: true,
         createdAt: true,
         disbursementSentAt: true,
         disbursementReference: true,

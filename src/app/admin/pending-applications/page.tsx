@@ -4,6 +4,11 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/nextAuth";
 import prisma from "@/lib/prisma";
 import PendingApplicationsTable from "@/app/admin/pending-applications/PendingApplicationsTable";
+import {
+  MIN_DISPOSABLE_INCOME_FOR_LOAN,
+  getDisposableIncomeEligibility,
+  getMaxLoanForUser,
+} from "@/lib/loanPolicy";
 
 export default async function PendingApplicationsPage() {
   const session = await getServerSession(authOptions);
@@ -30,15 +35,55 @@ export default async function PendingApplicationsPage() {
     orderBy: { createdAt: "desc" },
   });
 
+  const pendingUserIds = Array.from(new Set(pendingLoans.map((loan) => loan.userId)));
+  const loanCountsByUser = pendingUserIds.length
+    ? await prisma.loan.groupBy({
+      by: ["userId"],
+      where: {
+        userId: {
+          in: pendingUserIds,
+        },
+      },
+      _count: {
+        _all: true,
+      },
+    })
+    : [];
+  const loanCountMap = new Map(loanCountsByUser.map((entry) => [entry.userId, entry._count._all]));
+
   const pendingLoansData = pendingLoans.map((loan) => ({
+    previousLoanCount: loanCountMap.get(loan.userId) ?? 1,
     id: loan.id,
     applicantName: loan.user.fullName,
     applicantEmail: loan.applicantEmail ?? loan.user.email ?? "No email",
     persalNumber: loan.user.persalNumber ?? "N/A",
     amount: loan.amount,
     termDays: loan.termDays,
+    disposableIncome: loan.disposableIncome,
     createdAt: loan.createdAt.toISOString(),
-  }));
+  })).map((loan) => {
+    const maxByProfile = getMaxLoanForUser(loan.previousLoanCount > 1);
+    const affordability = getDisposableIncomeEligibility(loan.disposableIncome ?? 0, loan.amount, maxByProfile);
+    const ineligibleReason =
+      (loan.disposableIncome ?? 0) < MIN_DISPOSABLE_INCOME_FOR_LOAN
+        ? "Disposable income below R1000"
+        : !affordability.eligible
+          ? "Requested amount exceeds 25% of disposable income"
+          : null;
+
+    return {
+      id: loan.id,
+      applicantName: loan.applicantName,
+      applicantEmail: loan.applicantEmail,
+      persalNumber: loan.persalNumber,
+      amount: loan.amount,
+      termDays: loan.termDays,
+      disposableIncome: loan.disposableIncome,
+      affordabilityMax: affordability.maxAllowed,
+      ineligibleReason,
+      createdAt: loan.createdAt,
+    };
+  });
 
   return (
     <section className="max-w-6xl mx-auto px-4 md:px-6 py-8 md:py-10">

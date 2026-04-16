@@ -4,6 +4,8 @@ import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import {
   FIRST_TIME_MAX_LOAN,
+  MIN_DISPOSABLE_INCOME_FOR_LOAN,
+  MAX_LOAN_DISPOSABLE_INCOME_RATIO,
   RETURNING_MAX_LOAN,
   calculateLoanCharges,
   calculateLogicalMaxLoan,
@@ -307,7 +309,7 @@ function ApplyPageContent() {
     <section className="max-w-2xl mx-auto py-12">
       <h2 className="text-2xl font-semibold mb-6">Apply for a Loan</h2>
       <div className="mb-6 p-4 bg-teal-50 border border-teal-200 rounded text-teal-800 text-sm">
-        <strong>Legal Notice:</strong> First-time users can borrow up to <b>R{FIRST_TIME_MAX_LOAN.toLocaleString()}</b>, returning users up to <b>R{RETURNING_MAX_LOAN.toLocaleString()}</b>, with a maximum term of <b>3 months</b>. Only one active loan per client is allowed.
+        <strong>Legal Notice:</strong> First-time users can borrow up to <b>R{FIRST_TIME_MAX_LOAN.toLocaleString()}</b>, returning users up to <b>R{RETURNING_MAX_LOAN.toLocaleString()}</b>. For affordability, approved loan amount cannot exceed <b>{Math.round(MAX_LOAN_DISPOSABLE_INCOME_RATIO * 100)}%</b> of disposable income. Applications with disposable income below <b>R{MIN_DISPOSABLE_INCOME_FOR_LOAN.toLocaleString()}</b> may still be submitted for admin review and can be rejected for insufficient disposable income. Maximum term is <b>3 months</b>. Only one active loan per client is allowed.
       </div>
       <div className="mb-6 p-3 bg-gray-50 border border-gray-200 rounded text-gray-700 text-sm">
         Profile limit: <b>{isReturningUser ? "Returning user" : "First-time user"}</b> (up to <b>R{userLoanCap.toLocaleString()}</b>).
@@ -378,7 +380,7 @@ function ApplyPageContent() {
               </div>
               <div className="mt-2 text-lg font-semibold whitespace-nowrap">R {desiredLoan.toLocaleString()}</div>
               {maxLoan < 100 && (
-                <div className="text-red-600 text-sm mt-2">Your salary and disposable income are too low for a loan.</div>
+                <div className="text-red-600 text-sm mt-2">You are currently not eligible for a loan based on your salary/disposable income profile.</div>
               )}
             </div>
             <div>

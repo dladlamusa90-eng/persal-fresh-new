@@ -4,7 +4,14 @@ import { Prisma } from "@prisma/client";
 import { authOptions } from "@/lib/nextAuth";
 import prisma from "@/lib/prisma";
 import { formatRand, sendSystemNotification } from "@/lib/systemNotifications";
-import { ALLOWED_TERM_DAYS, FIRST_TIME_MAX_LOAN, MIN_LOAN_AMOUNT, RETURNING_MAX_LOAN, getMaxLoanForUser } from "@/lib/loanPolicy";
+import {
+  ALLOWED_TERM_DAYS,
+  FIRST_TIME_MAX_LOAN,
+  MIN_LOAN_AMOUNT,
+  RETURNING_MAX_LOAN,
+  getDisposableIncomeEligibility,
+  getMaxLoanForUser,
+} from "@/lib/loanPolicy";
 import {
   getBankAccountConstraintLabel,
   isSouthAfricanBankName,
@@ -195,6 +202,18 @@ export async function POST(req: Request) {
         },
         { status: 400 }
       );
+    }
+
+    if (disposableIncome >= 1000) {
+      const affordability = getDisposableIncomeEligibility(disposableIncome, amount, maxAllowed);
+      if (!affordability.eligible) {
+        return NextResponse.json(
+          {
+            error: `Loan amount exceeds affordability limit. Maximum allowed is R${affordability.maxAllowed.toLocaleString()} (25% of disposable income).`,
+          },
+          { status: 400 }
+        );
+      }
     }
 
     const now = new Date();

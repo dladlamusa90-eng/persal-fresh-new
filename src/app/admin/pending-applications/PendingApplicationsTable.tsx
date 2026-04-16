@@ -11,6 +11,9 @@ type PendingLoanRow = {
   persalNumber: string;
   amount: number;
   termDays: number;
+  disposableIncome: number | null;
+  affordabilityMax: number;
+  ineligibleReason: string | null;
   createdAt: string;
 };
 
@@ -97,6 +100,8 @@ export default function PendingApplicationsTable({ loans }: Props) {
               <th className="px-4 py-3 font-semibold">Email</th>
               <th className="px-4 py-3 font-semibold">Persal Number</th>
               <th className="px-4 py-3 font-semibold">Amount</th>
+              <th className="px-4 py-3 font-semibold">Disposable Income</th>
+              <th className="px-4 py-3 font-semibold">Eligibility</th>
               <th className="px-4 py-3 font-semibold">Term</th>
               <th className="px-4 py-3 font-semibold">Submitted</th>
               <th className="px-4 py-3 font-semibold">Action</th>
@@ -105,7 +110,7 @@ export default function PendingApplicationsTable({ loans }: Props) {
           <tbody>
             {filteredLoans.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-slate-500">
+                <td colSpan={9} className="px-4 py-8 text-center text-slate-500">
                   No pending applications in this amount range.
                 </td>
               </tr>
@@ -117,6 +122,24 @@ export default function PendingApplicationsTable({ loans }: Props) {
                   <td className="px-4 py-3 text-slate-700">{loan.persalNumber}</td>
                   <td className="px-4 py-3 text-slate-700 font-semibold">
                     R {new Intl.NumberFormat("en-US").format(Math.round(loan.amount))}
+                  </td>
+                  <td className="px-4 py-3 text-slate-700">
+                    {loan.disposableIncome == null
+                      ? "N/A"
+                      : `R ${new Intl.NumberFormat("en-US").format(Math.round(loan.disposableIncome))}`}
+                  </td>
+                  <td className="px-4 py-3 text-xs">
+                    {loan.ineligibleReason ? (
+                      <div className="inline-flex flex-col rounded-lg border border-red-200 bg-red-50 px-2 py-1 text-red-700">
+                        <span className="font-semibold">Not eligible</span>
+                        <span>{loan.ineligibleReason}</span>
+                      </div>
+                    ) : (
+                      <div className="inline-flex flex-col rounded-lg border border-green-200 bg-green-50 px-2 py-1 text-green-700">
+                        <span className="font-semibold">Eligible</span>
+                        <span>Max by affordability: R {new Intl.NumberFormat("en-US").format(Math.round(loan.affordabilityMax))}</span>
+                      </div>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-slate-700">{loan.termDays} days</td>
                   <td className="px-4 py-3 text-slate-600">

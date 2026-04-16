@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/nextAuth";
 import prisma from "@/lib/prisma";
 import { isValidLoanRejectionReason } from "@/lib/loanRejectionReasons";
+import { sendSystemNotification, formatRand } from "@/lib/systemNotifications";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -76,6 +77,12 @@ export async function PATCH(req: Request, context: RouteContext) {
       reason,
       at: new Date().toISOString(),
     });
+
+    await sendSystemNotification(
+      updatedLoan.userId,
+      "Loan application update",
+      `Your loan application for ${formatRand(updatedLoan.amount)} was rejected. Reason: ${reason}`
+    );
 
     return NextResponse.json(
       { message: "Loan rejected", loan: updatedLoan },
