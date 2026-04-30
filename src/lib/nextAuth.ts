@@ -137,9 +137,6 @@ export const authOptions: NextAuthOptions = {
         const normalizedEmail = identifier.toLowerCase();
 
         const lockKey = `nextauth:${usingId ? normalizedId : normalizedEmail}`;
-        const lock = isAuthLocked(lockKey);
-        if (lock.locked) return null;
-
         const user = await findAuthUser({ normalizedId, usingId, normalizedEmail });
 
         if (!user) {
@@ -157,6 +154,8 @@ export const authOptions: NextAuthOptions = {
           const legacyPlaintextMatch = user.password === password;
           if (!legacyPlaintextMatch) {
             registerAuthFailure(lockKey);
+            const lock = isAuthLocked(lockKey);
+            if (lock.locked) return null;
             return null;
           }
 

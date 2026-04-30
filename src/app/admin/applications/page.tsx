@@ -16,27 +16,73 @@ export default async function AdminApplicationsPage() {
     redirect("/dashboard");
   }
 
-  const users = await (prisma.user.findMany as any)({
-    where: { role: "USER" },
-    select: {
-      id: true,
-      fullName: true,
-      email: true,
-      phone: true,
-      idNumber: true,
-      persalNumber: true,
-      address: true,
-      applicationStatus: true,
-      applicationApprovedAt: true,
-      applicationRejectedAt: true,
-      applicationRejectionReason: true,
-      createdAt: true,
-    },
-    orderBy: [
-      { applicationStatus: "asc" }, // APPROVED, PENDING, REJECTED — alphabetical puts PENDING first-ish; we sort below
-      { createdAt: "desc" },
-    ],
-  });
+  let usingLegacyFallback = false;
+  let users: Array<{
+    id: string;
+    fullName: string;
+    email: string;
+    phone: string | null;
+    idNumber: string | null;
+    persalNumber: string | null;
+    address: string | null;
+    applicationStatus: "PENDING" | "APPROVED" | "REJECTED";
+    applicationApprovedAt: Date | null;
+    applicationRejectedAt: Date | null;
+    applicationRejectionReason: string | null;
+    createdAt: Date;
+  }>;
+
+  try {
+    users = await prisma.user.findMany({
+      where: { role: "USER" },
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        phone: true,
+        idNumber: true,
+        persalNumber: true,
+        address: true,
+        applicationStatus: true,
+        applicationApprovedAt: true,
+        applicationRejectedAt: true,
+        applicationRejectionReason: true,
+        createdAt: true,
+      },
+      orderBy: [
+        { applicationStatus: "asc" },
+        { createdAt: "desc" },
+      ],
+    });
+  } catch (error) {
+    if (!(error instanceof Error) || !error.message.includes("Unknown argument `applicationStatus`")) {
+      throw error;
+    }
+
+    usingLegacyFallback = true;
+    const fallbackUsers = await prisma.user.findMany({
+      where: { role: "USER" },
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        phone: true,
+        idNumber: true,
+        persalNumber: true,
+        address: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    users = fallbackUsers.map((u) => ({
+      ...u,
+      applicationStatus: "PENDING",
+      applicationApprovedAt: null,
+      applicationRejectedAt: null,
+      applicationRejectionReason: null,
+    }));
+  }
 
   // Sort: PENDING first, then APPROVED, then REJECTED
   const statusOrder = { PENDING: 0, APPROVED: 1, REJECTED: 2 };
@@ -95,6 +141,12 @@ export default async function AdminApplicationsPage() {
           </div>
         </div>
       </div>
+
+      {usingLegacyFallback && (
+        <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-amber-900 text-sm font-medium">
+          Application status fields are temporarily unavailable in the running Prisma client. Restart the dev server to load the latest Prisma schema.
+        </div>
+      )}
 
       <AdminApplicationsPanel initialUsers={usersData} />
     </section>

@@ -94,10 +94,17 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      await sendSms(
-        user.phone,
-        `Your Persal login OTP is: ${otpCode}. It expires in 5 minutes. Do not share this code with anyone.`
-      );
+      try {
+        await sendSms(
+          user.phone,
+          `Your Persal login OTP is: ${otpCode}. It expires in 5 minutes. Do not share this code with anyone.`
+        );
+      } catch {
+        return NextResponse.json(
+          { error: "OTP login is temporarily unavailable. Please use Email login with your password." },
+          { status: 503 }
+        );
+      }
 
       return NextResponse.json(
         {
@@ -203,10 +210,6 @@ export async function POST(req: NextRequest) {
     const normalizedEmail = identifier.toLowerCase();
     const password = parsed.data.password;
     const lockKey = `login:${usingId ? normalizedId : normalizedEmail}:${ip}`;
-    const lock = isAuthLocked(lockKey);
-    if (lock.locked) {
-      return NextResponse.json({ error: "Too many failed attempts. Try again later." }, { status: 429 });
-    }
 
     const user = await prisma.user.findFirst({
       where: usingId
@@ -217,6 +220,10 @@ export async function POST(req: NextRequest) {
 
     if (!user) {
       registerAuthFailure(lockKey);
+      const lock = isAuthLocked(lockKey);
+      if (lock.locked) {
+        return NextResponse.json({ error: "Too many failed attempts. Try again later." }, { status: 429 });
+      }
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
@@ -231,6 +238,10 @@ export async function POST(req: NextRequest) {
     const ok = await verifyPassword(password, user.password);
     if (!ok) {
       registerAuthFailure(lockKey);
+      const lock = isAuthLocked(lockKey);
+      if (lock.locked) {
+        return NextResponse.json({ error: "Too many failed attempts. Try again later." }, { status: 429 });
+      }
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 

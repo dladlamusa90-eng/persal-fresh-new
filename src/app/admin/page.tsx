@@ -116,9 +116,15 @@ export default async function AdminPage() {
     }
   })();
 
-  const pendingAppCountPromise = (prisma.user.count as any)({
-    where: { applicationStatus: "PENDING", role: "USER" },
-  }).catch(() => 0);
+  const pendingAppCountPromise = (async () => {
+    try {
+      return await prisma.user.count({
+        where: { applicationStatus: "PENDING", role: "USER" },
+      } as any);
+    } catch {
+      return 0;
+    }
+  })();
 
   const [loans, users, pendingAppCount] = await Promise.all([loansPromise, usersPromise, pendingAppCountPromise]);
 
