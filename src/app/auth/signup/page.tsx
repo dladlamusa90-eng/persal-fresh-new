@@ -1,5 +1,5 @@
 "use client";
-import { Suspense, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
@@ -15,10 +15,80 @@ function SignupPageContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [address, setAddress] = useState("");
+  const [faceStep, setFaceStep] = useState<"idle" | "camera" | "captured">("idle");
+  const [registrationFacePhoto, setRegistrationFacePhoto] = useState<string | null>(null);
   const [showRequirementsPopup, setShowRequirementsPopup] = useState(searchParams.get("from") === "login");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  const stopCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (faceStep !== "camera" || !videoRef.current || !streamRef.current) {
+      return;
+    }
+
+    videoRef.current.srcObject = streamRef.current;
+    void videoRef.current.play().catch(() => {
+      setError("Unable to start camera preview. Please try again.");
+      setFaceStep("idle");
+    });
+  }, [faceStep]);
+
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, [stopCamera]);
+
+  async function startFaceCamera() {
+    setError("");
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user", width: { ideal: 720 }, height: { ideal: 960 } },
+      });
+      streamRef.current = stream;
+      setFaceStep("camera");
+    } catch {
+      setError("Camera access denied. Please allow camera permission to register your face.");
+    }
+  }
+
+  function captureFace() {
+    if (!videoRef.current || !canvasRef.current) return;
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+
+    canvas.width = video.videoWidth || 720;
+    canvas.height = video.videoHeight || 960;
+
+    const context = canvas.getContext("2d");
+    if (!context) return;
+
+    context.drawImage(video, 0, 0);
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+    setRegistrationFacePhoto(dataUrl);
+    stopCamera();
+    setFaceStep("captured");
+  }
+
+  async function retakeFace() {
+    setRegistrationFacePhoto(null);
+    await startFaceCamera();
+  }
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
@@ -52,6 +122,11 @@ function SignupPageContent() {
       return;
     }
 
+    if (!registrationFacePhoto) {
+      setError("Face registration is required. Please capture your face photo before submitting.");
+      return;
+    }
+
     setError("");
     setIsSubmitting(true);
 
@@ -69,6 +144,7 @@ function SignupPageContent() {
           persalNumber: normalizedPersal,
           phone: normalizedPhone,
           address: address.trim(),
+          registrationFacePhoto,
         }),
       });
 
@@ -212,6 +288,72 @@ function SignupPageContent() {
                 placeholder="e.g. 12 Maple Street, Johannesburg"
                 className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base md:text-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-300"
               />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-start">
+              <label className="text-gray-700 text-lg md:text-xl md:pt-2">Face Registration</label>
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 md:p-5">
+                <canvas ref={canvasRef} className="hidden" />
+                <p className="text-sm text-amber-900 font-semibold">Required for first-time application</p>
+                <p className="mt-1 text-xs md:text-sm text-amber-800">
+                  We store this as your registered face and compare it with your live face when you apply for a loan.
+                </p>
+
+                {faceStep === "idle" && !registrationFacePhoto && (
+                  <button
+                    type="button"
+                    onClick={startFaceCamera}
+                    className="mt-4 inline-flex rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-700 transition"
+                  >
+                    Start Camera
+                  </button>
+                )}
+
+                {faceStep === "camera" && (
+                  <div className="mt-4 space-y-3">
+                    <div className="relative rounded-xl overflow-hidden border border-amber-200 bg-black" style={{ aspectRatio: "3 / 4" }}>
+                      <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
+                    </div>
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          stopCamera();
+                          setFaceStep("idle");
+                        }}
+                        className="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={captureFace}
+                        className="flex-1 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-700 transition"
+                      >
+                        Capture Face
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {registrationFacePhoto && faceStep === "captured" && (
+                  <div className="mt-4 space-y-3">
+                    <div className="rounded-xl overflow-hidden border border-amber-200 bg-black" style={{ aspectRatio: "3 / 4" }}>
+                      <img src={registrationFacePhoto} alt="Registered face" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex gap-3">
+                      <span className="flex-1 rounded-xl bg-green-100 px-4 py-2.5 text-sm font-semibold text-green-800 text-center">Face captured</span>
+                      <button
+                        type="button"
+                        onClick={retakeFace}
+                        className="rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition"
+                      >
+                        Retake
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

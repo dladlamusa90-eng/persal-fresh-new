@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import prisma from "@/lib/prisma";
 import { hash } from "@/lib/bcrypt";
+import { buildFaceIdExternalUserId, submitToSmileId } from "@/lib/faceId";
 import {
   getBankAccountConstraintLabel,
   isValidBankAccountNumber,
@@ -33,7 +35,7 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await req.json();
-    const { fullName, email, persalNumber, password, phone, idNumber, bankName, accountNumber, address } = data;
+    const { fullName, email, persalNumber, password, phone, idNumber, bankName, accountNumber, address, registrationFacePhoto } = data;
     const normalizedFullName = String(fullName ?? "").trim().replace(/\s+/g, " ");
     const normalizedAddress = String(address ?? "").trim();
 
@@ -43,9 +45,17 @@ export async function POST(req: NextRequest) {
     const normalizedPhone = normalizePhoneNumber(String(phone ?? "").trim());
     const normalizedAccountNumber = normalizeAccountNumber(String(accountNumber ?? "").trim());
     const normalizedBankName = String(bankName ?? "").trim();
+    const normalizedRegistrationFacePhoto = String(registrationFacePhoto ?? "").trim();
 
     if (!normalizedFullName || !email || !persalNumber || !password || !normalizedPhone || !normalizedIdNumber) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    if (!normalizedRegistrationFacePhoto || normalizedRegistrationFacePhoto.length < 100) {
+      return NextResponse.json(
+        { error: "Face registration is required. Please capture your face photo before submitting." },
+        { status: 400 }
+      );
     }
 
     if (!isSouthAfricanPhoneNumber(normalizedPhone)) {
@@ -145,7 +155,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const partnerId = process.env.SMILE_PARTNER_ID;
+    const apiKey = process.env.SMILE_API_KEY;
+    const callbackUrl = process.env.SMILE_CALLBACK_URL ?? "";
+    const env = (process.env.SMILE_ENV === "production" ? "production" : "sandbox") as "sandbox" | "production";
+    const smileConfigured = Boolean(partnerId && apiKey);
+
     const hashedPassword = await hash(password);
+    const userId = randomUUID();
+    const externalUserId = buildFaceIdExternalUserId(userId);
+
+    // Create the user first with the registration face photo stored locally.
+    // New schema fields are set via a follow-up raw update so stale Prisma client
+    // runtime doesn't cause a P2022 / unknown-field error on create.
     const user = await prisma.user.create({
       data: {
         fullName: normalizedFullName,
@@ -159,6 +181,63 @@ export async function POST(req: NextRequest) {
         address: normalizedAddress || null,
       },
     });
+
+    // Back-fill face-registration fields safely (tolerant to Prisma client drift).
+    try {
+      await prisma.$executeRaw`
+        UPDATE "User"
+        SET
+          "faceIdExternalUserId" = ${externalUserId},
+          "faceIdRegistrationPhoto" = ${normalizedRegistrationFacePhoto},
+          "faceIdStatus" = 'PENDING',
+          "faceIdLastCheckedAt" = NOW()
+        WHERE id = ${user.id}
+      `;
+    } catch {
+      // Non-fatal: face fields may not exist in an older migration state.
+    }
+
+    // If SmileId is configured, attempt enrollment now.
+    // Enrollment failure does NOT block account creation — the user can
+    // retry face verification from the dashboard.
+    if (smileConfigured) {
+      try {
+        const enrollmentResult = await submitToSmileId({
+          partnerId: partnerId!,
+          apiKey: apiKey!,
+          externalUserId,
+          jobType: 1,
+          selfieBase64: normalizedRegistrationFacePhoto,
+          callbackUrl,
+          env,
+        });
+
+        if (enrollmentResult.approved) {
+          await prisma.$executeRaw`
+            UPDATE "User"
+            SET
+              "faceIdEnrolled" = true,
+              "faceIdStatus" = 'ENROLLED',
+              "faceIdVerifiedAt" = NOW(),
+              "faceIdLastCheckedAt" = NOW(),
+              "faceIdLastError" = NULL
+            WHERE id = ${user.id}
+          `;
+        } else {
+          await prisma.$executeRaw`
+            UPDATE "User"
+            SET
+              "faceIdStatus" = 'PENDING',
+              "faceIdLastCheckedAt" = NOW(),
+              "faceIdLastError" = ${"enrollment_pending"}
+            WHERE id = ${user.id}
+          `;
+        }
+      } catch {
+        // SmileId call failed — user is still created, face can be enrolled later.
+      }
+    }
+
     return NextResponse.json({ message: "User created", user: { id: user.id, email: user.email } }, { status: 201 });
   } catch (error) {
     console.error("[signup] error:", error);

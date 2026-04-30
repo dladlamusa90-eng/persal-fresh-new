@@ -77,7 +77,8 @@ export default function Home() {
       canvas.width = width;
       canvas.height = height;
       let rafId = 0;
-      const balls = Array.from({ length: 18 }).map(() => ({
+      const particleCount = window.innerWidth < 768 ? 10 : 18;
+      const balls = Array.from({ length: particleCount }).map(() => ({
         x: Math.random() * width,
         y: Math.random() * height,
         r: 18 + Math.random() * 18,
@@ -106,9 +107,21 @@ export default function Home() {
         rafId = requestAnimationFrame(animate);
       }
       animate();
+
+      const onVisibilityChange = () => {
+        if (document.visibilityState === 'hidden') {
+          cancelAnimationFrame(rafId);
+          return;
+        }
+        rafId = requestAnimationFrame(animate);
+      };
+
+      document.addEventListener('visibilitychange', onVisibilityChange);
+
       return () => {
         running = false;
         cancelAnimationFrame(rafId);
+        document.removeEventListener('visibilitychange', onVisibilityChange);
       };
     }, []);
   const maxLoan = 5000;
@@ -515,7 +528,7 @@ export default function Home() {
                     </div>
                     <div className="text-center md:text-right">
                       <Link
-                        href={!error && desiredLoan >= 100 && desiredLoan <= maxLoan ? "/auth/login" : "#"}
+                        href={!error && desiredLoan >= 100 && desiredLoan <= maxLoan ? "/auth/signup?from=login" : "#"}
                         className={`inline-block px-4 py-2 rounded-lg font-semibold text-base transition text-center ${!error && desiredLoan >= 100 && desiredLoan <= maxLoan ? 'bg-orange-500 text-white hover:bg-orange-600 cursor-pointer' : 'bg-gray-300 text-gray-400 cursor-not-allowed pointer-events-none'}`}
                       >
                         Apply Now
@@ -626,7 +639,7 @@ export default function Home() {
           <section className="flex-1 bg-persal-blue rounded-t-2xl md:rounded-l-2xl md:rounded-tr-none shadow p-8 flex flex-col items-start justify-center">
             <h2 className="text-2xl font-bold text-white mb-3">Ready to get started?</h2>
             <p className="text-teal-100 mb-5">Apply for your Persal payroll loan today and experience fast, fair, and stress-free borrowing.</p>
-            <a href="/auth/login" className="inline-block bg-white text-persal-blue font-semibold px-6 py-3 rounded-lg shadow hover:bg-teal-50 transition">Apply Now</a>
+            <a href="/auth/signup?from=login" className="inline-block bg-white text-persal-blue font-semibold px-6 py-3 rounded-lg shadow hover:bg-teal-50 transition">Apply Now</a>
           </section>
           <div className="flex-1 flex items-stretch">
             {/* Sliding image carousel */}

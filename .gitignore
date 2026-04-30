@@ -12,3 +12,4 @@ tsconfig.tsbuildinfo
 tmp-*.js
 cookies.txt
 .env.local
+dev-certs/

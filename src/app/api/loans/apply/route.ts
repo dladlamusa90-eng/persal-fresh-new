@@ -138,11 +138,6 @@ export async function POST(req: Request) {
         accountType: true,
         branchCode: true,
         faceIdStatus: true,
-        faceIdEnrolled: true,
-        faceIdRegistrationPhoto: true,
-        faceIdLastLivePhoto: true,
-        faceIdLastMatchPassed: true,
-        faceIdLastMatchedAt: true,
         faceIdVerifiedAt: true,
         applicationStatus: true,
       } as any,
@@ -175,33 +170,29 @@ export async function POST(req: Request) {
     }
     // ─────────────────────────────────────────────────────────────────────
 
-    // ── FaceID verification gate ───────────────────────────────────────────
-    const faceIdStatus = (user as any).faceIdStatus as string | null;
-    const faceIdEnrolled = Boolean((user as any).faceIdEnrolled);
-    const faceIdRegistrationPhoto = (user as any).faceIdRegistrationPhoto as string | null;
-    const faceIdLastLivePhoto = (user as any).faceIdLastLivePhoto as string | null;
-    const faceIdLastMatchPassed = Boolean((user as any).faceIdLastMatchPassed);
-    const faceIdLastMatchedAt = (user as any).faceIdLastMatchedAt as Date | string | null;
-    const FACE_MATCH_VALID_MS = 15 * 60 * 1000; // 15 minutes
-    const faceMatchExpired = faceIdLastMatchedAt
-      ? Date.now() - new Date(faceIdLastMatchedAt).getTime() > FACE_MATCH_VALID_MS
-      : true;
-
-    if (!faceIdEnrolled || !faceIdRegistrationPhoto) {
-      return NextResponse.json(
-        { error: "Face registration required. Please register your face before submitting a loan application." },
-        { status: 403 }
-      );
-    }
-
-    if (faceIdStatus !== "VERIFIED" || !faceIdLastLivePhoto || !faceIdLastMatchPassed || faceMatchExpired) {
-      return NextResponse.json(
-        {
-          error:
-            "Live face match required. Please complete Verify Face now so we can match your live face to your registered face before submission.",
-        },
-        { status: 403 }
-      );
+    // ── Snapshot face photos for admin comparison (non-blocking) ──────────
+    // Use raw SQL to read new columns safely regardless of Prisma client state.
+    type FaceRow = {
+      faceIdRegistrationPhoto: string | null;
+      faceIdLastLivePhoto: string | null;
+      faceIdLastMatchPassed: boolean;
+      faceIdLastMatchedAt: Date | null;
+    };
+    let faceSnapshots: FaceRow = {
+      faceIdRegistrationPhoto: null,
+      faceIdLastLivePhoto: null,
+      faceIdLastMatchPassed: false,
+      faceIdLastMatchedAt: null,
+    };
+    try {
+      const faceRows = await prisma.$queryRaw<FaceRow[]>`
+        SELECT "faceIdRegistrationPhoto", "faceIdLastLivePhoto",
+               "faceIdLastMatchPassed", "faceIdLastMatchedAt"
+        FROM "User" WHERE id = ${user.id} LIMIT 1
+      `;
+      if (faceRows[0]) faceSnapshots = faceRows[0];
+    } catch {
+      // Face columns may not yet exist on older DB instances — continue without them.
     }
     // ──────────────────────────────────────────────────────────────────────
 
@@ -357,10 +348,10 @@ export async function POST(req: Request) {
           applicantAccountNumber: resolvedAccountNumber,
           applicantAccountType: resolvedAccountType,
           applicantBranchCode: resolvedBranchCode,
-          faceRegistrationPhotoSnapshot: faceIdRegistrationPhoto,
-          faceVerificationPhoto: faceIdLastLivePhoto,
-          faceMatchPassed: true,
-          faceMatchCheckedAt: faceIdLastMatchedAt ? new Date(faceIdLastMatchedAt) : now,
+          faceRegistrationPhotoSnapshot: faceSnapshots.faceIdRegistrationPhoto,
+          faceVerificationPhoto: faceSnapshots.faceIdLastLivePhoto,
+          faceMatchPassed: Boolean(faceSnapshots.faceIdLastMatchPassed),
+          faceMatchCheckedAt: faceSnapshots.faceIdLastMatchedAt ? new Date(faceSnapshots.faceIdLastMatchedAt) : null,
           status: "PENDING",
           debitMandateAccepted,
           debitMandateAcceptedAt: debitMandateAccepted ? now : null,

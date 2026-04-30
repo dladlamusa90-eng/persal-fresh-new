@@ -18,49 +18,51 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: {
-        id: true,
-        faceIdEnrolled: true,
-        faceIdExternalUserId: true,
-        faceIdStatus: true,
-        faceIdVerifiedAt: true,
-        faceIdLastMatchPassed: true,
-        faceIdLastMatchedAt: true,
-        faceIdRegistrationPhoto: true,
-      } as any,
-    });
+    type UserRow = {
+      id: string;
+      faceIdExternalUserId: string | null;
+      faceIdStatus: string | null;
+      faceIdVerifiedAt: Date | null;
+      faceIdEnrolled: boolean;
+      faceIdRegistrationPhoto: string | null;
+      faceIdLastMatchPassed: boolean;
+      faceIdLastMatchedAt: Date | null;
+    };
+
+    const rows = await prisma.$queryRaw<UserRow[]>`
+      SELECT id, "faceIdExternalUserId", "faceIdStatus", "faceIdVerifiedAt",
+             "faceIdEnrolled", "faceIdRegistrationPhoto",
+             "faceIdLastMatchPassed", "faceIdLastMatchedAt"
+      FROM "User" WHERE id = ${session.user.id} LIMIT 1
+    `;
+    const user = rows[0] ?? null;
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const externalUserId = (user as any).faceIdExternalUserId || buildFaceIdExternalUserId(user.id);
-    const enrolled = Boolean((user as any).faceIdEnrolled);
+    const externalUserId = user.faceIdExternalUserId || buildFaceIdExternalUserId(user.id);
+    const enrolled = Boolean(user.faceIdEnrolled);
     const verifiedByStatus = isFaceIdVerified({
-      faceIdStatus: (user as any).faceIdStatus,
-      faceIdVerifiedAt: (user as any).faceIdVerifiedAt,
+      faceIdStatus: user.faceIdStatus,
+      faceIdVerifiedAt: user.faceIdVerifiedAt,
     });
-    const faceIdLastMatchPassed = Boolean((user as any).faceIdLastMatchPassed);
-    const faceIdLastMatchedAt = (user as any).faceIdLastMatchedAt as Date | string | null;
     const FACE_MATCH_VALID_MS = 15 * 60 * 1000;
     const liveMatchValid = Boolean(
-      faceIdLastMatchPassed &&
-      faceIdLastMatchedAt &&
-      Date.now() - new Date(faceIdLastMatchedAt).getTime() <= FACE_MATCH_VALID_MS
+      user.faceIdLastMatchPassed &&
+      user.faceIdLastMatchedAt &&
+      Date.now() - new Date(user.faceIdLastMatchedAt).getTime() <= FACE_MATCH_VALID_MS
     );
     const verified = Boolean(verifiedByStatus && liveMatchValid);
 
-    if (!(user as any).faceIdExternalUserId) {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          faceIdExternalUserId: externalUserId,
-          faceIdStatus: verified ? "VERIFIED" : "PENDING",
-          faceIdLastCheckedAt: new Date(),
-        } as any,
-      });
+    if (!user.faceIdExternalUserId) {
+      await prisma.$executeRaw`
+        UPDATE "User"
+        SET "faceIdExternalUserId" = ${externalUserId},
+            "faceIdStatus" = ${verified ? "VERIFIED" : "PENDING"},
+            "faceIdLastCheckedAt" = NOW()
+        WHERE id = ${user.id}
+      `;
     }
 
     const verificationBaseUrl = process.env.SMILE_FACE_VERIFICATION_URL || process.env.NEXT_PUBLIC_SMILE_FACE_VERIFICATION_URL;
@@ -70,8 +72,8 @@ export async function GET() {
         verified,
         enrolled,
         liveMatchValid,
-        hasRegistrationPhoto: Boolean((user as any).faceIdRegistrationPhoto),
-        status: (user as any).faceIdStatus ?? "PENDING",
+        hasRegistrationPhoto: Boolean(user.faceIdRegistrationPhoto),
+        status: user.faceIdStatus ?? "PENDING",
         externalUserId,
         verificationUrl: verificationBaseUrl
           ? buildVerificationUrl(verificationBaseUrl, externalUserId)
