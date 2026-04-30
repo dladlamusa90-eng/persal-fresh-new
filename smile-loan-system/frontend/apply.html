@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smile Loan - Apply</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body data-page="apply">
+    <main class="shell">
+      <section class="card">
+        <div class="card-header">
+          <p class="eyebrow">Loan Application</p>
+          <h1>Tell Us About Yourself</h1>
+          <p class="muted">Complete the form to continue to identity verification.</p>
+        </div>
+
+        <form id="apply-form" class="form-grid" novalidate>
+          <label>
+            First Name
+            <input type="text" name="first_name" placeholder="e.g. Amahle" required />
+          </label>
+
+          <label>
+            Last Name
+            <input type="text" name="last_name" placeholder="e.g. Mokoena" required />
+          </label>
+
+          <label>
+            ID Number
+            <input type="text" name="id_number" placeholder="e.g. 9001015800087" required />
+          </label>
+
+          <label>
+            Phone Number
+            <input type="tel" name="phone_number" placeholder="e.g. +27123456789" required />
+          </label>
+
+          <div class="actions">
+            <a class="btn btn-ghost" href="./index.html">Back</a>
+            <button class="btn btn-primary" type="submit">Continue</button>
+          </div>
+        </form>
+      </section>
+    </main>
+    <script src="./app.js" defer></script>
+  </body>
+</html>

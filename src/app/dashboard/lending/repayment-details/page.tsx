@@ -1,8 +1,9 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { calculateLoanCharges } from "@/lib/loanPolicy";
+import FaceIdGate from "@/app/components/FaceIdGate";
 
 export default function RepaymentDetailsPage() {
   return (
@@ -18,6 +19,18 @@ function RepaymentDetailsContent() {
   const [showFeesBreakdown, setShowFeesBreakdown] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [faceIdVerified, setFaceIdVerified] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    fetch("/api/faceid/session", { cache: "no-store" })
+      .then((r) => r.ok ? r.json() : null)
+      .then((data: { verified?: boolean } | null) => {
+        if (mounted && data?.verified) setFaceIdVerified(true);
+      })
+      .catch(() => undefined);
+    return () => { mounted = false; };
+  }, []);
 
   const rawLoan = Number(searchParams.get("loan"));
   const loanAmount = Number.isFinite(rawLoan) && rawLoan >= 100 ? Math.min(5000, rawLoan) : 1500;
@@ -42,6 +55,11 @@ function RepaymentDetailsContent() {
 
   async function handleContinue() {
     if (submitting) return;
+
+    if (!faceIdVerified) {
+      setError("Face verification required. Please verify your face to continue.");
+      return;
+    }
 
     setSubmitting(true);
     setError("");
@@ -208,12 +226,17 @@ function RepaymentDetailsContent() {
           <button
             type="button"
             onClick={handleContinue}
-            disabled={submitting}
-            className="inline-flex min-w-[120px] items-center justify-center rounded-xl bg-[#f5912d] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#eb8621]"
+            disabled={submitting || !faceIdVerified}
+            className="inline-flex min-w-[120px] items-center justify-center rounded-xl bg-[#f5912d] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#eb8621] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? "Submitting..." : "Continue"}
           </button>
         </div>
+        {!faceIdVerified && (
+          <div className="mt-4">
+            <FaceIdGate onVerified={() => setFaceIdVerified(true)} />
+          </div>
+        )}
         {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
       </div>
 

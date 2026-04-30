@@ -137,7 +137,9 @@ export async function POST(req: Request) {
         accountNumber: true,
         accountType: true,
         branchCode: true,
-      },
+        faceIdStatus: true,
+        faceIdVerifiedAt: true,
+      } as any,
     });
 
     if (!user) {
@@ -150,6 +152,22 @@ export async function POST(req: Request) {
         { status: 403 }
       );
     }
+
+    // ── FaceID verification gate ───────────────────────────────────────────
+    const faceIdStatus = (user as any).faceIdStatus as string | null;
+    const faceIdVerifiedAt = (user as any).faceIdVerifiedAt as Date | string | null;
+    const FACE_ID_VALID_MS = 24 * 60 * 60 * 1000; // 24 hours
+    const faceIdExpired = faceIdVerifiedAt
+      ? Date.now() - new Date(faceIdVerifiedAt).getTime() > FACE_ID_VALID_MS
+      : true;
+
+    if (faceIdStatus !== "VERIFIED" || faceIdExpired) {
+      return NextResponse.json(
+        { error: "Face verification required. Please verify your face before submitting a loan application." },
+        { status: 403 }
+      );
+    }
+    // ──────────────────────────────────────────────────────────────────────
 
     const applicationDraft = await prisma.loanApplicationDraft.findUnique({
       where: { userId: user.id },

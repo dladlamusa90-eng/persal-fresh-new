@@ -55,6 +55,12 @@ model User {
   deletedAt     DateTime?
   bankVerified    Boolean  @default(false)
   stitchAccountId String?
+  faceIdExternalUserId String? @unique
+  faceIdEnrolled  Boolean  @default(false)
+  faceIdStatus    String?
+  faceIdVerifiedAt DateTime?
+  faceIdLastCheckedAt DateTime?
+  faceIdLastError String?
   loanApplicationDraft LoanApplicationDraft?
   loans         Loan[]
   loginOtps     LoginOtp[]
@@ -66,6 +72,7 @@ model User {
   @@index([role])
   @@index([isBurned])
   @@index([isDeleted])
+  @@index([faceIdStatus])
   @@index([createdAt])
 }
 

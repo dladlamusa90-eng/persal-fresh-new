@@ -2,6 +2,7 @@
 import React, { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
+import FaceIdGate from "@/app/components/FaceIdGate";
 import {
   FIRST_TIME_MAX_LOAN,
   MIN_DISPOSABLE_INCOME_FOR_LOAN,
@@ -18,6 +19,7 @@ function ApplyPageContent() {
   const [hasActiveLoan, setHasActiveLoan] = useState(false);
   const [hasPendingLoan, setHasPendingLoan] = useState(false);
   const [isReturningUser, setIsReturningUser] = useState(false);
+  const [faceIdVerified, setFaceIdVerified] = useState(false);
   // Eligibility/calculation state
   const searchParams = useSearchParams();
   const [salary, setSalary] = useState(() => Number(searchParams.get("salary")) || 5000);
@@ -145,6 +147,16 @@ function ApplyPageContent() {
             bankStatement: draftBody.draft.documents.bankStatement ?? null,
           });
         }
+
+        try {
+          const faceIdRes = await fetch("/api/faceid/session", { cache: "no-store" });
+          if (faceIdRes.ok && mounted) {
+            const fd = (await faceIdRes.json()) as { verified?: boolean };
+            if (fd.verified) setFaceIdVerified(true);
+          }
+        } catch {
+          // ignore — FaceIdGate component handles verification
+        }
       } catch {
         return;
       }
@@ -176,6 +188,11 @@ function ApplyPageContent() {
     e.preventDefault();
 
     if (hasActiveLoan) return;
+
+    if (!faceIdVerified) {
+      setError("Please complete face verification before submitting.");
+      return;
+    }
 
     if (!calculated || desiredLoan < 100) {
       setError("Please calculate eligibility and choose a valid loan amount.");
@@ -518,10 +535,13 @@ function ApplyPageContent() {
           </div>
         </div>
         {error && <div className="text-red-600 font-semibold text-sm">{error}</div>}
+        {!hasActiveLoan && (
+          <FaceIdGate onVerified={() => setFaceIdVerified(true)} />
+        )}
         <button
           type="submit"
           className="w-full px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-semibold transition disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
-          disabled={hasActiveLoan || submitting}
+          disabled={hasActiveLoan || submitting || !faceIdVerified}
         >
           {submitting ? "Submitting..." : "Submit Application"}
         </button>
