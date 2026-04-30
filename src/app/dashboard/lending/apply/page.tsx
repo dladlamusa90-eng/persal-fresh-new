@@ -20,6 +20,7 @@ function ApplyPageContent() {
   const [hasPendingLoan, setHasPendingLoan] = useState(false);
   const [isReturningUser, setIsReturningUser] = useState(false);
   const [faceIdVerified, setFaceIdVerified] = useState(false);
+  const [applicationStatus, setApplicationStatus] = useState<"PENDING" | "APPROVED" | "REJECTED" | null>(null);
   // Eligibility/calculation state
   const searchParams = useSearchParams();
   const [salary, setSalary] = useState(() => Number(searchParams.get("salary")) || 5000);
@@ -101,6 +102,7 @@ function ApplyPageContent() {
               accountNumber?: string | null;
               accountType?: "CHEQUE" | "SAVINGS" | "TRANSMISSION" | null;
               branchCode?: string | null;
+              applicationStatus?: "PENDING" | "APPROVED" | "REJECTED" | null;
             };
           };
 
@@ -113,6 +115,7 @@ function ApplyPageContent() {
             setAccountNumber(user.accountNumber ?? "");
             setAccountType(user.accountType ?? "CHEQUE");
             setBranchCode(user.branchCode ?? "");
+            setApplicationStatus(user.applicationStatus ?? null);
           }
         }
 
@@ -336,11 +339,24 @@ function ApplyPageContent() {
           You already have an active loan. You cannot apply for another loan until your current loan is settled.
         </div>
       )}
-      {!hasActiveLoan && hasPendingLoan && (
+      {!hasActiveLoan && applicationStatus === "PENDING" && (
+        <div className="mb-6 p-5 bg-amber-50 border border-amber-300 rounded-xl text-amber-900 text-sm font-semibold">
+          <p className="text-base font-bold mb-1">Application Under Review</p>
+          Your account application is currently being reviewed by our team. Once your Persal number and personal details are verified and approved, you will be able to apply for a loan. This typically takes 1–2 business days.
+        </div>
+      )}
+      {!hasActiveLoan && applicationStatus === "REJECTED" && (
+        <div className="mb-6 p-5 bg-red-50 border border-red-200 rounded-xl text-red-800 text-sm font-semibold">
+          <p className="text-base font-bold mb-1">Application Not Approved</p>
+          Your account application was not approved. Please contact our support team for assistance.
+        </div>
+      )}
+      {!hasActiveLoan && hasPendingLoan && applicationStatus === "APPROVED" && (
         <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded text-amber-800 text-sm font-semibold">
           You already have a pending application. If you continue and submit a new one, your previous pending application will be cancelled and replaced.
         </div>
       )}
+      {applicationStatus === "APPROVED" && !hasActiveLoan && (
       <form className="space-y-8" onSubmit={handleSubmit}>
         {/* Eligibility Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -546,6 +562,7 @@ function ApplyPageContent() {
           {submitting ? "Submitting..." : "Submit Application"}
         </button>
       </form>
+      )}
     </section>
   );
 }

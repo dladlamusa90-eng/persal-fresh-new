@@ -78,9 +78,9 @@ function SignupPageContent() {
         return;
       }
 
-      router.push("/auth/login");
+      router.push("/auth/application-submitted");
     } catch {
-      setError("Signup failed. Please try again.");
+      setError("Application submission failed. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -97,7 +97,7 @@ function SignupPageContent() {
             </a>
             <nav className="flex gap-4 items-center">
               <a href="/auth/login" className="text-persal-dark font-medium px-4 py-2 rounded hover:bg-teal-50 transition">Login</a>
-              <span className="px-4 py-2 rounded bg-gray-200 text-gray-500 font-semibold cursor-not-allowed select-none">Register</span>
+              <span className="px-4 py-2 rounded bg-gray-200 text-gray-500 font-semibold cursor-not-allowed select-none">Apply</span>
             </nav>
           </div>
         </header>
@@ -105,7 +105,7 @@ function SignupPageContent() {
         <div className="w-full px-4 md:px-8 pt-4 pb-10">
           <div className="w-full max-w-7xl mx-auto">
         <form onSubmit={handleSignup} className="w-full max-w-5xl mx-auto bg-white/70 backdrop-blur-sm border border-gray-200 rounded-3xl p-5 md:p-8 shadow-sm">
-          <h1 className="text-2xl md:text-3xl text-gray-800 font-medium mb-7">Register</h1>
+          <h1 className="text-2xl md:text-3xl text-gray-800 font-medium mb-7">Submit Application</h1>
 
           <div className="space-y-7">
             <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
@@ -217,18 +217,18 @@ function SignupPageContent() {
 
           <div className="mt-8 flex items-center justify-between gap-4">
             <p className="text-gray-700 text-base md:text-lg">
-              Already have an account? <Link href="/auth/login" className="text-teal-600 hover:underline">Log in</Link>
+              Already applied? <Link href="/auth/login" className="text-teal-600 hover:underline">Log in</Link>
             </p>
             <button
               type="submit"
               disabled={isSubmitting}
               className="bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl px-7 py-2.5 text-lg md:text-xl min-w-[200px] md:min-w-[230px] transition disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? "Creating..." : "Continue"}
+              {isSubmitting ? "Submitting..." : "Submit Application"}
             </button>
           </div>
 
-          {error && <div className="mt-5 text-sm font-medium text-teal-700">{error}</div>}
+          {error && <div className="mt-5 text-sm font-medium text-red-600">{error}</div>}
         </form>
           </div>
         </div>

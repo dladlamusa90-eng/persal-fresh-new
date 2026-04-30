@@ -139,6 +139,7 @@ export async function POST(req: Request) {
         branchCode: true,
         faceIdStatus: true,
         faceIdVerifiedAt: true,
+        applicationStatus: true,
       } as any,
     });
 
@@ -152,6 +153,22 @@ export async function POST(req: Request) {
         { status: 403 }
       );
     }
+
+    // ── Application approval gate ─────────────────────────────────────────
+    if ((user as any).applicationStatus === "PENDING") {
+      return NextResponse.json(
+        { error: "Your account application is still under review. You will be able to apply for a loan once your application is approved." },
+        { status: 403 }
+      );
+    }
+
+    if ((user as any).applicationStatus === "REJECTED") {
+      return NextResponse.json(
+        { error: "Your account application was not approved. Please contact support for assistance." },
+        { status: 403 }
+      );
+    }
+    // ─────────────────────────────────────────────────────────────────────
 
     // ── FaceID verification gate ───────────────────────────────────────────
     const faceIdStatus = (user as any).faceIdStatus as string | null;
@@ -250,6 +267,15 @@ export async function POST(req: Request) {
         ? (accountType as "CHEQUE" | "SAVINGS" | "TRANSMISSION")
         : user.accountType) ?? null;
     const resolvedBranchCode = branchCode || user.branchCode || null;
+
+    // Detect fields that differ from the user's approved application profile
+    const changedFields: string[] = [];
+    if (phone && phone !== user.phone) changedFields.push("phone");
+    if (idNumber && idNumber !== user.idNumber) changedFields.push("ID number");
+    if (persalNumber && persalNumber !== user.persalNumber) changedFields.push("Persal number");
+    if (bankName && bankName !== user.bankName) changedFields.push("bank name");
+    if (accountNumber && accountNumber !== user.accountNumber) changedFields.push("account number");
+    if (branchCode && branchCode !== user.branchCode) changedFields.push("branch code");
 
     const profileUpdatePayload: {
       phone?: string;
@@ -353,6 +379,30 @@ export async function POST(req: Request) {
       "Loan Application Received",
       `Your application for ${formatRand(amount)} over ${termDays} days has been received and is currently under review. We will notify you once a decision has been made.`
     );
+
+    // Notify all admins if the applicant submitted different details than those on their approved application
+    if (changedFields.length > 0) {
+      void (async () => {
+        try {
+          const admins = await prisma.user.findMany({
+            where: { role: "ADMIN" },
+            select: { id: true },
+          });
+          const fieldList = changedFields.join(", ");
+          await Promise.all(
+            admins.map((admin) =>
+              sendSystemNotification(
+                admin.id,
+                "⚠️ Loan Application — Detail Change Detected",
+                `${user.fullName} (${user.email}) submitted a loan application for ${formatRand(amount)} with different details than their approved profile. Changed fields: ${fieldList}. Please review loan application #${loan.id}.`
+              )
+            )
+          );
+        } catch {
+          // Non-critical — do not block response
+        }
+      })();
+    }
 
     return NextResponse.json({ message: "Loan application submitted", loan }, { status: 201 });
   } catch {

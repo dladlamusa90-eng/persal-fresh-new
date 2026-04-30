@@ -116,7 +116,11 @@ export default async function AdminPage() {
     }
   })();
 
-  const [loans, users] = await Promise.all([loansPromise, usersPromise]);
+  const pendingAppCountPromise = (prisma.user.count as any)({
+    where: { applicationStatus: "PENDING", role: "USER" },
+  }).catch(() => 0);
+
+  const [loans, users, pendingAppCount] = await Promise.all([loansPromise, usersPromise, pendingAppCountPromise]);
 
   const nonAdminUsers = users.filter((user) => user.role === "USER");
   const totalUsers = nonAdminUsers.length;
@@ -186,6 +190,17 @@ export default async function AdminPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
+              <Link
+                href="/admin/applications"
+                className="inline-flex items-center gap-2 rounded-xl bg-amber-400 hover:bg-amber-500 text-slate-900 px-4 py-2.5 text-sm font-semibold transition"
+              >
+                User Applications
+                {pendingAppCount > 0 && (
+                  <span className="inline-flex items-center justify-center rounded-full bg-slate-900 text-white text-xs font-bold w-5 h-5">
+                    {pendingAppCount}
+                  </span>
+                )}
+              </Link>
               <Link
                 href="/admin/users?role=USER"
                 className="inline-flex items-center rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-persal-dark hover:bg-slate-100 transition"

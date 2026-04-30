@@ -78,6 +78,7 @@ export async function GET(req: NextRequest) {
         role: true,
         isBurned: true,
         isDeleted: true,
+        applicationStatus: true,
       } as any,
     });
 
