@@ -2,7 +2,6 @@
 import React, { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
-import FaceIdGate from "@/app/components/FaceIdGate";
 import {
   FIRST_TIME_MAX_LOAN,
   MIN_DISPOSABLE_INCOME_FOR_LOAN,
@@ -158,7 +157,7 @@ function ApplyPageContent() {
             if (fd.verified) setFaceIdVerified(true);
           }
         } catch {
-          // ignore — FaceIdGate component handles verification
+          // ignore - user can still navigate to dedicated face verification screen
         }
       } catch {
         return;
@@ -551,8 +550,32 @@ function ApplyPageContent() {
           </div>
         </div>
         {error && <div className="text-red-600 font-semibold text-sm">{error}</div>}
-        {!hasActiveLoan && (
-          <FaceIdGate onVerified={() => setFaceIdVerified(true)} />
+        {!hasActiveLoan && !faceIdVerified && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 md:p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-amber-900">Face verification required</p>
+              <p className="text-xs md:text-sm text-amber-800 mt-1">
+                Complete face verification on a dedicated secure screen before submitting your loan application.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const currentQuery = searchParams.toString();
+                const returnTo = `/dashboard/lending/apply${currentQuery ? `?${currentQuery}` : ""}`;
+                router.push(`/dashboard/lending/face-verification?returnTo=${encodeURIComponent(returnTo)}`);
+              }}
+              className="px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold transition"
+            >
+              Verify Face
+            </button>
+          </div>
+        )}
+        {faceIdVerified && (
+          <div className="rounded-xl border border-green-200 bg-green-50 p-4 flex items-center gap-3">
+            <span className="text-green-600 text-xl font-bold">✓</span>
+            <span className="text-green-700 font-semibold text-sm">Face verified. You may submit your application.</span>
+          </div>
         )}
         <button
           type="submit"
