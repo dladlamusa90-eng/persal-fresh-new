@@ -64,6 +64,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [profileName, setProfileName] = useState("Persal User");
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const pathname = usePathname();
+  const isRegistrationRoute =
+    pathname === "/dashboard/lending/verify-number" ||
+    pathname === "/dashboard/lending/my-details" ||
+    pathname === "/dashboard/lending/current-address" ||
+    pathname === "/dashboard/lending/employment-details" ||
+    pathname === "/dashboard/lending/monthly-finances" ||
+    pathname === "/dashboard/lending/bank-details" ||
+    pathname === "/dashboard/lending/repayment-details";
   const isDashboardHome = pathname === "/dashboard";
   const isFullScreen = pathname === "/dashboard/lending/verify-number" || pathname === "/dashboard/lending/my-details" || pathname === "/dashboard/lending/current-address" || pathname === "/dashboard/lending/employment-details" || pathname === "/dashboard/lending/monthly-finances" || pathname === "/dashboard/lending/bank-details" || pathname === "/dashboard/lending/repayment-details";
 
@@ -139,6 +147,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     let mounted = true;
     let signedOut = false;
 
+    if (isRegistrationRoute) {
+      return () => {
+        mounted = false;
+      };
+    }
+
     function forceSignOut() {
       if (signedOut) return;
       signedOut = true;
@@ -176,7 +190,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       mounted = false;
       clearInterval(intervalId);
     };
-  }, []);
+  }, [isRegistrationRoute]);
   return (
     <div className="min-h-screen bg-[#fafcff] flex flex-col relative overflow-x-hidden">
       <div className="relative z-10">

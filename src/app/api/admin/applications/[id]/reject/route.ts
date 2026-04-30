@@ -5,11 +5,6 @@ import prisma from "@/lib/prisma";
 import { sendSms } from "@/lib/sms";
 import { sendSystemNotification } from "@/lib/systemNotifications";
 
-function isUnknownApplicationStatusArg(error: unknown) {
-  const message = error instanceof Error ? error.message.toLowerCase() : "";
-  return message.includes("unknown argument `applicationstatus`");
-}
-
 async function sendApplicationDecisionEmail(
   _to: string,
   _fullName: string,
@@ -58,32 +53,7 @@ export async function POST(
       return NextResponse.json({ error: "Cannot modify admin application status" }, { status: 400 });
     }
 
-    try {
-      await prisma.user.update({
-        where: { id: userId },
-        data: {
-          applicationStatus: "REJECTED",
-          applicationRejectedAt: new Date(),
-          applicationApprovedAt: null,
-          applicationRejectionReason: reason,
-        } as any,
-      });
-    } catch (error) {
-      if (!isUnknownApplicationStatusArg(error)) {
-        throw error;
-      }
-
-      await prisma.$executeRaw`
-        UPDATE "User"
-        SET
-          "applicationStatus" = 'REJECTED'::"ApplicationStatus",
-          "applicationRejectedAt" = NOW(),
-          "applicationApprovedAt" = NULL,
-          "applicationRejectionReason" = ${reason}
-        WHERE "id" = ${userId}
-      `;
-    }
-
+    // Notify the user before deleting the account so the notification is sent.
     void sendSystemNotification(
       user.id,
       "Application Update",
@@ -106,6 +76,18 @@ export async function POST(
     void sendApplicationDecisionEmail(user.email, user.fullName, "REJECTED", reason).catch(() => {
       // Non-blocking until email setup is available.
     });
+
+    // ── Delete the user account so they can re-register with the same details ──
+    // Cascade-delete all related records first, then remove the user.
+    await prisma.$transaction([
+      prisma.notification.deleteMany({ where: { userId } }),
+      prisma.loanApplicationDraft.deleteMany({ where: { userId } }),
+      prisma.loginOtp.deleteMany({ where: { userId } }),
+      prisma.passwordResetOtp.deleteMany({ where: { userId } }),
+      prisma.loan.deleteMany({ where: { userId } }),
+      prisma.user.delete({ where: { id: userId } }),
+    ]);
+    // ─────────────────────────────────────────────────────────────────────────
 
     return NextResponse.json({ message: "Application rejected" }, { status: 200 });
   } catch {
