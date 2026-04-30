@@ -236,26 +236,6 @@ function RepaymentDetailsContent() {
             Verify Face
           </button>
         </div>
-        {!faceIdVerified && (
-          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 md:p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-            <div>
-              <p className="text-sm font-semibold text-amber-900">Face verification required</p>
-              <p className="text-xs md:text-sm text-amber-800 mt-1">
-                Complete face verification on a secure dedicated screen to continue.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                const returnTo = withWizardQuery("/dashboard/lending/repayment-details");
-                router.push(`/dashboard/lending/face-verification?returnTo=${encodeURIComponent(returnTo)}`);
-              }}
-              className="px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold transition"
-            >
-              Verify Face
-            </button>
-          </div>
-        )}
         {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
       </div>
 
