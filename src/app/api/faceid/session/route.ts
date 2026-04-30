@@ -22,9 +22,13 @@ export async function GET() {
       where: { id: session.user.id },
       select: {
         id: true,
+        faceIdEnrolled: true,
         faceIdExternalUserId: true,
         faceIdStatus: true,
         faceIdVerifiedAt: true,
+        faceIdLastMatchPassed: true,
+        faceIdLastMatchedAt: true,
+        faceIdRegistrationPhoto: true,
       } as any,
     });
 
@@ -34,10 +38,19 @@ export async function GET() {
 
     const externalUserId = (user as any).faceIdExternalUserId || buildFaceIdExternalUserId(user.id);
     const enrolled = Boolean((user as any).faceIdEnrolled);
-    const verified = isFaceIdVerified({
+    const verifiedByStatus = isFaceIdVerified({
       faceIdStatus: (user as any).faceIdStatus,
       faceIdVerifiedAt: (user as any).faceIdVerifiedAt,
     });
+    const faceIdLastMatchPassed = Boolean((user as any).faceIdLastMatchPassed);
+    const faceIdLastMatchedAt = (user as any).faceIdLastMatchedAt as Date | string | null;
+    const FACE_MATCH_VALID_MS = 15 * 60 * 1000;
+    const liveMatchValid = Boolean(
+      faceIdLastMatchPassed &&
+      faceIdLastMatchedAt &&
+      Date.now() - new Date(faceIdLastMatchedAt).getTime() <= FACE_MATCH_VALID_MS
+    );
+    const verified = Boolean(verifiedByStatus && liveMatchValid);
 
     if (!(user as any).faceIdExternalUserId) {
       await prisma.user.update({
@@ -56,6 +69,8 @@ export async function GET() {
       {
         verified,
         enrolled,
+        liveMatchValid,
+        hasRegistrationPhoto: Boolean((user as any).faceIdRegistrationPhoto),
         status: (user as any).faceIdStatus ?? "PENDING",
         externalUserId,
         verificationUrl: verificationBaseUrl

@@ -48,7 +48,11 @@ export default async function AdminLoanApplicationPage({ params }: PageProps) {
       applicantAccountNumber: true,
       applicantAccountType: true,
       applicantBranchCode: true,
-    },
+      faceRegistrationPhotoSnapshot: true,
+      faceVerificationPhoto: true,
+      faceMatchPassed: true,
+      faceMatchCheckedAt: true,
+    } as any,
   });
 
   if (!loan) {
@@ -147,6 +151,23 @@ export default async function AdminLoanApplicationPage({ params }: PageProps) {
             <DocumentCard label="Proof of Income" document={applicationDocuments.proofOfIncome ?? null} />
             <DocumentCard label="Proof of Residence" document={applicationDocuments.proofOfResidence ?? null} />
             <DocumentCard label="Bank Statement" document={applicationDocuments.bankStatement ?? null} />
+          </div>
+
+          <h2 className="text-lg font-semibold text-gray-900 mt-8">Face Match Evidence</h2>
+          <p className="mt-1 text-xs text-gray-500">
+            Registered face from first application vs live face captured during this loan application.
+          </p>
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FacePhotoCard label="Registered Face" photo={loan.faceRegistrationPhotoSnapshot} />
+            <FacePhotoCard label="Loan Application Live Face" photo={loan.faceVerificationPhoto} />
+          </div>
+          <div className="mt-3 rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
+            <p>
+              <span className="font-semibold">Match Result:</span> {loan.faceMatchPassed ? "Matched" : "Not matched"}
+            </p>
+            <p>
+              <span className="font-semibold">Checked At:</span> {loan.faceMatchCheckedAt ? loan.faceMatchCheckedAt.toISOString().slice(0, 19).replace("T", " ") : "N/A"}
+            </p>
           </div>
 
           <h2 className="text-lg font-semibold text-gray-900 mt-8">Application Statement</h2>
@@ -267,4 +288,19 @@ function formatStatementValue(value: string | number | null) {
   if (value == null || value === "") return "N/A";
   if (typeof value === "number") return value.toLocaleString();
   return String(value);
+}
+
+function FacePhotoCard({ label, photo }: { label: string; photo: string | null }) {
+  return (
+    <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+      <p className="text-xs text-gray-500">{label}</p>
+      {photo ? (
+        <div className="mt-2 rounded-lg overflow-hidden border border-gray-200 bg-black" style={{ aspectRatio: "3 / 4" }}>
+          <img src={photo} alt={label} className="w-full h-full object-cover" />
+        </div>
+      ) : (
+        <p className="mt-1 text-sm font-semibold text-gray-900">N/A</p>
+      )}
+    </div>
+  );
 }

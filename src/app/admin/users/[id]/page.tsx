@@ -22,6 +22,7 @@ async function getUserDetails(id: string) {
     idNumber: true,
     bankName: true,
     accountNumber: true,
+    faceIdRegistrationPhoto: true,
     createdAt: true,
     isBurned: true,
     burnedAt: true,
@@ -33,6 +34,9 @@ async function getUserDetails(id: string) {
         termDays: true,
         status: true,
         rejectionReason: true,
+        faceVerificationPhoto: true,
+        faceMatchPassed: true,
+        faceMatchCheckedAt: true,
         createdAt: true,
         disbursementSentAt: true,
       },
@@ -47,7 +51,7 @@ async function getUserDetails(id: string) {
         points: true,
         isDeleted: true,
         deletedAt: true,
-      },
+      } as any,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
@@ -62,7 +66,7 @@ async function getUserDetails(id: string) {
 
     const fallbackUser = await prisma.user.findUnique({
       where: { id },
-      select: baseSelect,
+      select: baseSelect as any,
     });
 
     if (!fallbackUser) {
@@ -98,6 +102,7 @@ export default async function AdminUserDetailsPage({ params }: Props) {
   }
 
   const paidLoans = user.loans.filter((loan) => loan.status === "PAID");
+  const latestLoanWithFace = user.loans.find((loan) => Boolean(loan.faceVerificationPhoto));
   const totalLoansGivenToUser = user.loans
     .filter((loan) => loan.status === "PAID" || loan.disbursementSentAt != null)
     .reduce((sum, loan) => sum + loan.amount, 0);
@@ -160,6 +165,21 @@ export default async function AdminUserDetailsPage({ params }: Props) {
         </div>
       </div>
 
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+        <h2 className="text-base font-semibold text-gray-900">Face Match Comparison</h2>
+        <p className="mt-1 text-xs text-gray-500">
+          Registered face from first application vs latest live face used in loan verification.
+        </p>
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FacePhotoCard label="Registered Face" photo={user.faceIdRegistrationPhoto ?? null} />
+          <FacePhotoCard label="Latest Loan Live Face" photo={latestLoanWithFace?.faceVerificationPhoto ?? null} />
+        </div>
+        <div className="mt-3 rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
+          <p><span className="font-semibold">Latest Match Result:</span> {latestLoanWithFace ? (latestLoanWithFace.faceMatchPassed ? "Matched" : "Not matched") : "N/A"}</p>
+          <p><span className="font-semibold">Checked At:</span> {latestLoanWithFace?.faceMatchCheckedAt ? latestLoanWithFace.faceMatchCheckedAt.toISOString().slice(0, 19).replace("T", " ") : "N/A"}</p>
+        </div>
+      </div>
+
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-x-auto">
         <div className="px-4 py-3 border-b border-gray-200">
           <h2 className="text-base font-semibold text-gray-900">Loan Records</h2>
@@ -198,5 +218,20 @@ export default async function AdminUserDetailsPage({ params }: Props) {
         </table>
       </div>
     </section>
+  );
+}
+
+function FacePhotoCard({ label, photo }: { label: string; photo: string | null }) {
+  return (
+    <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+      <p className="text-xs text-gray-500">{label}</p>
+      {photo ? (
+        <div className="mt-2 rounded-lg overflow-hidden border border-gray-200 bg-black" style={{ aspectRatio: "3 / 4" }}>
+          <img src={photo} alt={label} className="w-full h-full object-cover" />
+        </div>
+      ) : (
+        <p className="mt-1 text-sm font-semibold text-gray-900">N/A</p>
+      )}
+    </div>
   );
 }

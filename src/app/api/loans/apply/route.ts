@@ -138,6 +138,11 @@ export async function POST(req: Request) {
         accountType: true,
         branchCode: true,
         faceIdStatus: true,
+        faceIdEnrolled: true,
+        faceIdRegistrationPhoto: true,
+        faceIdLastLivePhoto: true,
+        faceIdLastMatchPassed: true,
+        faceIdLastMatchedAt: true,
         faceIdVerifiedAt: true,
         applicationStatus: true,
       } as any,
@@ -172,15 +177,29 @@ export async function POST(req: Request) {
 
     // ── FaceID verification gate ───────────────────────────────────────────
     const faceIdStatus = (user as any).faceIdStatus as string | null;
-    const faceIdVerifiedAt = (user as any).faceIdVerifiedAt as Date | string | null;
-    const FACE_ID_VALID_MS = 24 * 60 * 60 * 1000; // 24 hours
-    const faceIdExpired = faceIdVerifiedAt
-      ? Date.now() - new Date(faceIdVerifiedAt).getTime() > FACE_ID_VALID_MS
+    const faceIdEnrolled = Boolean((user as any).faceIdEnrolled);
+    const faceIdRegistrationPhoto = (user as any).faceIdRegistrationPhoto as string | null;
+    const faceIdLastLivePhoto = (user as any).faceIdLastLivePhoto as string | null;
+    const faceIdLastMatchPassed = Boolean((user as any).faceIdLastMatchPassed);
+    const faceIdLastMatchedAt = (user as any).faceIdLastMatchedAt as Date | string | null;
+    const FACE_MATCH_VALID_MS = 15 * 60 * 1000; // 15 minutes
+    const faceMatchExpired = faceIdLastMatchedAt
+      ? Date.now() - new Date(faceIdLastMatchedAt).getTime() > FACE_MATCH_VALID_MS
       : true;
 
-    if (faceIdStatus !== "VERIFIED" || faceIdExpired) {
+    if (!faceIdEnrolled || !faceIdRegistrationPhoto) {
       return NextResponse.json(
-        { error: "Face verification required. Please verify your face before submitting a loan application." },
+        { error: "Face registration required. Please register your face before submitting a loan application." },
+        { status: 403 }
+      );
+    }
+
+    if (faceIdStatus !== "VERIFIED" || !faceIdLastLivePhoto || !faceIdLastMatchPassed || faceMatchExpired) {
+      return NextResponse.json(
+        {
+          error:
+            "Live face match required. Please complete Verify Face now so we can match your live face to your registered face before submission.",
+        },
         { status: 403 }
       );
     }
@@ -338,6 +357,10 @@ export async function POST(req: Request) {
           applicantAccountNumber: resolvedAccountNumber,
           applicantAccountType: resolvedAccountType,
           applicantBranchCode: resolvedBranchCode,
+          faceRegistrationPhotoSnapshot: faceIdRegistrationPhoto,
+          faceVerificationPhoto: faceIdLastLivePhoto,
+          faceMatchPassed: true,
+          faceMatchCheckedAt: faceIdLastMatchedAt ? new Date(faceIdLastMatchedAt) : now,
           status: "PENDING",
           debitMandateAccepted,
           debitMandateAcceptedAt: debitMandateAccepted ? now : null,

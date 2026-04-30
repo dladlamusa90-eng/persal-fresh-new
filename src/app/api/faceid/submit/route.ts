@@ -36,7 +36,11 @@ export async function POST(req: NextRequest) {
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { id: true, faceIdExternalUserId: true } as any,
+      select: {
+        id: true,
+        faceIdExternalUserId: true,
+        faceIdRegistrationPhoto: true,
+      } as any,
     });
 
     if (!user) {
@@ -70,13 +74,21 @@ export async function POST(req: NextRequest) {
           where: { id: user.id },
           data: {
             faceIdEnrolled: true,
-            faceIdStatus: "VERIFIED",
+            faceIdStatus: "ENROLLED",
             faceIdVerifiedAt: new Date(),
             faceIdLastCheckedAt: new Date(),
             faceIdLastError: null,
+            faceIdRegistrationPhoto: (user as any).faceIdRegistrationPhoto || selfie,
+            faceIdLastMatchPassed: false,
+            faceIdLastMatchedAt: null,
+            faceIdLastLivePhoto: null,
           } as any,
         });
-        return NextResponse.json({ verified: true, enrolled: true, message: "Face enrolled and verified." });
+        return NextResponse.json({
+          verified: false,
+          enrolled: true,
+          message: "Face registration complete. Authenticate once more to match against your registered face.",
+        });
       }
 
       // Enrollment submitted but not yet approved (async callback expected)
@@ -86,6 +98,7 @@ export async function POST(req: NextRequest) {
           faceIdStatus: "PENDING",
           faceIdLastCheckedAt: new Date(),
           faceIdLastError: result.resultText || "enrollment_pending",
+          faceIdLastMatchPassed: false,
         } as any,
       });
       return NextResponse.json(
@@ -102,6 +115,9 @@ export async function POST(req: NextRequest) {
             faceIdVerifiedAt: new Date(),
             faceIdLastCheckedAt: new Date(),
             faceIdLastError: null,
+            faceIdLastLivePhoto: selfie,
+            faceIdLastMatchPassed: true,
+            faceIdLastMatchedAt: new Date(),
           } as any,
         });
         return NextResponse.json({ verified: true, enrolled: true, message: "Face verified successfully." });
@@ -113,10 +129,18 @@ export async function POST(req: NextRequest) {
           faceIdStatus: "FAILED",
           faceIdLastCheckedAt: new Date(),
           faceIdLastError: result.resultText || "authentication_failed",
+          faceIdLastMatchPassed: false,
+          faceIdLastMatchedAt: new Date(),
+          faceIdLastLivePhoto: selfie,
         } as any,
       });
       return NextResponse.json(
-        { verified: false, enrolled: true, error: "Face authentication failed. Please ensure good lighting and try again." },
+        {
+          verified: false,
+          enrolled: true,
+          error:
+            "Face authentication failed. Your live face does not match your registered face. Please use good lighting, look straight at the camera, and try again.",
+        },
         { status: 200 }
       );
     }

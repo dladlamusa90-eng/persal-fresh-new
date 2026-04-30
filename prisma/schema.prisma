@@ -67,6 +67,10 @@ model User {
   faceIdVerifiedAt DateTime?
   faceIdLastCheckedAt DateTime?
   faceIdLastError String?
+  faceIdRegistrationPhoto String?
+  faceIdLastLivePhoto String?
+  faceIdLastMatchPassed Boolean @default(false)
+  faceIdLastMatchedAt DateTime?
   applicationStatus   ApplicationStatus @default(PENDING)
   applicationApprovedAt DateTime?
   applicationRejectedAt DateTime?
@@ -172,6 +176,10 @@ model Loan {
   disbursementMode String?
   stitchMandateId     String?
   stitchMandateStatus String?
+  faceRegistrationPhotoSnapshot String?
+  faceVerificationPhoto String?
+  faceMatchPassed Boolean @default(false)
+  faceMatchCheckedAt DateTime?
   userId    String
   user      User       @relation(fields: [userId], references: [id])
   createdAt DateTime   @default(now())
