@@ -143,11 +143,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return pathname === href || pathname.startsWith(`${href}/`);
   };
 
+  // Prevent polling refresh for users who have just registered (not just during registration wizard)
   React.useEffect(() => {
     let mounted = true;
     let signedOut = false;
 
-    if (isRegistrationRoute) {
+    // Check for a flag in localStorage indicating recent registration
+    const justRegistered = typeof window !== "undefined" && window.localStorage?.getItem("justRegistered") === "true";
+
+    if (isRegistrationRoute || justRegistered) {
       return () => {
         mounted = false;
       };

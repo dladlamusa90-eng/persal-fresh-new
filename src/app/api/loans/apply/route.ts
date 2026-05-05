@@ -171,7 +171,7 @@ export async function POST(req: Request) {
     // ─────────────────────────────────────────────────────────────────────
 
     // ── Snapshot face photos for admin comparison (non-blocking) ──────────
-    // Use raw SQL to read new columns safely regardless of Prisma client state.
+    // Always allow application to proceed, regardless of face match result.
     type FaceRow = {
       faceIdRegistrationPhoto: string | null;
       faceIdLastLivePhoto: string | null;
@@ -194,7 +194,7 @@ export async function POST(req: Request) {
     } catch {
       // Face columns may not yet exist on older DB instances — continue without them.
     }
-    // ──────────────────────────────────────────────────────────────────────
+    // No matter what, do not block the application for any face recognition result.
 
     const applicationDraft = await prisma.loanApplicationDraft.findUnique({
       where: { userId: user.id },

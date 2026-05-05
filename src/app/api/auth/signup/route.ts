@@ -3,19 +3,19 @@ import { randomUUID } from "crypto";
 import prisma from "@/lib/prisma";
 import { hash } from "@/lib/bcrypt";
 import { buildFaceIdExternalUserId, submitToSmileId } from "@/lib/faceId";
-import {
-  getBankAccountConstraintLabel,
-  isValidBankAccountNumber,
-  isSouthAfricanIdNumber,
-  isSouthAfricanBankName,
-  isSouthAfricanPhoneNumber,
-  isValidPersalNumber,
-  normalizeAccountNumber,
-  normalizeIdNumber,
-  normalizePersalNumber,
-  normalizePhoneNumber,
-} from "@/lib/validators/auth";
-import { takeRateLimitToken } from "@/lib/security/rateLimit";
+    const normalizedRegistrationFacePhoto = String(registrationFacePhoto ?? "").trim();
+
+    if (!normalizedFullName || !email || !persalNumber || !password || !normalizedPhone || !normalizedIdNumber) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    // Removed face registration photo requirement
+    // if (!normalizedRegistrationFacePhoto || normalizedRegistrationFacePhoto.length < 100) {
+    //   return NextResponse.json(
+    //     { error: "Face registration is required. Please capture your face photo before submitting." },
+    //     { status: 400 }
+    //   );
+    // }
 
 function getRequestIp(req: NextRequest) {
   const forwardedFor = req.headers.get("x-forwarded-for");

@@ -215,7 +215,7 @@ export async function POST(req: NextRequest) {
       where: usingId
         ? { idNumber: normalizedId }
         : { email: { equals: normalizedEmail, mode: "insensitive" } },
-      select: { id: true, email: true, password: true, isBurned: true, isDeleted: true },
+      select: { id: true, email: true, password: true, isBurned: true, isDeleted: true, applicationStatus: true },
     });
 
     if (!user) {
@@ -233,6 +233,10 @@ export async function POST(req: NextRequest) {
 
     if (user.isDeleted) {
       return NextResponse.json({ error: "This account was deleted. Please register again." }, { status: 403 });
+    }
+
+    if (user.applicationStatus !== "APPROVED") {
+      return NextResponse.json({ error: "Your application is not yet approved. Please wait for admin approval." }, { status: 403 });
     }
 
     const ok = await verifyPassword(password, user.password);
