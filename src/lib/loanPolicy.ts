@@ -79,6 +79,7 @@ export function calculateLoanCharges(amount: number, termDays: number) {
   const serviceFee = 60;
   const totalCost = interestMonth1 + interestMonth2 + interestMonth3 + initiationFee + serviceFee;
   const totalRepayable = Math.round(amount + totalCost);
+  const monthlyRepayment = Number((totalRepayable / termMonths).toFixed(2));
 
   return {
     termMonths,
@@ -89,6 +90,7 @@ export function calculateLoanCharges(amount: number, termDays: number) {
     serviceFee,
     totalCost,
     totalRepayable,
+    monthlyRepayment,
   };
 }
 

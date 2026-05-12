@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { hash } from "@/lib/bcrypt";
-import { buildFaceIdExternalUserId, submitToSmileId } from "@/lib/faceId";
 import { takeRateLimitToken } from "@/lib/security/rateLimit";
 import {
   getBankAccountConstraintLabel,
@@ -9,10 +8,8 @@ import {
   isSouthAfricanIdNumber,
   isSouthAfricanPhoneNumber,
   isValidBankAccountNumber,
-  isValidPersalNumber,
   normalizeAccountNumber,
   normalizeIdNumber,
-  normalizePersalNumber,
   normalizePhoneNumber,
 } from "@/lib/validators/auth";
 
@@ -34,39 +31,23 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await req.json();
-    const { fullName, email, persalNumber, password, phone, idNumber, bankName, accountNumber, address, registrationFacePhoto } = data;
+    const { fullName, email, password, phone, idNumber, bankName, accountNumber, address } = data;
     const normalizedFullName = String(fullName ?? "").trim().replace(/\s+/g, " ");
     const normalizedAddress = String(address ?? "").trim();
 
     const normalizedEmail = String(email ?? "").trim().toLowerCase();
-    const normalizedPersal = normalizePersalNumber(String(persalNumber ?? "").trim());
     const normalizedIdNumber = normalizeIdNumber(String(idNumber ?? "").trim());
     const normalizedPhone = normalizePhoneNumber(String(phone ?? "").trim());
     const normalizedAccountNumber = normalizeAccountNumber(String(accountNumber ?? "").trim());
     const normalizedBankName = String(bankName ?? "").trim();
-    const normalizedRegistrationFacePhoto = String(registrationFacePhoto ?? "").trim();
 
-    if (!normalizedFullName || !email || !persalNumber || !password || !normalizedPhone || !normalizedIdNumber) {
+    if (!normalizedFullName || !email || !password || !normalizedPhone || !normalizedIdNumber) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
-    }
-
-    if (!normalizedRegistrationFacePhoto || normalizedRegistrationFacePhoto.length < 100) {
-      return NextResponse.json(
-        { error: "Face registration is required. Please capture your face photo before submitting." },
-        { status: 400 }
-      );
     }
 
     if (!isSouthAfricanPhoneNumber(normalizedPhone)) {
       return NextResponse.json(
         { error: "Please enter a valid South African phone number (e.g. 0821234567 or +27821234567)." },
-        { status: 400 }
-      );
-    }
-
-    if (!isValidPersalNumber(normalizedPersal)) {
-      return NextResponse.json(
-        { error: "Persal Number must be exactly 8 digits." },
         { status: 400 }
       );
     }

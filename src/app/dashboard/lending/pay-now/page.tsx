@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { calculateLoanCharges, getTermEndDate } from "@/lib/loanPolicy";
+import { calculateLoanCharges, getTermEndDate, getTermMonths } from "@/lib/loanPolicy";
 
 type LoanStatus = "PENDING" | "APPROVED" | "REJECTED" | "PAID";
 
@@ -61,24 +61,16 @@ export default function PayNowPage() {
   const paymentDetails = useMemo(() => {
     if (!loan) return null;
 
-    const now = new Date();
     const firstMonthEnd = getTermEndDate(new Date(loan.createdAt), 30);
     const fullTermEnd = getTermEndDate(new Date(loan.createdAt), loan.termDays);
 
-    const monthOneRepayable = calculateLoanCharges(loan.amount, 30).totalRepayable;
-    const fullRepayable = calculateLoanCharges(loan.amount, loan.termDays).totalRepayable;
-
-    const payableToday = now < firstMonthEnd ? monthOneRepayable : fullRepayable;
+    const charges = calculateLoanCharges(loan.amount, loan.termDays);
+    const termMonths = getTermMonths(loan.termDays);
 
     return {
-      payableToday,
-      monthOneRepayable,
-      fullRepayable,
-      todayLabel: now.toLocaleDateString("en-ZA", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      }),
+      termMonths,
+      monthlyRepayment: charges.monthlyRepayment,
+      totalRepayable: charges.totalRepayable,
       firstMonthEndLabel: firstMonthEnd.toLocaleDateString("en-ZA", {
         day: "2-digit",
         month: "short",
@@ -164,23 +156,31 @@ export default function PayNowPage() {
   return (
     <section className="max-w-2xl mx-auto py-10 px-4">
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h1 className="text-2xl font-bold text-slate-900">Pay Now</h1>
-        <p className="mt-2 text-sm text-slate-600">Pay the full amount due today with profit applicable for today&apos;s date.</p>
+        <h1 className="text-2xl font-bold text-slate-900">Monthly Repayments</h1>
+        <p className="mt-2 text-sm text-slate-600">Record your monthly repayment against this approved loan.</p>
         <p className="mt-1 text-xs text-amber-700">Mock payment mode: this simulates payment so you can verify status updates and points behavior.</p>
 
         {paymentDetails && (
           <div className="mt-5 space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-600">Amount due today ({paymentDetails.todayLabel})</span>
-              <span className="text-lg font-bold text-slate-900">R {paymentDetails.payableToday.toLocaleString()}</span>
+              <span className="text-slate-600">Monthly repayment amount</span>
+              <span className="text-lg font-bold text-slate-900">R {paymentDetails.monthlyRepayment.toLocaleString()}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-500">If paid before {paymentDetails.firstMonthEndLabel}</span>
-              <span className="font-semibold text-slate-700">R {paymentDetails.monthOneRepayable.toLocaleString()}</span>
+              <span className="text-slate-500">Repayment plan</span>
+              <span className="font-semibold text-slate-700">{paymentDetails.termMonths} monthly repayments</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-500">If paid after month one (until {paymentDetails.fullTermEndLabel})</span>
-              <span className="font-semibold text-slate-700">R {paymentDetails.fullRepayable.toLocaleString()}</span>
+              <span className="text-slate-500">First repayment due</span>
+              <span className="font-semibold text-slate-700">{paymentDetails.firstMonthEndLabel}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-slate-500">Final repayment due</span>
+              <span className="font-semibold text-slate-700">{paymentDetails.fullTermEndLabel}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-slate-500">Total repayable</span>
+              <span className="font-semibold text-slate-700">R {paymentDetails.totalRepayable.toLocaleString()}</span>
             </div>
           </div>
         )}
@@ -191,7 +191,7 @@ export default function PayNowPage() {
           disabled={isPaying}
           className="mt-5 w-full rounded-xl bg-persal-blue px-4 py-3 font-semibold text-white hover:bg-persal-dark transition disabled:opacity-60"
         >
-          {isPaying ? "Processing Mock Payment..." : "Pay Full Amount Now (Mock)"}
+          {isPaying ? "Recording Monthly Repayment..." : "Record Monthly Repayment (Mock)"}
         </button>
 
         {message && <p className="mt-3 text-green-700">{message}</p>}

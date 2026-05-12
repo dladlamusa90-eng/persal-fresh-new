@@ -171,8 +171,8 @@ export default function ActiveLoanPage() {
               <span className="text-lg font-bold text-gray-900">R {loanDetails.amount.toLocaleString()}</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-gray-500 text-xs">Deduction At End</span>
-              <span className="text-base font-semibold text-teal-700 ml-auto">R {loanDetails.repayable.toLocaleString()}</span>
+              <span className="text-gray-500 text-xs">Monthly repayment amount</span>
+              <span className="text-base font-semibold text-teal-700 ml-auto">R {(loanDetails.repayable / getTermMonths(loan.termDays)).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
             </div>
             <div className="flex items-center gap-2 mt-2">
               <ShieldCheck className="w-5 h-5 text-teal-600" />
@@ -192,12 +192,12 @@ export default function ActiveLoanPage() {
           <span className="text-base font-semibold text-green-600 ml-auto">{loanDetails.status}</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-gray-500 text-xs">Next Deduction</span>
+          <span className="text-gray-500 text-xs">Final Repayment Date</span>
           <span className="text-base font-semibold text-gray-900 ml-auto">{loanDetails.nextDeduction}</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-gray-500 text-xs">Pay Before Month 1 End</span>
-          <span className="text-base font-semibold text-gray-900 ml-auto">R {loanDetails.earlyRepayable.toLocaleString()}</span>
+          <span className="text-gray-500 text-xs">Total repayable</span>
+          <span className="text-base font-semibold text-gray-900 ml-auto">R {loanDetails.repayable.toLocaleString()}</span>
         </div>
       </div>
       <div className="flex gap-4">
@@ -210,7 +210,7 @@ export default function ActiveLoanPage() {
         disabled={isPaying}
         className="mt-4 w-full px-6 py-3 bg-persal-blue hover:bg-persal-dark text-white rounded-lg font-semibold transition disabled:opacity-60"
       >
-        {isPaying ? "Recording Payment..." : "Pay Now (Test Only, No Real Money)"}
+        {isPaying ? "Recording Monthly Repayment..." : "Record Monthly Repayment (Test Only, No Real Money)"}
       </button>
       {paymentMessage && <p className="text-green-700 mt-3">{paymentMessage}</p>}
       {paymentError && <p className="text-red-600 mt-3">{paymentError}</p>}

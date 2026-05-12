@@ -12,7 +12,6 @@ function SignupPageContent() {
   const [firstName, setFirstName] = useState("");
   const [surname, setSurname] = useState("");
   const [idNumber, setIdNumber] = useState("");
-  const [persalNumber, setPersalNumber] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,7 +35,7 @@ function SignupPageContent() {
   async function handleNext(e: React.FormEvent) {
     e.preventDefault();
 
-    if (!firstName.trim() || !surname.trim() || !idNumber.trim() || !persalNumber.trim() || !phone.trim() || !email.trim() || !password.trim() || !address.trim()) {
+    if (!firstName.trim() || !surname.trim() || !idNumber.trim() || !phone.trim() || !email.trim() || !password.trim() || !address.trim()) {
       setError("Please complete all required fields.");
       return;
     }
@@ -44,12 +43,6 @@ function SignupPageContent() {
     const sanitizedId = idNumber.replace(/\D/g, "");
     if (sanitizedId.length !== 13) {
       setError("Please enter a valid 13-digit South African ID number.");
-      return;
-    }
-
-    const normalizedPersal = persalNumber.replace(/\D/g, "");
-    if (normalizedPersal.length !== 8) {
-      setError("Please enter a valid 8-digit Persal Number.");
       return;
     }
 
@@ -65,21 +58,26 @@ function SignupPageContent() {
     }
 
     try {
-      sessionStorage.setItem(
-        SIGNUP_DRAFT_KEY,
-        JSON.stringify({
-          firstName: firstName.trim(),
-          surname: surname.trim(),
+      // Directly call signup API here (no face step, no persal)
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName: `${firstName.trim()} ${surname.trim()}`,
           idNumber: sanitizedId,
-          persalNumber: normalizedPersal,
           phone: normalizedPhone,
           email: email.trim().toLowerCase(),
           password,
           address: address.trim(),
-        })
-      );
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Unable to sign up. Please try again.");
+        return;
+      }
       setError("");
-      router.push("/auth/signup/face-registration");
+      router.push("/auth/login?from=signup");
     } catch {
       setError("Unable to continue. Please try again.");
     }

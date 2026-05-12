@@ -2,6 +2,7 @@
 import Link from "next/link";
 import React, { useState, useEffect, useRef } from "react";
 import AppFooter from "@/app/components/AppFooter";
+import { calculateLoanCharges } from "@/lib/loanPolicy";
 
 const CAROUSEL_IMAGES = [
   { src: "/get-started.png", alt: "Get Started 1" },
@@ -144,22 +145,18 @@ export default function Home() {
   const termDays = Math.max(6, Math.min(90, selectedDays));
   const term = Math.max(1, Math.min(3, Math.ceil(termDays / 30)));
 
-  // Interest logic for up to 3 months
-  const interest1 = desiredLoan * 0.05;
-  const interest2 = term >= 2 ? desiredLoan * 0.03 : 0;
-  const interest3 = term === 3 ? desiredLoan * 0.02 : 0;
-  let initiationFee = 0;
-  if (desiredLoan <= 1000) {
-    initiationFee = 150;
-  } else if (desiredLoan <= 1500) {
-    initiationFee = 200;
-  } else {
-    initiationFee = 300;
-  }
-  const serviceFee = 60;
-  const totalCost = interest1 + interest2 + interest3 + initiationFee + serviceFee;
-  const totalRepayable = desiredLoan + totalCost;
-  const totalInterest = interest1 + interest2 + interest3;
+  const {
+    termMonths,
+    interestMonth1,
+    interestMonth2,
+    interestMonth3,
+    initiationFee,
+    serviceFee,
+    totalCost,
+    totalRepayable,
+    monthlyRepayment,
+  } = calculateLoanCharges(desiredLoan, termDays);
+  const totalInterest = interestMonth1 + interestMonth2 + interestMonth3;
   const totalFees = initiationFee + serviceFee;
   const amountPercent = ((desiredLoan - 100) / (5000 - 100)) * 100;
   const dayPercent = ((termDays - 6) / (90 - 6)) * 100;
@@ -501,12 +498,12 @@ export default function Home() {
 
                   <div className="bg-gray-200 px-4 md:px-6 py-6 md:py-7 grid grid-cols-1 md:grid-cols-4 gap-4 items-center mt-auto border-t border-gray-300/70 min-h-[132px]">
                     <div className="flex flex-col items-center text-center">
-                      <div className="text-base md:text-lg text-persal-blue font-semibold leading-tight tracking-tight">R{totalRepayable.toFixed(2)}</div>
-                      <div className="text-xs text-gray-700 leading-tight mt-1 font-medium">1 x Installment</div>
+                      <div className="text-base md:text-lg text-persal-blue font-semibold leading-tight tracking-tight">R{monthlyRepayment.toFixed(2)}</div>
+                      <div className="text-xs text-gray-700 leading-tight mt-1 font-medium">Monthly repayment</div>
                     </div>
                     <div className="flex flex-col items-center text-center">
                       <div className="text-base md:text-lg text-gray-700 leading-tight tracking-tight">{repayDateLabelCompact}</div>
-                      <div className="text-xs text-gray-700 leading-tight mt-1 font-medium">Repay date</div>
+                      <div className="text-xs text-gray-700 leading-tight mt-1 font-medium">Final repayment date</div>
                     </div>
                     <div className="flex flex-col items-center text-center">
                       <div className="text-base md:text-lg text-gray-700 leading-tight tracking-tight inline-flex items-center gap-1">
@@ -555,11 +552,12 @@ export default function Home() {
                   </button>
                 </div>
                 <div className="px-4 py-3 text-persal-blue font-semibold border-b border-gray-200">
-                  R{totalRepayable.toFixed(2)} on {repayDateLabelCompact}
+                  R{monthlyRepayment.toFixed(2)} x {termMonths} monthly repayments
                 </div>
                 <div className="divide-y divide-gray-200 text-sm">
+                  <div className="px-4 py-3 flex items-center justify-between"><span className="text-gray-700">Monthly repayments</span><span className="font-semibold text-gray-700">{termMonths} x R{monthlyRepayment.toFixed(2)}</span></div>
                   <div className="px-4 py-3 flex items-center justify-between"><span className="text-gray-700">Initiation fee</span><span className="font-semibold text-gray-700">R{initiationFee.toFixed(2)}</span></div>
-                  <div className="px-4 py-3 flex items-center justify-between"><span className="text-gray-700">Service fees</span><span className="font-semibold text-gray-700">R{serviceFee.toFixed(2)}</span></div>
+                  <div className="px-4 py-3 flex items-center justify-between"><span className="text-gray-700">Service fee</span><span className="font-semibold text-gray-700">R{serviceFee.toFixed(2)}</span></div>
                   <div className="px-4 py-3 flex items-center justify-between"><span className="text-gray-700">Total fees</span><span className="font-semibold text-gray-700">R{totalFees.toFixed(2)}</span></div>
                   <div className="px-4 py-3 flex items-center justify-between"><span className="text-gray-700">Total interest</span><span className="font-semibold text-gray-700">R{totalInterest.toFixed(2)}</span></div>
                 </div>

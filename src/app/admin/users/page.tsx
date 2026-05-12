@@ -77,6 +77,7 @@ export default async function AdminUsersPage({ searchParams }: Props) {
           isBurned: true,
           isDeleted: true,
           createdAt: true,
+          applicationStatus: true,
           loans: {
             select: {
               amount: true,
@@ -156,6 +157,7 @@ export default async function AdminUsersPage({ searchParams }: Props) {
       profitTotal,
       profit30Days,
       joinedAt: user.createdAt.toISOString(),
+      applicationStatus: (user as any).applicationStatus || null,
     };
   });
 

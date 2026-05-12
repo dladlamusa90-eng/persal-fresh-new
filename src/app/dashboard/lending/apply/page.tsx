@@ -340,7 +340,7 @@ function ApplyPageContent() {
   }
 
   // --- FORMULA BASED ON EXAMPLES ---
-  const { interestMonth1, interestMonth2, interestMonth3, initiationFee, serviceFee, totalCost, totalRepayable } =
+  const { termMonths, monthlyRepayment, interestMonth1, interestMonth2, interestMonth3, initiationFee, serviceFee, totalCost, totalRepayable } =
     calculateLoanCharges(desiredLoan, term * 30);
 
   async function handleDocumentChange(field: "identityDocument" | "proofOfIncome" | "proofOfResidence" | "bankStatement", file: File | null) {
@@ -468,9 +468,9 @@ function ApplyPageContent() {
             <div>
               <label className="block text-gray-700 mb-2">Select Term</label>
               <select value={term} onChange={e => setTerm(Number(e.target.value))} className="w-full border rounded p-2" disabled={hasActiveLoan}>
-                <option value={1}>1 Month (full repayment with interest)</option>
-                <option value={2}>2 Months (full payment at term end)</option>
-                <option value={3}>3 Months (full payment at term end)</option>
+                <option value={1}>1 Month (1 monthly repayment)</option>
+                <option value={2}>2 Months (2 monthly repayments)</option>
+                <option value={3}>3 Months (3 monthly repayments)</option>
               </select>
             </div>
             <div className="bg-white rounded-xl p-4 border border-gray-100 flex flex-col gap-2">
@@ -508,17 +508,21 @@ function ApplyPageContent() {
                 <span className="whitespace-nowrap">R {totalCost.toLocaleString(undefined, {maximumFractionDigits:2})}</span>
               </div>
               <div className="flex justify-between text-base font-bold mt-2">
-                <span>Total Repayable (deducted at end)</span>
+                <span>Total Repayable</span>
                 <span className="whitespace-nowrap">R {totalRepayable.toLocaleString()}</span>
               </div>
-              <span className="text-xs text-gray-500 mt-2">Money is withdrawn once, at the end of your selected period.</span>
+              <div className="flex justify-between text-base font-bold mt-2">
+                <span>Monthly Repayments</span>
+                <span className="whitespace-nowrap">{termMonths} x R {monthlyRepayment.toLocaleString(undefined, {maximumFractionDigits:2})}</span>
+              </div>
+              <span className="text-xs text-gray-500 mt-2">Repayments are scheduled monthly across your selected term.</span>
             </div>
           </div>
         )}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-gray-900">Debit & Banking Details</h3>
           <p className="text-sm text-gray-600">
-            These details are required to process your debit mandate and end-of-term collection.
+            These details are required to process your debit mandate and monthly repayment collections.
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -638,10 +642,13 @@ function ApplyPageContent() {
   );
 }
 
+import UnifiedLoanApplicationForm from "../../components/UnifiedLoanApplicationForm";
+
 export default function ApplyPage() {
+  // TODO: Pass real user state from dashboard context or API if needed
   return (
     <Suspense fallback={<section className="max-w-2xl mx-auto py-12" />}>
-      <ApplyPageContent />
+      <UnifiedLoanApplicationForm user={{ isLoggedIn: true }} />
     </Suspense>
   );
 }

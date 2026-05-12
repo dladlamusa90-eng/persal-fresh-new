@@ -4,6 +4,16 @@ import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import { Lightbulb } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { calculateLoanCharges } from "@/lib/loanPolicy";
+
+// Persal status helper
+function getPersalStatus(user) {
+  if (!user?.persalNumber) return "missing";
+  if (user?.applicationStatus === "REJECTED") return "rejected";
+  if (user?.applicationStatus === "PENDING") return "pending";
+  if (user?.applicationStatus === "APPROVED") return "approved";
+  return "unknown";
+}
 
 export default function DashboardHomePage() {
   const router = useRouter();
@@ -20,6 +30,10 @@ export default function DashboardHomePage() {
   const [activeMyLoanSection, setActiveMyLoanSection] = useState<"summary" | "documents">("summary");
   const [firstName, setFirstName] = useState("");
   const repayDateInputRef = useRef<HTMLInputElement | null>(null);
+  const [user, setUser] = useState(null);
+  const [persalInput, setPersalInput] = useState("");
+  const [persalError, setPersalError] = useState("");
+  const [persalSubmitting, setPersalSubmitting] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -30,14 +44,46 @@ export default function DashboardHomePage() {
         if (userData?.user?.fullName) {
           setFirstName(userData.user.fullName.trim().split(" ")[0]);
         }
-
+        setUser(userData?.user || null);
+        if (userData?.user?.persalNumber) setPersalInput(userData.user.persalNumber);
         const status = loanData?.latestLoan?.status;
         setHasPendingLoan(status === "PENDING");
-        // Pay Now is only for users with an active payable loan.
         setHasActiveLoan(status === "APPROVED");
       })
       .catch(() => {});
   }, []);
+
+  const persalStatus = getPersalStatus(user);
+
+  const canApply =
+    !hasActiveLoan &&
+    !error &&
+    desiredLoan >= 100 &&
+    desiredLoan <= maxLoan &&
+    persalStatus === "approved";
+
+  async function handlePersalSubmit(e) {
+    e.preventDefault();
+    setPersalError("");
+    setPersalSubmitting(true);
+    try {
+      const res = await fetch("/api/users/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ persalNumber: persalInput }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setPersalError(data.error || "Unable to submit Persal number.");
+      } else {
+        setUser((u) => ({ ...u, persalNumber: persalInput, applicationStatus: "PENDING" }));
+      }
+    } catch {
+      setPersalError("Network error. Please try again.");
+    } finally {
+      setPersalSubmitting(false);
+    }
+  }
 
   function updateDesiredLoan(value: number) {
     if (value < 100 || value > maxLoan) {
@@ -49,30 +95,24 @@ export default function DashboardHomePage() {
   }
 
   const termDays = Math.max(6, Math.min(90, selectedDays));
-  const term = Math.max(1, Math.min(3, Math.ceil(termDays / 30)));
-  const interest1 = desiredLoan * 0.05;
-  const interest2 = term >= 2 ? desiredLoan * 0.03 : 0;
-  const interest3 = term === 3 ? desiredLoan * 0.02 : 0;
-
-  let initiationFee = 0;
-  if (desiredLoan <= 1000) {
-    initiationFee = 150;
-  } else if (desiredLoan <= 1500) {
-    initiationFee = 200;
-  } else {
-    initiationFee = 300;
-  }
-
-  const serviceFee = 60;
-  const totalCost = interest1 + interest2 + interest3 + initiationFee + serviceFee;
-  const totalRepayable = desiredLoan + totalCost;
-  const totalInterest = interest1 + interest2 + interest3;
+  const {
+    termMonths,
+    interestMonth1,
+    interestMonth2,
+    interestMonth3,
+    initiationFee,
+    serviceFee,
+    totalCost,
+    totalRepayable,
+    monthlyRepayment,
+  } = calculateLoanCharges(desiredLoan, termDays);
+  const totalInterest = interestMonth1 + interestMonth2 + interestMonth3;
   const totalFees = initiationFee + serviceFee;
   const amountPercent = ((desiredLoan - 100) / (5000 - 100)) * 100;
   const dayPercent = ((termDays - 6) / (90 - 6)) * 100;
   const amountKnobPercent = Math.min(97, Math.max(3, amountPercent));
   const dayKnobPercent = Math.min(97, Math.max(3, dayPercent));
-  const canApply = !hasActiveLoan && !error && desiredLoan >= 100 && desiredLoan <= maxLoan;
+  // canApply now includes persalStatus === "approved"
 
   const repayDate = new Date();
   repayDate.setDate(repayDate.getDate() + termDays);
@@ -84,7 +124,7 @@ export default function DashboardHomePage() {
   const repayDateISO = repayDate.toISOString().split("T")[0];
   const repayDateDisplay = repayDateISO.replace(/-/g, "/");
   const repayDateLabelCompact = repayDateLabel.replace(/\s+/g, "");
-  const applyNowHref = `/dashboard/lending/verify-number?loan=${desiredLoan}&term=${term}&termDays=${termDays}`;
+  const applyNowHref = `/dashboard/lending/verify-number?loan=${desiredLoan}&term=${termMonths}&termDays=${termDays}`;
 
   function handleApplyNowClick(event: React.MouseEvent<HTMLAnchorElement>) {
     if (!canApply) {
@@ -136,6 +176,35 @@ export default function DashboardHomePage() {
 
   return (
     <section className="max-w-6xl mx-auto px-2 md:px-4 -mt-6 md:-mt-10">
+      {/* Persal number prompt */}
+      {user && persalStatus !== "approved" && (
+        <div className="mb-6 p-4 rounded-xl border border-orange-300 bg-orange-50 flex flex-col items-center">
+          <h2 className="text-lg font-semibold text-orange-800 mb-2">Persal Number Required</h2>
+          {persalStatus === "missing" && <p className="mb-2 text-orange-700">Please submit your Persal number to apply for a loan.</p>}
+          {persalStatus === "pending" && <p className="mb-2 text-orange-700">Your Persal number is under review. You will be notified when it is approved.</p>}
+          {persalStatus === "rejected" && <p className="mb-2 text-red-700">Your Persal number was rejected. Please check and resubmit.</p>}
+          <form onSubmit={handlePersalSubmit} className="flex flex-col items-center gap-2 w-full max-w-xs">
+            <input
+              type="text"
+              className="border rounded px-3 py-2 w-full"
+              placeholder="Enter Persal Number"
+              value={persalInput}
+              onChange={(e) => setPersalInput(e.target.value)}
+              disabled={persalStatus === "pending" || persalSubmitting}
+              maxLength={8}
+            />
+            <button
+              type="submit"
+              className="bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded px-4 py-2 mt-1"
+              disabled={persalStatus === "pending" || persalSubmitting}
+            >
+              {persalStatus === "rejected" ? "Resubmit" : "Submit"}
+            </button>
+            {persalError && <div className="text-red-600 text-sm mt-1">{persalError}</div>}
+          </form>
+          <p className="mt-2 text-xs text-gray-600">You can skip for now, but you cannot apply for a loan until your Persal number is approved.</p>
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-[190px_1fr] gap-6 md:gap-8">
         <aside className="pt-2">
           <nav className="space-y-3 text-[22px] md:text-base">
@@ -416,12 +485,12 @@ export default function DashboardHomePage() {
 
                 <div className="bg-gray-200 px-4 md:px-6 py-6 md:py-7 grid grid-cols-1 md:grid-cols-4 gap-4 items-center mt-auto border-t border-gray-300/70 min-h-[132px]">
                   <div className="flex flex-col items-center text-center">
-                    <div className="text-base md:text-lg text-persal-blue font-semibold leading-tight tracking-tight">R{totalRepayable.toFixed(2)}</div>
-                    <div className="text-xs text-gray-700 leading-tight mt-1 font-medium">1 x Installment</div>
+                    <div className="text-base md:text-lg text-persal-blue font-semibold leading-tight tracking-tight">R{monthlyRepayment.toFixed(2)}</div>
+                    <div className="text-xs text-gray-700 leading-tight mt-1 font-medium">Monthly repayment</div>
                   </div>
                   <div className="flex flex-col items-center text-center">
                     <div className="text-base md:text-lg text-gray-700 leading-tight tracking-tight">{repayDateLabelCompact}</div>
-                    <div className="text-xs text-gray-700 leading-tight mt-1 font-medium">Repay date</div>
+                    <div className="text-xs text-gray-700 leading-tight mt-1 font-medium">Final repayment date</div>
                   </div>
                   <div className="flex flex-col items-center text-center">
                     <div className="text-base md:text-lg text-gray-700 leading-tight tracking-tight inline-flex items-center gap-1">
@@ -470,7 +539,7 @@ export default function DashboardHomePage() {
                 className="inline-flex items-center justify-center rounded-lg bg-persal-blue px-4 py-2 text-base font-semibold text-white transition hover:bg-persal-dark"
                 title="Open mock payment screen"
               >
-                Pay Now
+                Monthly Repayments
               </Link>
             </div>
           )}
@@ -526,11 +595,12 @@ export default function DashboardHomePage() {
                   </button>
                 </div>
                 <div className="px-4 py-3 text-persal-blue font-semibold border-b border-gray-200">
-                  R{totalRepayable.toFixed(2)} on {repayDateLabelCompact}
+                  R{monthlyRepayment.toFixed(2)} x {termMonths} monthly repayments
                 </div>
                 <div className="divide-y divide-gray-200 text-sm">
+                  <div className="px-4 py-3 flex items-center justify-between"><span className="text-gray-700">Monthly repayments</span><span className="font-semibold text-gray-700">{termMonths} x R{monthlyRepayment.toFixed(2)}</span></div>
                   <div className="px-4 py-3 flex items-center justify-between"><span className="text-gray-700">Initiation fee</span><span className="font-semibold text-gray-700">R{initiationFee.toFixed(2)}</span></div>
-                  <div className="px-4 py-3 flex items-center justify-between"><span className="text-gray-700">Service fees</span><span className="font-semibold text-gray-700">R{serviceFee.toFixed(2)}</span></div>
+                  <div className="px-4 py-3 flex items-center justify-between"><span className="text-gray-700">Service fee</span><span className="font-semibold text-gray-700">R{serviceFee.toFixed(2)}</span></div>
                   <div className="px-4 py-3 flex items-center justify-between"><span className="text-gray-700">Total fees</span><span className="font-semibold text-gray-700">R{totalFees.toFixed(2)}</span></div>
                   <div className="px-4 py-3 flex items-center justify-between"><span className="text-gray-700">Total interest</span><span className="font-semibold text-gray-700">R{totalInterest.toFixed(2)}</span></div>
                 </div>

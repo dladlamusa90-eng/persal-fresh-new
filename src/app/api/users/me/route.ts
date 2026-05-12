@@ -118,6 +118,28 @@ export async function PATCH(req: NextRequest) {
       address?: string | null;
     };
 
+    // Allow persalNumber-only update for Persal submission
+    if (Object.keys(body).length === 1 && "persalNumber" in body) {
+      const persal = normalizePersalNumber(String(body.persalNumber ?? "").trim());
+      if (!isValidPersalNumber(persal)) {
+        return NextResponse.json({ error: "Persal Number must be exactly 8 digits." }, { status: 400 });
+      }
+      // Check for duplicate Persal
+      const existing = await prisma.user.findFirst({
+        where: { persalNumber: persal, NOT: { id: identity.id ? identity.id : undefined } },
+        select: { id: true },
+      });
+      if (existing) {
+        return NextResponse.json({ error: "Persal Number already belongs to another account" }, { status: 409 });
+      }
+      const updatedUser = await prisma.user.update({
+        where: identity.id ? { id: identity.id } : { email: String(identity.email ?? "") },
+        data: { persalNumber: persal, applicationStatus: "PENDING" },
+        select: { id: true, persalNumber: true, applicationStatus: true },
+      });
+      return NextResponse.json({ message: "Persal submitted", user: updatedUser }, { status: 200 });
+    }
+
     // Address-only partial update
     if (Object.keys(body).length === 1 && "address" in body) {
       const currentUser = await prisma.user.findUnique({

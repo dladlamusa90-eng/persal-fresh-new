@@ -64,7 +64,7 @@ function GuestApplyContent() {
     year: "numeric",
   });
 
-  const { totalCost, totalRepayable } = calculateLoanCharges(amount, termDays);
+  const { termMonths, monthlyRepayment, totalCost, totalRepayable } = calculateLoanCharges(amount, termDays);
 
   function validatePhone(v: string) {
     return SA_PHONE_PATTERN.test(v.replace(/\s/g, ""));
@@ -187,13 +187,13 @@ function GuestApplyContent() {
               <div className="text-teal-300 text-xs mt-1">Days</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-orange-300">R{totalRepayable.toFixed(2)}</div>
-              <div className="text-teal-300 text-xs mt-1">Total Repayable</div>
+              <div className="text-3xl font-bold text-orange-300">R{monthlyRepayment.toFixed(2)}</div>
+              <div className="text-teal-300 text-xs mt-1">Monthly Repayment</div>
             </div>
           </div>
           <div className="mt-4 pt-4 border-t border-white/20 flex items-center justify-between text-sm text-teal-200">
             <span>Interest &amp; Fees: <span className="text-white font-semibold">R{totalCost.toFixed(2)}</span></span>
-            <span>Repay by: <span className="text-white font-semibold">{repayDateLabel}</span></span>
+            <span>{termMonths} monthly repayments, final by: <span className="text-white font-semibold">{repayDateLabel}</span></span>
           </div>
         </div>
 
@@ -414,7 +414,7 @@ function GuestApplyContent() {
           <div className="bg-white rounded-xl shadow p-6 border border-gray-100">
             <h2 className="text-base font-semibold text-persal-dark mb-3">Debit Mandate</h2>
             <p className="text-gray-600 text-sm mb-4 leading-relaxed">
-              By accepting, you authorise Persal Loans to deduct repayments from your salary via the Persal payroll system. The deduction of <strong>R{totalRepayable.toFixed(2)}</strong> will be made on or around <strong>{repayDateLabel}</strong>. This mandate is governed by the National Credit Act and may be cancelled with written notice.
+              By accepting, you authorise Persal Loans to deduct <strong>{termMonths} monthly repayment{termMonths > 1 ? "s" : ""}</strong> of <strong>R{monthlyRepayment.toFixed(2)}</strong> from your salary via the Persal payroll system. Your final repayment is due on or around <strong>{repayDateLabel}</strong>. This mandate is governed by the National Credit Act and may be cancelled with written notice.
             </p>
             <label className="flex items-start gap-3 cursor-pointer select-none">
               <input
@@ -454,10 +454,12 @@ function GuestApplyContent() {
   );
 }
 
+import UnifiedLoanApplicationForm from "../components/UnifiedLoanApplicationForm";
+
 export default function GuestApplyPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-gray-500">Loading…</div>}>
-      <GuestApplyContent />
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-gray-500">Loading</div>}>
+      <UnifiedLoanApplicationForm user={{ isLoggedIn: false }} />
     </Suspense>
   );
 }
