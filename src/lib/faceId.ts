@@ -1,4 +1,4 @@
-import { createHmac } from "crypto";
+import { WebApi } from "smile-identity-core";
 
 export function isFaceIdVerified(user: { faceIdStatus?: string | null; faceIdVerifiedAt?: Date | string | null }): boolean {
   if (user.faceIdStatus !== "VERIFIED") return false;
@@ -9,12 +9,6 @@ export function buildFaceIdExternalUserId(userId: string): string {
   return `persal-${userId}`;
 }
 
-export function generateSmileSignature(apiKey: string, timestamp: string, partnerId: string): string {
-  return createHmac("sha256", apiKey)
-    .update(timestamp + partnerId + "sid_request")
-    .digest("base64");
-}
-
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
 }
@@ -23,14 +17,25 @@ export function extractSmileStatusText(raw: unknown): string {
   const top = asRecord(raw);
   const result = asRecord(top.result);
   const data = asRecord(top.data);
+  const nestedResult = asRecord(data.result);
 
   const candidate =
     top.result_text ??
+    top.ResultText ??
     top.message ??
+    top.Message ??
     result.result_text ??
+    result.ResultText ??
     result.message ??
+    result.Message ??
     data.result_text ??
-    data.message;
+    data.ResultText ??
+    data.message ??
+    data.Message ??
+    nestedResult.result_text ??
+    nestedResult.ResultText ??
+    nestedResult.message ??
+    nestedResult.Message;
 
   if (typeof candidate === "string" && candidate.trim()) {
     return candidate.trim();
@@ -43,24 +48,46 @@ export function isSmileApproved(raw: unknown): boolean | null {
   const top = asRecord(raw);
   const result = asRecord(top.result);
   const data = asRecord(top.data);
+  const nestedResult = asRecord(data.result);
 
   const boolCandidate =
     top.approved ??
     top.verified ??
     top.success ??
+    top.job_success ??
     result.approved ??
     result.verified ??
     result.success ??
+    result.job_success ??
     data.approved ??
     data.verified ??
-    data.success;
+    data.success ??
+    data.job_success ??
+    nestedResult.approved ??
+    nestedResult.verified ??
+    nestedResult.success ??
+    nestedResult.job_success;
 
   if (typeof boolCandidate === "boolean") {
     return boolCandidate;
   }
 
   const textCandidate =
-    String(top.result_code ?? result.result_code ?? top.result_text ?? result.result_text ?? "").toUpperCase();
+    String(
+      top.result_code ??
+        top.ResultCode ??
+        result.result_code ??
+        result.ResultCode ??
+        nestedResult.result_code ??
+        nestedResult.ResultCode ??
+        top.result_text ??
+        top.ResultText ??
+        result.result_text ??
+        result.ResultText ??
+        nestedResult.result_text ??
+        nestedResult.ResultText ??
+        ""
+    ).toUpperCase();
 
   if (!textCandidate) return null;
   if (textCandidate.includes("PASS") || textCandidate.includes("MATCH") || textCandidate.includes("APPROVED")) {
@@ -77,7 +104,7 @@ export interface SmileSubmitParams {
   partnerId: string;
   apiKey: string;
   externalUserId: string;
-  jobType: 1 | 2;
+  jobType: 2 | 4;
   selfieBase64: string;
   callbackUrl?: string;
   env?: "sandbox" | "production";
@@ -92,56 +119,34 @@ export interface SmileSubmitResult {
 
 export async function submitToSmileId(params: SmileSubmitParams): Promise<SmileSubmitResult> {
   const { partnerId, apiKey, externalUserId, jobType, selfieBase64, callbackUrl, env = "sandbox" } = params;
-
-  const baseUrl =
-    env === "production"
-      ? "https://api.smileidentity.com/v1"
-      : "https://testapi.smileidentity.com/v1";
-
-  const timestamp = new Date().toISOString();
-  const signature = generateSmileSignature(apiKey, timestamp, partnerId);
   const jobId = `job-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const cleanBase64 = selfieBase64.replace(/^data:[a-z/]+;base64,/, "");
-
-  const payload = {
-    smile_client_id: partnerId,
-    partner_id: partnerId,
-    signature,
-    timestamp,
-    source_sdk: "backend_web",
-    source_sdk_version: "1.0.0",
-    job_type: jobType,
-    partner_params: {
+  const webApi = new WebApi(partnerId, callbackUrl || null, apiKey, env === "production" ? 1 : 0);
+  const raw = await webApi.submit_job(
+    {
       user_id: externalUserId,
       job_id: jobId,
-      job_type: String(jobType),
+      job_type: jobType,
     },
-    callback_url: callbackUrl ?? "",
-    return_job_status: true,
-    return_history: false,
-    return_images: false,
-    images: [
+    [
       {
         image_type_id: 2,
         image: cleanBase64,
       },
     ],
-  };
+    { entered: false },
+    {
+      optional_callback: callbackUrl,
+      return_job_status: true,
+      return_history: false,
+      return_images: false,
+      use_enrolled_image: false,
+    }
+  );
 
-  const response = await fetch(`${baseUrl}/smile_jobs`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-
-  const raw: unknown = await response.json().catch(() => ({}));
   const resultText = extractSmileStatusText(raw);
   const approved = isSmileApproved(raw) ?? false;
   const jobComplete = Boolean(asRecord(raw).job_complete);
-
-  if (!response.ok && !approved) {
-    return { jobComplete, approved: false, resultText, rawResponse: raw };
-  }
 
   return { jobComplete, approved, resultText, rawResponse: raw };
 }

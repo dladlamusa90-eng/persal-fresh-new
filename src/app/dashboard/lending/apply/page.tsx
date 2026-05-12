@@ -47,6 +47,30 @@ function ApplyPageContent() {
 
   const userLoanCap = getMaxLoanForUser(isReturningUser);
 
+  function getApplyReturnTo() {
+    const currentQuery = searchParams.toString();
+    return `/dashboard/lending/apply${currentQuery ? `?${currentQuery}` : ""}`;
+  }
+
+  function openFaceVerificationWindow() {
+    if (typeof window === "undefined") return false;
+
+    const popupUrl = `/dashboard/lending/face-verification?popup=1&returnTo=${encodeURIComponent(getApplyReturnTo())}`;
+    const popup = window.open(
+      popupUrl,
+      "persal-face-verification",
+      "popup=yes,width=520,height=760,left=120,top=80,resizable=yes,scrollbars=yes"
+    );
+
+    if (!popup) {
+      router.push(`/dashboard/lending/face-verification?returnTo=${encodeURIComponent(getApplyReturnTo())}`);
+      return false;
+    }
+
+    popup.focus();
+    return true;
+  }
+
   // On mount, if query params present, auto-calculate eligibility
   useEffect(() => {
     if (searchParams.get("salary") && searchParams.get("disposable")) {
@@ -170,6 +194,31 @@ function ApplyPageContent() {
     };
   }, []);
 
+  useEffect(() => {
+    async function refreshFaceStatus() {
+      try {
+        const response = await fetch("/api/faceid/session", { cache: "no-store" });
+        if (!response.ok) return;
+        const body = (await response.json()) as { verified?: boolean };
+        if (body.verified) {
+          setFaceIdVerified(true);
+          setError("");
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    function handleFaceVerified(event: MessageEvent) {
+      if (event.origin !== window.location.origin) return;
+      if (event.data?.type !== "persal-faceid-verified") return;
+      void refreshFaceStatus();
+    }
+
+    window.addEventListener("message", handleFaceVerified);
+    return () => window.removeEventListener("message", handleFaceVerified);
+  }, []);
+
   function handleCalculate(e: React.FormEvent) {
     e.preventDefault();
     if (disposable > salary) {
@@ -192,7 +241,8 @@ function ApplyPageContent() {
     if (hasActiveLoan) return;
 
     if (!faceIdVerified) {
-      setError("Please complete face verification before submitting.");
+      setError("Complete face verification in the secure window to continue with your application.");
+      openFaceVerificationWindow();
       return;
     }
 
@@ -561,9 +611,7 @@ function ApplyPageContent() {
             <button
               type="button"
               onClick={() => {
-                const currentQuery = searchParams.toString();
-                const returnTo = `/dashboard/lending/apply${currentQuery ? `?${currentQuery}` : ""}`;
-                router.push(`/dashboard/lending/face-verification?returnTo=${encodeURIComponent(returnTo)}`);
+                openFaceVerificationWindow();
               }}
               className="px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold transition"
             >
@@ -580,7 +628,7 @@ function ApplyPageContent() {
         <button
           type="submit"
           className="w-full px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-semibold transition disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
-          disabled={hasActiveLoan || submitting || !faceIdVerified}
+          disabled={hasActiveLoan || submitting}
         >
           {submitting ? "Submitting..." : "Submit Application"}
         </button>

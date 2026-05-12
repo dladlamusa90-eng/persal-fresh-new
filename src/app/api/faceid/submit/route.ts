@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
   }
 
   const externalUserId = user.faceIdExternalUserId || buildFaceIdExternalUserId(user.id);
+  const jobType = user.faceIdEnrolled ? 2 : 4;
   if (!user.faceIdExternalUserId) {
     await prisma.user.update({
       where: { id: user.id },
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest) {
       partnerId,
       apiKey,
       externalUserId,
-      jobType: 2,
+      jobType,
       selfieBase64,
       callbackUrl,
       env,
@@ -97,15 +98,17 @@ export async function POST(req: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
+    const message = error instanceof Error ? error.message : "verification_error";
+
     await prisma.user.update({
       where: { id: user.id },
       data: {
         faceIdStatus: user.faceIdEnrolled ? "ENROLLED" : "PENDING",
         faceIdLastCheckedAt: new Date(),
-        faceIdLastError: error instanceof Error ? error.message : "verification_error",
+        faceIdLastError: message,
       },
     });
 
-    return NextResponse.json({ error: "Face verification failed. Please try again." }, { status: 502 });
+    return NextResponse.json({ error: message }, { status: 502 });
   }
 }

@@ -16,6 +16,17 @@ function FaceVerificationContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnTo = searchParams.get("returnTo") || "/dashboard/lending/apply";
+  const isPopup = searchParams.get("popup") === "1";
+
+  function handleVerified() {
+    if (typeof window !== "undefined" && window.opener && !window.opener.closed) {
+      window.opener.postMessage({ type: "persal-faceid-verified" }, window.location.origin);
+      window.close();
+      return;
+    }
+
+    router.push(returnTo);
+  }
 
   return (
     <section className="max-w-5xl mx-auto px-4 py-6 md:py-8">
@@ -26,15 +37,22 @@ function FaceVerificationContent() {
         </p>
       </div>
 
-      <FaceIdGate onVerified={() => router.push(returnTo)} />
+      <FaceIdGate onVerified={handleVerified} />
 
       <div className="mt-5">
         <button
           type="button"
-          onClick={() => router.push(returnTo)}
+          onClick={() => {
+            if (isPopup && typeof window !== "undefined") {
+              window.close();
+              return;
+            }
+
+            router.push(returnTo);
+          }}
           className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
         >
-          Back
+          {isPopup ? "Close" : "Back"}
         </button>
       </div>
     </section>

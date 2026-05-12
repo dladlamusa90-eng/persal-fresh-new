@@ -23,7 +23,8 @@
     "pg": "^8.18.0",
     "prisma": "^7.4.0",
     "react": "latest",
-    "react-dom": "latest"
+    "react-dom": "latest",
+    "smile-identity-core": "^3.1.0"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",

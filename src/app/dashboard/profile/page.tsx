@@ -1,5 +1,6 @@
 "use client";
 import React, { ChangeEvent, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import { DashboardProfile, defaultDashboardProfile, getProfileInitial } from "@/app/dashboard/profile/profileData";
 import {
@@ -21,6 +22,7 @@ function isValidEmail(email: string) {
 }
 
 export default function ProfilePage() {
+  const router = useRouter();
   const [activeSection, setActiveSection] = useState<"profile" | "employment" | "banking">("profile");
   const [profile, setProfile] = useState<DashboardProfile>(defaultDashboardProfile);
   const [initialProfile, setInitialProfile] = useState<DashboardProfile>(defaultDashboardProfile);
@@ -39,15 +41,19 @@ export default function ProfilePage() {
   const [accountType, setAccountType] = useState("");
   const [branchCode, setBranchCode] = useState("");
   const [applicationData, setApplicationData] = useState<Record<string, string | number | null>>({});
+  const [faceIdVerified, setFaceIdVerified] = useState(false);
+  const [faceIdStatus, setFaceIdStatus] = useState<string | null>(null);
+  const [faceIdLastError, setFaceIdLastError] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
 
     async function loadProfile() {
       try {
-        const [response, draftResponse] = await Promise.all([
+        const [response, draftResponse, faceResponse] = await Promise.all([
           fetch("/api/users/me", { cache: "no-store" }),
           fetch("/api/loan-application-draft", { cache: "no-store" }),
+          fetch("/api/faceid/session", { cache: "no-store" }),
         ]);
         if (!response.ok) {
           setErrorMessage("Unable to load profile details.");
@@ -103,6 +109,17 @@ export default function ProfilePage() {
         setAccountType(body.user.accountType ?? "");
         setBranchCode(body.user.branchCode ?? "");
         setApplicationData(draftBody?.draft?.data ?? {});
+
+        if (faceResponse.ok) {
+          const faceBody = (await faceResponse.json()) as {
+            verified?: boolean;
+            status?: string | null;
+            lastError?: string | null;
+          };
+          setFaceIdVerified(Boolean(faceBody.verified));
+          setFaceIdStatus(faceBody.status ?? null);
+          setFaceIdLastError(faceBody.lastError ?? null);
+        }
       } catch {
         setErrorMessage("Unable to load profile details.");
       } finally {
@@ -377,6 +394,36 @@ export default function ProfilePage() {
 
           {activeSection === "profile" && (
             <>
+          <div className={`mb-8 rounded-2xl border p-5 md:p-6 ${faceIdVerified ? "border-green-200 bg-green-50" : "border-amber-200 bg-amber-50"}`}>
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className={`text-sm font-semibold ${faceIdVerified ? "text-green-900" : "text-amber-900"}`}>
+                  {faceIdVerified ? "Face verification complete" : "Face verification required"}
+                </p>
+                <p className={`mt-1 text-sm ${faceIdVerified ? "text-green-800" : "text-amber-800"}`}>
+                  {faceIdVerified
+                    ? "Your profile is verified with Smile ID and ready for secure application steps."
+                    : "Verify your identity with Smile ID before high-risk actions like final loan submission."}
+                </p>
+                {!faceIdVerified && faceIdLastError && (
+                  <p className="mt-2 text-xs text-amber-900">Last verification result: {faceIdLastError}</p>
+                )}
+                {!faceIdVerified && faceIdStatus && !faceIdLastError && (
+                  <p className="mt-2 text-xs text-amber-900">Current status: {faceIdStatus}</p>
+                )}
+              </div>
+              {!faceIdVerified && (
+                <button
+                  type="button"
+                  onClick={() => router.push("/dashboard/lending/face-verification?returnTo=%2Fdashboard%2Fprofile")}
+                  className="rounded-xl bg-teal-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-teal-700"
+                >
+                  Verify Face
+                </button>
+              )}
+            </div>
+          </div>
+
           <div className="space-y-7">
             <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
               <div className="text-gray-700">Name</div>

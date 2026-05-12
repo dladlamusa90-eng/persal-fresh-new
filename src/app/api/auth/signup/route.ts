@@ -205,7 +205,7 @@ export async function POST(req: NextRequest) {
           partnerId: partnerId!,
           apiKey: apiKey!,
           externalUserId,
-          jobType: 1,
+          jobType: 4,
           selfieBase64: normalizedRegistrationFacePhoto,
           callbackUrl,
           env,

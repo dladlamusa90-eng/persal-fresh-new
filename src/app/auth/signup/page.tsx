@@ -1,9 +1,11 @@
 "use client";
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import AppFooter from "@/app/components/AppFooter";
+
+const SIGNUP_DRAFT_KEY = "signup-application-draft-v1";
 
 function SignupPageContent() {
   const searchParams = useSearchParams();
@@ -15,84 +17,24 @@ function SignupPageContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [address, setAddress] = useState("");
-  const [faceStep, setFaceStep] = useState<"idle" | "camera" | "captured">("idle");
-  const [registrationFacePhoto, setRegistrationFacePhoto] = useState<string | null>(null);
   const [showRequirementsPopup, setShowRequirementsPopup] = useState(searchParams.get("from") === "login");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
 
-  const stopCamera = useCallback(() => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-  }, []);
+  function normalizeSouthAfricanPhoneInput(value: string) {
+    const cleaned = value.replace(/[^\d+]/g, "");
+    const withSingleLeadingPlus = cleaned.startsWith("+")
+      ? `+${cleaned.slice(1).replace(/\+/g, "")}`
+      : cleaned.replace(/\+/g, "");
 
-  useEffect(() => {
-    if (faceStep !== "camera" || !videoRef.current || !streamRef.current) {
-      return;
+    if (withSingleLeadingPlus.startsWith("+")) {
+      return withSingleLeadingPlus.slice(0, 12);
     }
 
-    videoRef.current.srcObject = streamRef.current;
-    void videoRef.current.play().catch(() => {
-      setError("Unable to start camera preview. Please try again.");
-      setFaceStep("idle");
-    });
-  }, [faceStep]);
-
-  useEffect(() => {
-    return () => {
-      stopCamera();
-    };
-  }, [stopCamera]);
-
-  async function startFaceCamera() {
-    setError("");
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user", width: { ideal: 720 }, height: { ideal: 960 } },
-      });
-      streamRef.current = stream;
-      setFaceStep("camera");
-    } catch {
-      setError("Camera access denied. Please allow camera permission to register your face.");
-    }
+    return withSingleLeadingPlus.slice(0, 10);
   }
-
-  function captureFace() {
-    if (!videoRef.current || !canvasRef.current) return;
-
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-
-    canvas.width = video.videoWidth || 720;
-    canvas.height = video.videoHeight || 960;
-
-    const context = canvas.getContext("2d");
-    if (!context) return;
-
-    context.drawImage(video, 0, 0);
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
-    setRegistrationFacePhoto(dataUrl);
-    stopCamera();
-    setFaceStep("captured");
-  }
-
-  async function retakeFace() {
-    setRegistrationFacePhoto(null);
-    await startFaceCamera();
-  }
-
-  async function handleSignup(e: React.FormEvent) {
+  async function handleNext(e: React.FormEvent) {
     e.preventDefault();
-    if (isSubmitting) return;
 
     if (!firstName.trim() || !surname.trim() || !idNumber.trim() || !persalNumber.trim() || !phone.trim() || !email.trim() || !password.trim() || !address.trim()) {
       setError("Please complete all required fields.");
@@ -122,43 +64,24 @@ function SignupPageContent() {
       return;
     }
 
-    if (!registrationFacePhoto) {
-      setError("Face registration is required. Please capture your face photo before submitting.");
-      return;
-    }
-
-    setError("");
-    setIsSubmitting(true);
-
     try {
-      const response = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          fullName: `${firstName.trim()} ${surname.trim()}`.trim(),
-          email: email.trim().toLowerCase(),
-          password,
+      sessionStorage.setItem(
+        SIGNUP_DRAFT_KEY,
+        JSON.stringify({
+          firstName: firstName.trim(),
+          surname: surname.trim(),
           idNumber: sanitizedId,
           persalNumber: normalizedPersal,
           phone: normalizedPhone,
+          email: email.trim().toLowerCase(),
+          password,
           address: address.trim(),
-          registrationFacePhoto,
-        }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        setError(data.error || "Signup failed. Please try again.");
-        return;
-      }
-
-      router.push("/auth/application-submitted");
+        })
+      );
+      setError("");
+      router.push("/auth/signup/face-registration");
     } catch {
-      setError("Application submission failed. Please try again.");
-    } finally {
-      setIsSubmitting(false);
+      setError("Unable to continue. Please try again.");
     }
   }
 
@@ -180,7 +103,7 @@ function SignupPageContent() {
 
         <div className="w-full px-4 md:px-8 pt-4 pb-10">
           <div className="w-full max-w-7xl mx-auto">
-        <form onSubmit={handleSignup} className="w-full max-w-5xl mx-auto bg-white/70 backdrop-blur-sm border border-gray-200 rounded-3xl p-5 md:p-8 shadow-sm">
+        <form onSubmit={handleNext} className="w-full max-w-5xl mx-auto bg-white/70 backdrop-blur-sm border border-gray-200 rounded-3xl p-5 md:p-8 shadow-sm">
           <h1 className="text-2xl md:text-3xl text-gray-800 font-medium mb-7">Submit Application</h1>
 
           <div className="space-y-7">
@@ -244,9 +167,12 @@ function SignupPageContent() {
                 id="cellphone"
                 name="phone"
                 type="tel"
+                inputMode="tel"
+                pattern="^(?:\+27|0)[1-9][0-9]{8}$"
+                title="Enter a valid South African cellphone number, e.g. 0821234567 or +27821234567"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="e.g. 0821234567"
+                onChange={(e) => setPhone(normalizeSouthAfricanPhoneInput(e.target.value))}
+                placeholder="e.g. 0821234567 or +27821234567"
                 className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base md:text-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-300"
               />
             </div>
@@ -290,71 +216,6 @@ function SignupPageContent() {
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-start">
-              <label className="text-gray-700 text-lg md:text-xl md:pt-2">Face Registration</label>
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 md:p-5">
-                <canvas ref={canvasRef} className="hidden" />
-                <p className="text-sm text-amber-900 font-semibold">Required for first-time application</p>
-                <p className="mt-1 text-xs md:text-sm text-amber-800">
-                  We store this as your registered face and compare it with your live face when you apply for a loan.
-                </p>
-
-                {faceStep === "idle" && !registrationFacePhoto && (
-                  <button
-                    type="button"
-                    onClick={startFaceCamera}
-                    className="mt-4 inline-flex rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-700 transition"
-                  >
-                    Start Camera
-                  </button>
-                )}
-
-                {faceStep === "camera" && (
-                  <div className="mt-4 space-y-3">
-                    <div className="relative rounded-xl overflow-hidden border border-amber-200 bg-black" style={{ aspectRatio: "3 / 4" }}>
-                      <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
-                    </div>
-                    <div className="flex gap-3">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          stopCamera();
-                          setFaceStep("idle");
-                        }}
-                        className="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="button"
-                        onClick={captureFace}
-                        className="flex-1 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-700 transition"
-                      >
-                        Capture Face
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {registrationFacePhoto && faceStep === "captured" && (
-                  <div className="mt-4 space-y-3">
-                    <div className="rounded-xl overflow-hidden border border-amber-200 bg-black" style={{ aspectRatio: "3 / 4" }}>
-                      <img src={registrationFacePhoto} alt="Registered face" className="w-full h-full object-cover" />
-                    </div>
-                    <div className="flex gap-3">
-                      <span className="flex-1 rounded-xl bg-green-100 px-4 py-2.5 text-sm font-semibold text-green-800 text-center">Face captured</span>
-                      <button
-                        type="button"
-                        onClick={retakeFace}
-                        className="rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition"
-                      >
-                        Retake
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
           </div>
 
           <div className="mt-8 flex items-center justify-between gap-4">
@@ -363,10 +224,9 @@ function SignupPageContent() {
             </p>
             <button
               type="submit"
-              disabled={isSubmitting}
-              className="bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl px-7 py-2.5 text-lg md:text-xl min-w-[200px] md:min-w-[230px] transition disabled:opacity-60 disabled:cursor-not-allowed"
+              className="bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl px-7 py-2.5 text-lg md:text-xl min-w-[200px] md:min-w-[230px] transition"
             >
-              {isSubmitting ? "Submitting..." : "Submit Application"}
+              Next
             </button>
           </div>
 
@@ -400,11 +260,7 @@ function SignupPageContent() {
               </li>
               <li className="flex items-start gap-3">
                 <CheckCircle2 className="text-lime-500 mt-0.5 shrink-0" size={18} />
-                <span>Most recent proof of income</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <CheckCircle2 className="text-lime-500 mt-0.5 shrink-0" size={18} />
-                <span>Salary paid into a Capitec, Absa, FNB, Nedbank, Standard Bank or Tyme Bank account</span>
+                <span>South African Cell Number</span>
               </li>
             </ul>
 
