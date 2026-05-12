@@ -6,6 +6,11 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 const APPLY_DRAFT_KEY = "guestLoanApplyDraft";
 
+function formatWithCommas(value: number) {
+  const rounded = Math.round(value);
+  return String(rounded).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
 type UploadedDocument = {
   name: string;
   type: string;
@@ -267,7 +272,7 @@ export default function ApplyFaceVerificationPage() {
           {draft && (
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
-                <div className="text-3xl font-bold text-white">R{draft.amount.toLocaleString()}</div>
+                <div className="text-3xl font-bold text-white">R{formatWithCommas(draft.amount)}</div>
                 <div className="text-teal-300 text-xs mt-1">Loan Amount</div>
               </div>
               <div>

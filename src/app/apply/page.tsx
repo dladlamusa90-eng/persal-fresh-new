@@ -9,6 +9,11 @@ const SA_PHONE_PATTERN = /^(\+27|0)(6|7|8)[0-9]{8}$/;
 const APPLY_DRAFT_KEY = "guestLoanApplyDraft";
 const MAX_BANK_STATEMENT_SIZE_BYTES = 2 * 1024 * 1024;
 
+function formatWithCommas(value: number) {
+  const rounded = Math.round(value);
+  return String(rounded).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
 type UploadedDocument = {
   name: string;
   type: string;
@@ -174,7 +179,7 @@ function GuestApplyContent() {
           <p className="text-teal-200 text-sm mb-5">No account needed — just fill in your details below.</p>
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
-              <div className="text-3xl font-bold text-white">R{amount.toLocaleString()}</div>
+              <div className="text-3xl font-bold text-white">R{formatWithCommas(amount)}</div>
               <div className="text-teal-300 text-xs mt-1">Loan Amount</div>
             </div>
             <div>
