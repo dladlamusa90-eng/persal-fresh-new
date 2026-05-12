@@ -7,22 +7,75 @@ import { calculateLoanCharges } from "@/lib/loanPolicy";
 export default function RepaymentDetailsPage() {
   return (
     <Suspense fallback={<section className="max-w-6xl mx-auto px-4 md:px-6 py-4 md:py-6"><p className="text-sm text-gray-600">Loading...</p></section>}>
-      import { Suspense } from "react";
-      import { useRouter, useSearchParams } from "next/navigation";
-      import { calculateLoanCharges } from "@/lib/loanPolicy";
+      <RepaymentDetailsContent />
+    </Suspense>
+  );
+}
 
-      // Face recognition logic removed. No gating, no API calls, no UI.
+function RepaymentDetailsContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [amount, setAmount] = useState(1500);
+  const [termDays, setTermDays] = useState(90);
+  const [faceVerified, setFaceVerified] = useState(false);
 
-      export default function RepaymentDetailsPage() {
-        // ...existing code for rendering the page, minus face verification logic...
-        // You can safely submit/continue without Face ID.
-        return (
-          <Suspense fallback={<section className="max-w-6xl mx-auto px-4 md:px-6 py-4 md:py-6"><p className="text-sm text-gray-600">Loading...</p></section>}>
-            {/* Repayment details content here, face recognition removed */}
-            <div className="p-8">Repayment details page (face recognition removed).</div>
-          </Suspense>
-        );
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadData() {
+      try {
+        const [draftRes, faceRes] = await Promise.all([
+          fetch("/api/loan-application-draft", { cache: "no-store" }),
+          fetch("/api/faceid/session", { cache: "no-store" }),
+        ]);
+
+        if (draftRes.ok && mounted) {
+          const body = (await draftRes.json()) as {
+            draft?: { data?: { requestedAmount?: number; requestedTermDays?: number } };
+          };
+
+          if (typeof body.draft?.data?.requestedAmount === "number") {
+            setAmount(body.draft.data.requestedAmount);
+          }
+
+          if (typeof body.draft?.data?.requestedTermDays === "number") {
+            setTermDays(body.draft.data.requestedTermDays);
+          }
+        }
+
+        if (faceRes.ok && mounted) {
+          const faceBody = (await faceRes.json()) as { verified?: boolean };
+          setFaceVerified(Boolean(faceBody.verified));
+        }
+      } catch {
+        // Keep defaults; user can still continue.
       }
+    }
+
+    loadData();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const charges = calculateLoanCharges(amount, termDays);
+  const totalInterest = charges.interestMonth1 + charges.interestMonth2 + charges.interestMonth3;
+  const totalRepayable = charges.totalRepayable;
+
+  function withWizardQuery(path: string) {
+    const query = searchParams.toString();
+    return query ? `${path}?${query}` : path;
+  }
+
+  const applyPath = withWizardQuery("/dashboard/lending/apply");
+  const verifyPath = `/dashboard/lending/face-verification?returnTo=${encodeURIComponent(applyPath)}`;
+
+  return (
+    <section className="max-w-6xl mx-auto px-4 md:px-6 py-4 md:py-6">
+      <div className="rounded-2xl bg-white px-6 py-6 md:px-8 md:py-8 shadow-sm">
+        <div className="mb-6">
+          <div className="text-sm font-medium text-persal-dark tracking-tight">90 %</div>
           <div className="mt-2 h-1 w-full rounded-full bg-gray-300 overflow-hidden">
             <div className="h-full w-[90%] bg-lime-500" />
           </div>
@@ -31,29 +84,34 @@ export default function RepaymentDetailsPage() {
         <h1 className="text-2xl md:text-3xl font-normal text-persal-dark mb-8">Loan repayment details</h1>
 
         <div className="divide-y divide-gray-200 border-t border-gray-200">
-          <div className="py-5 flex items-center justify-between gap-4">
-            <p className="text-base font-medium text-gray-700">Start date</p>
-            <p className="text-base text-gray-700">Upon loan cash payout</p>
+          <div className="py-4 flex items-center justify-between gap-4">
+            <p className="text-base font-medium text-gray-700">Loan amount</p>
+            <p className="text-base text-gray-700">R {amount.toLocaleString()}</p>
           </div>
+          <div className="py-4 flex items-center justify-between gap-4">
+            <p className="text-base font-medium text-gray-700">Repayment term</p>
+            <p className="text-base text-gray-700">{termDays} days</p>
+          </div>
+          <div className="py-4 flex items-center justify-between gap-4">
+            <p className="text-base font-medium text-gray-700">Total interest</p>
+            <p className="text-base text-gray-700">R {totalInterest.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+          </div>
+          <div className="py-4 flex items-center justify-between gap-4">
+            <p className="text-base font-medium text-gray-700">Initiation fee</p>
+            <p className="text-base text-gray-700">R {charges.initiationFee.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+          </div>
+          <div className="py-4 flex items-center justify-between gap-4">
+            <p className="text-base font-medium text-gray-700">Service fee</p>
+            <p className="text-base text-gray-700">R {charges.serviceFee.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+          </div>
+          <div className="py-5 flex items-center justify-between gap-4">
+            <p className="text-base font-semibold text-gray-900">Total to repay</p>
+            <p className="text-lg font-bold text-persal-blue">R {totalRepayable.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+          </div>
+        </div>
 
-          <div className="py-5 flex items-center justify-between gap-4">
-            <p className="text-base font-medium text-gray-700 inline-flex items-center gap-2">
-              Instalment amount
-              <button
-                type="button"
-                onClick={() => setShowFeesBreakdown(true)}
-                className="text-orange-500 hover:text-orange-600 inline-flex"
-                aria-label="Open fees breakdown"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="9" />
-                  <line x1="12" y1="10" x2="12" y2="16" />
-                  <circle cx="12" cy="7" r="1" fill="currentColor" stroke="none" />
-                </svg>
-              </button>
-            </p>
-            <p className="text-base text-gray-700">R {formatCurrency(totalToRepay)}</p>
-          </div>
+        <div className="mt-8 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700">
+          {faceVerified ? "Face verification complete. You can continue to submit your application." : "Face verification is required before final application submission."}
         </div>
 
         <div className="mt-10 flex items-center justify-between">
@@ -68,56 +126,13 @@ export default function RepaymentDetailsPage() {
 
           <button
             type="button"
-            onClick={handleVerifyFace}
-            className="inline-flex min-w-[120px] items-center justify-center rounded-xl bg-[#f5912d] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#eb8621]"
+            onClick={() => router.push(faceVerified ? applyPath : verifyPath)}
+            className="inline-flex min-w-[150px] items-center justify-center rounded-xl bg-[#f5912d] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#eb8621]"
           >
-            Verify Face
+            {faceVerified ? "Continue" : "Verify Face"}
           </button>
         </div>
-        {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
       </div>
-
-      {showFeesBreakdown && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4" role="dialog" aria-modal="true" aria-label="Fees Breakdown">
-          <div className="w-full max-w-[340px] rounded-xl overflow-hidden bg-gray-100 shadow-2xl border border-gray-200">
-            <div className="bg-orange-500 text-white px-4 py-2.5 flex items-center justify-between">
-              <h3 className="font-semibold text-xl">Fees Breakdown</h3>
-              <button
-                type="button"
-                onClick={() => setShowFeesBreakdown(false)}
-                className="text-white text-xl leading-none"
-                aria-label="Close fees breakdown"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="px-4 py-4 text-base text-gray-700">
-              <p className="text-teal-600 font-semibold mb-3">Loan fees &amp; interest</p>
-
-              <div className="border-t border-gray-200">
-                <div className="py-3 flex items-center justify-between">
-                  <span>Initiation fee</span>
-                  <span className="font-semibold">R {formatCurrency(charges.initiationFee)}</span>
-                </div>
-                <div className="py-3 flex items-center justify-between border-t border-gray-200">
-                  <span>Service fees</span>
-                  <span className="font-semibold">R {formatCurrency(charges.serviceFee)}</span>
-                </div>
-                <div className="py-3 flex items-center justify-between border-t border-gray-200">
-                  <span>Total interest</span>
-                  <span className="font-semibold">R {formatCurrency(totalInterest)}</span>
-                </div>
-              </div>
-
-              <div className="border-t border-gray-200 mt-2 pt-3 flex items-center justify-between text-teal-600 font-semibold">
-                <span>Total to repay</span>
-                <span>R {formatCurrency(totalToRepay)}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </section>
   );
 }

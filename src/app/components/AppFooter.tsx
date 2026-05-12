@@ -20,6 +20,10 @@ export default function AppFooter({ isAuthenticated = false }: AppFooterProps) {
           {!isAuthenticated && <a href="/auth/login" className="hover:underline">Login</a>}
           <a href="/auth/login" className="hover:underline">Apply</a>
           <a href="mailto:support@persal.co.za" className="hover:underline">Contact</a>
+          <a href="/privacy-policy" className="hover:underline">Privacy Policy</a>
+          <a href="/terms-and-conditions" className="hover:underline">Terms &amp; Conditions</a>
+          <a href="/paia-manual" className="hover:underline">PAIA Manual</a>
+          <a href="/ncr-disclosures" className="hover:underline">NCR Disclosures</a>
         </nav>
 
         <div id="join-our-community" className="flex flex-col items-center md:items-end">

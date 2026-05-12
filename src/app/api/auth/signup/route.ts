@@ -1,21 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { randomUUID } from "crypto";
 import prisma from "@/lib/prisma";
 import { hash } from "@/lib/bcrypt";
 import { buildFaceIdExternalUserId, submitToSmileId } from "@/lib/faceId";
-    const normalizedRegistrationFacePhoto = String(registrationFacePhoto ?? "").trim();
-
-    if (!normalizedFullName || !email || !persalNumber || !password || !normalizedPhone || !normalizedIdNumber) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
-    }
-
-    // Removed face registration photo requirement
-    // if (!normalizedRegistrationFacePhoto || normalizedRegistrationFacePhoto.length < 100) {
-    //   return NextResponse.json(
-    //     { error: "Face registration is required. Please capture your face photo before submitting." },
-    //     { status: 400 }
-    //   );
-    // }
+import { takeRateLimitToken } from "@/lib/security/rateLimit";
+import {
+  getBankAccountConstraintLabel,
+  isSouthAfricanBankName,
+  isSouthAfricanIdNumber,
+  isSouthAfricanPhoneNumber,
+  isValidBankAccountNumber,
+  isValidPersalNumber,
+  normalizeAccountNumber,
+  normalizeIdNumber,
+  normalizePersalNumber,
+  normalizePhoneNumber,
+} from "@/lib/validators/auth";
 
 function getRequestIp(req: NextRequest) {
   const forwardedFor = req.headers.get("x-forwarded-for");
@@ -162,8 +161,6 @@ export async function POST(req: NextRequest) {
     const smileConfigured = Boolean(partnerId && apiKey);
 
     const hashedPassword = await hash(password);
-    const userId = randomUUID();
-    const externalUserId = buildFaceIdExternalUserId(userId);
 
     // Create the user first with the registration face photo stored locally.
     // New schema fields are set via a follow-up raw update so stale Prisma client
@@ -181,6 +178,8 @@ export async function POST(req: NextRequest) {
         address: normalizedAddress || null,
       },
     });
+
+    const externalUserId = buildFaceIdExternalUserId(user.id);
 
     // Back-fill face-registration fields safely (tolerant to Prisma client drift).
     try {
@@ -229,7 +228,7 @@ export async function POST(req: NextRequest) {
             SET
               "faceIdStatus" = 'PENDING',
               "faceIdLastCheckedAt" = NOW(),
-              "faceIdLastError" = ${"enrollment_pending"}
+              "faceIdLastError" = ${enrollmentResult.resultText || "enrollment_pending"}
             WHERE id = ${user.id}
           `;
         }

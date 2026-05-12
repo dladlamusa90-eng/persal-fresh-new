@@ -71,7 +71,7 @@ export default async function AdminLoanApplicationPage({ params }: PageProps) {
   const applicationDocumentEntries = Object.entries(applicationDocuments)
     .filter(([, value]) => Boolean(value?.name || value?.dataUrl))
     .sort(([a], [b]) => a.localeCompare(b));
-  const appliedOn = loan.createdAt.toLocaleDateString("en-ZA", {
+  const appliedOn = new Date(loan.createdAt as Date | string).toLocaleDateString("en-ZA", {
     day: "2-digit",
     month: "short",
     year: "numeric",
