@@ -6,6 +6,15 @@ import { calculateLoanCharges } from "@/lib/loanPolicy";
 import { SOUTH_AFRICAN_BANK_NAMES } from "@/lib/validators/auth";
 
 const SA_PHONE_PATTERN = /^(\+27|0)(6|7|8)[0-9]{8}$/;
+const APPLY_DRAFT_KEY = "guestLoanApplyDraft";
+const MAX_BANK_STATEMENT_SIZE_BYTES = 2 * 1024 * 1024;
+
+type UploadedDocument = {
+  name: string;
+  type: string;
+  size: number;
+  dataUrl: string;
+};
 
 function GuestApplyContent() {
   const router = useRouter();
@@ -35,11 +44,11 @@ function GuestApplyContent() {
   const [accountNumber, setAccountNumber] = useState("");
   const [accountType, setAccountType] = useState("CHEQUE");
   const [branchCode, setBranchCode] = useState("");
+  const [bankStatementDocument, setBankStatementDocument] = useState<UploadedDocument | null>(null);
 
   // Mandate
   const [debitMandateAccepted, setDebitMandateAccepted] = useState(false);
 
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
   const repayDate = new Date();
@@ -56,6 +65,49 @@ function GuestApplyContent() {
     return SA_PHONE_PATTERN.test(v.replace(/\s/g, ""));
   }
 
+  function onBankStatementUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const allowed = ["application/pdf", "image/jpeg", "image/png"];
+    if (!allowed.includes(file.type)) {
+      setError("Please upload a PDF, JPG, or PNG bank statement.");
+      setBankStatementDocument(null);
+      return;
+    }
+
+    if (file.size > MAX_BANK_STATEMENT_SIZE_BYTES) {
+      setError("Bank statement file must be 2MB or smaller.");
+      setBankStatementDocument(null);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = typeof reader.result === "string" ? reader.result : "";
+      if (!dataUrl || dataUrl.length < 100) {
+        setError("Uploaded bank statement is invalid. Please try again.");
+        setBankStatementDocument(null);
+        return;
+      }
+
+      setError("");
+      setBankStatementDocument({
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        dataUrl,
+      });
+    };
+
+    reader.onerror = () => {
+      setError("Could not read uploaded bank statement. Please try again.");
+      setBankStatementDocument(null);
+    };
+
+    reader.readAsDataURL(file);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -70,59 +122,45 @@ function GuestApplyContent() {
     if (!bankName) { setError("Please select your bank."); return; }
     if (!accountNumber.trim()) { setError("Please enter your account number."); return; }
     if (!branchCode.trim()) { setError("Please enter your branch code."); return; }
+    if (!bankStatementDocument) { setError("Please upload your latest 3-month bank statement."); return; }
     if (!debitMandateAccepted) { setError("You must accept the debit mandate to apply."); return; }
 
-    setSubmitting(true);
-    try {
-      const res = await fetch("/api/guest/loan-apply", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fullName: fullName.trim(),
-          email: email.trim(),
-          phone: phone.trim(),
-          idNumber: idNumber.trim(),
-          persalNumber: persalNumber.trim(),
-          grossSalary,
-          disposableIncome,
-          amount,
-          termDays,
-          bankName,
-          accountNumber: accountNumber.trim(),
-          accountType,
-          branchCode: branchCode.trim(),
-          debitMandateAccepted,
-        }),
-      });
+    const draft = {
+      fullName: fullName.trim(),
+      email: email.trim(),
+      phone: phone.trim(),
+      idNumber: idNumber.trim(),
+      persalNumber: persalNumber.trim(),
+      grossSalary,
+      disposableIncome,
+      amount,
+      termDays,
+      bankName,
+      accountNumber: accountNumber.trim(),
+      accountType,
+      branchCode: branchCode.trim(),
+      bankStatementDocument,
+      debitMandateAccepted,
+      createdAt: Date.now(),
+    };
 
-      if (res.ok) {
-        const body = (await res.json()) as { applicationId?: string; isNewUser?: boolean };
-        router.push(`/apply/submitted?ref=${body.applicationId ?? ""}&newUser=${body.isNewUser ? "1" : "0"}`);
-        return;
-      }
-
-      const body = (await res.json()) as { error?: string };
-      setError(body.error ?? "Failed to submit application. Please try again.");
-    } catch {
-      setError("Network error. Please try again.");
-    } finally {
-      setSubmitting(false);
-    }
+    sessionStorage.setItem(APPLY_DRAFT_KEY, JSON.stringify(draft));
+    router.push("/apply/face-verification");
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="w-full bg-white shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+      <header className="w-full flex items-center justify-center py-2 px-4 md:px-8 mb-2 bg-white shadow-none">
+        <div className="flex w-full max-w-5xl items-center justify-between">
           <a href="/" className="flex items-center gap-2">
-            <img src="/logo.png" alt="Persal" className="h-12 object-contain" />
+            <img src="/logo.png" alt="Persal" className="w-[100px] h-[100px] object-contain -my-5" style={{ width: "100px", height: "100px" }} />
           </a>
-          <nav className="flex gap-3 items-center">
-            <Link href="/auth/login" className="text-persal-dark font-medium px-4 py-2 rounded hover:bg-teal-50 transition text-sm">
+          <nav className="flex gap-4 items-center">
+            <Link href="/auth/login" className="text-persal-dark font-medium px-4 py-2 rounded hover:bg-teal-50 transition">
               Sign In
             </Link>
-            <Link href="/auth/signup?from=apply" className="bg-persal-blue text-white font-semibold px-4 py-2 rounded shadow hover:bg-persal-dark transition text-sm">
+            <Link href="/auth/signup?from=apply" className="bg-persal-blue text-white font-semibold px-4 py-2 rounded shadow hover:bg-persal-dark transition">
               SignUp
             </Link>
           </nav>
@@ -347,6 +385,26 @@ function GuestApplyContent() {
             </div>
           </div>
 
+          {/* Supporting Documents */}
+          <div className="bg-white rounded-xl shadow p-6 border border-gray-100">
+            <h2 className="text-base font-semibold text-persal-dark mb-3">Supporting Documents</h2>
+            <p className="text-xs text-gray-500 mb-4">Upload your latest 3 months bank statement (PDF, JPG, or PNG up to 2MB).</p>
+            <label className="block text-gray-700 text-sm mb-1" htmlFor="bankStatement">3 Months Bank Statement</label>
+            <input
+              id="bankStatement"
+              type="file"
+              accept="application/pdf,image/jpeg,image/png"
+              onChange={onBankStatementUpload}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm file:mr-3 file:rounded file:border-0 file:bg-persal-blue file:px-3 file:py-1.5 file:text-white"
+              required
+            />
+            <p className="mt-2 text-xs text-gray-600">
+              {bankStatementDocument
+                ? `Selected: ${bankStatementDocument.name} (${Math.round(bankStatementDocument.size / 1024)} KB)`
+                : "No file selected yet."}
+            </p>
+          </div>
+
           {/* Debit Mandate */}
           <div className="bg-white rounded-xl shadow p-6 border border-gray-100">
             <h2 className="text-base font-semibold text-persal-dark mb-3">Debit Mandate</h2>
@@ -374,10 +432,9 @@ function GuestApplyContent() {
 
           <button
             type="submit"
-            disabled={submitting}
-            className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl text-base shadow-lg transition"
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 rounded-xl text-base shadow-lg transition"
           >
-            {submitting ? "Submitting…" : "Submit Application"}
+            Next
           </button>
 
           <p className="text-center text-xs text-gray-500 pb-6">

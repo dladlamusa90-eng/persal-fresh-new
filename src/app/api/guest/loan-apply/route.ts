@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { randomBytes } from "crypto";
+import { createHmac, timingSafeEqual } from "crypto";
+import { Prisma } from "@prisma/client";
 import bcrypt from "bcrypt";
 import prisma from "@/lib/prisma";
 import {
@@ -38,7 +40,14 @@ export async function POST(req: Request) {
       accountNumber?: string;
       accountType?: string;
       branchCode?: string;
+      bankStatementDocument?: {
+        name?: string;
+        type?: string;
+        size?: number;
+        dataUrl?: string;
+      };
       debitMandateAccepted?: boolean;
+      faceVerificationToken?: string;
     };
 
     const fullName = String(body.fullName ?? "").trim();
@@ -54,7 +63,53 @@ export async function POST(req: Request) {
     const accountNumber = normalizeAccountNumber(String(body.accountNumber ?? "").trim());
     const accountType = String(body.accountType ?? "CHEQUE").trim().toUpperCase();
     const branchCode = String(body.branchCode ?? "").trim();
+    const bankStatementDocument = body.bankStatementDocument;
     const debitMandateAccepted = Boolean(body.debitMandateAccepted);
+    const faceVerificationToken = String(body.faceVerificationToken ?? "").trim();
+
+    const faceSecret = process.env.FACE_VERIFICATION_SECRET || process.env.NEXTAUTH_SECRET || "";
+    if (!faceSecret) {
+      return NextResponse.json(
+        { error: "Face verification is not configured. Please contact support." },
+        { status: 503 }
+      );
+    }
+
+    if (!faceVerificationToken || !faceVerificationToken.includes(".")) {
+      return NextResponse.json(
+        { error: "Face verification is required before submitting your application." },
+        { status: 403 }
+      );
+    }
+
+    const [tokenBase, tokenSig] = faceVerificationToken.split(".");
+    const expectedSig = createHmac("sha256", faceSecret).update(tokenBase).digest("base64url");
+    const tokenSigBuffer = Buffer.from(tokenSig);
+    const expectedSigBuffer = Buffer.from(expectedSig);
+
+    if (tokenSigBuffer.length !== expectedSigBuffer.length || !timingSafeEqual(tokenSigBuffer, expectedSigBuffer)) {
+      return NextResponse.json(
+        { error: "Face verification proof is invalid. Please verify again." },
+        { status: 403 }
+      );
+    }
+
+    let tokenPayload: { idNumber?: string; approved?: boolean; exp?: number } = {};
+    try {
+      tokenPayload = JSON.parse(Buffer.from(tokenBase, "base64url").toString("utf8"));
+    } catch {
+      return NextResponse.json(
+        { error: "Face verification proof is malformed. Please verify again." },
+        { status: 403 }
+      );
+    }
+
+    if (!tokenPayload.approved || !tokenPayload.exp || Date.now() > tokenPayload.exp) {
+      return NextResponse.json(
+        { error: "Face verification expired. Please verify again." },
+        { status: 403 }
+      );
+    }
 
     // ── Basic validation ──────────────────────────────────────────────────
     if (!fullName || fullName.length < 2) {
@@ -96,6 +151,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Please enter a valid South African ID number." }, { status: 400 });
     }
 
+    if (String(tokenPayload.idNumber ?? "") !== idNumber) {
+      return NextResponse.json(
+        { error: "Face verification ID does not match your application ID number." },
+        { status: 403 }
+      );
+    }
+
     if (!isValidPersalNumber(persalNumber)) {
       return NextResponse.json({ error: "Persal number must be exactly 8 digits." }, { status: 400 });
     }
@@ -117,6 +179,33 @@ export async function POST(req: Request) {
 
     if (!isValidBranchCode(branchCode)) {
       return NextResponse.json({ error: "Branch code must be exactly 6 digits." }, { status: 400 });
+    }
+
+    const bankStatementName = String(bankStatementDocument?.name ?? "").trim();
+    const bankStatementType = String(bankStatementDocument?.type ?? "").trim().toLowerCase();
+    const bankStatementSize = Number(bankStatementDocument?.size ?? 0);
+    const bankStatementDataUrl = String(bankStatementDocument?.dataUrl ?? "").trim();
+    const allowedStatementType = ["application/pdf", "image/jpeg", "image/png"].includes(bankStatementType);
+
+    if (!bankStatementName || !bankStatementDataUrl || bankStatementDataUrl.length < 100) {
+      return NextResponse.json(
+        { error: "Please upload your latest 3-month bank statement." },
+        { status: 400 }
+      );
+    }
+
+    if (!allowedStatementType) {
+      return NextResponse.json(
+        { error: "Bank statement must be a PDF, JPG, or PNG file." },
+        { status: 400 }
+      );
+    }
+
+    if (!Number.isFinite(bankStatementSize) || bankStatementSize <= 0 || bankStatementSize > 2 * 1024 * 1024) {
+      return NextResponse.json(
+        { error: "Bank statement file must be 2MB or smaller." },
+        { status: 400 }
+      );
     }
 
     if (!debitMandateAccepted) {
@@ -246,6 +335,15 @@ export async function POST(req: Request) {
         debitMandateAccepted,
         debitMandateAcceptedAt: debitMandateAccepted ? now : null,
         debitMandateReference: debitMandateAccepted ? mandateReference : null,
+        applicationDocuments: {
+          bankStatement: {
+            name: bankStatementName,
+            type: bankStatementType,
+            size: bankStatementSize,
+            dataUrl: bankStatementDataUrl,
+            uploadedAt: now.toISOString(),
+          },
+        } as Prisma.InputJsonValue,
         status: "PENDING",
       },
       select: { id: true },
