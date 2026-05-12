@@ -7,11 +7,44 @@ import BurnUserButton from "../BurnUserButton";
 import UpdateUserPointsForm from "./UpdateUserPointsForm";
 import SendUserMessageForm from "./SendUserMessageForm";
 
+type UserLoan = {
+  id: string;
+  amount: number;
+  termDays: number;
+  status: string;
+  rejectionReason: string | null;
+  faceVerificationPhoto: string | null;
+  faceMatchPassed: boolean;
+  faceMatchCheckedAt: Date | null;
+  createdAt: Date;
+  disbursementSentAt: Date | null;
+};
+
+type UserDetails = {
+  id: string;
+  fullName: string;
+  email: string;
+  role: string;
+  persalNumber: string | null;
+  phone: string | null;
+  idNumber: string | null;
+  bankName: string | null;
+  accountNumber: string | null;
+  faceIdRegistrationPhoto: string | null;
+  createdAt: Date;
+  isBurned: boolean;
+  burnedAt: Date | null;
+  loans: UserLoan[];
+  points: number;
+  isDeleted: boolean;
+  deletedAt: Date | null;
+};
+
 type Props = {
   params: Promise<{ id: string }>;
 };
 
-async function getUserDetails(id: string) {
+async function getUserDetails(id: string): Promise<UserDetails | null> {
   const baseSelect = {
     id: true,
     fullName: true,
@@ -52,7 +85,7 @@ async function getUserDetails(id: string) {
         isDeleted: true,
         deletedAt: true,
       } as any,
-    });
+    }) as unknown as UserDetails | null;
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
     const code = typeof (error as { code?: unknown })?.code === "string"
@@ -67,7 +100,7 @@ async function getUserDetails(id: string) {
     const fallbackUser = await prisma.user.findUnique({
       where: { id },
       select: baseSelect as any,
-    });
+    }) as unknown as Omit<UserDetails, "points" | "isDeleted" | "deletedAt"> | null;
 
     if (!fallbackUser) {
       return null;
@@ -78,7 +111,7 @@ async function getUserDetails(id: string) {
       points: 0,
       isDeleted: false,
       deletedAt: null,
-    };
+    } satisfies UserDetails;
   }
 }
 

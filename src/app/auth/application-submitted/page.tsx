@@ -32,11 +32,11 @@ export default function ApplicationSubmittedPage() {
               </div>
 
               <h1 className="text-2xl md:text-3xl text-gray-800 font-semibold mb-4">
-                Application Submitted
+                Signup Submitted
               </h1>
 
               <p className="text-gray-600 text-base md:text-lg mb-3">
-                Thank you! Your application has been received and is currently under review by our team.
+                Thank you! Your signup has been received and is currently under review by our team.
               </p>
 
               <p className="text-gray-500 text-sm md:text-base mb-8">

@@ -122,6 +122,23 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Loan term must be 30, 60, or 90 days" }, { status: 400 });
     }
 
+    type UserApplyRow = {
+      id: string;
+      isBurned: boolean;
+      fullName: string;
+      email: string;
+      address: string | null;
+      phone: string | null;
+      idNumber: string | null;
+      persalNumber: string | null;
+      bankName: string | null;
+      accountNumber: string | null;
+      accountType: "CHEQUE" | "SAVINGS" | "TRANSMISSION" | null;
+      branchCode: string | null;
+      faceIdStatus: string | null;
+      faceIdVerifiedAt: Date | null;
+      applicationStatus: string | null;
+    };
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       select: {
@@ -141,7 +158,7 @@ export async function POST(req: Request) {
         faceIdVerifiedAt: true,
         applicationStatus: true,
       } as any,
-    });
+    }) as unknown as UserApplyRow | null;
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -155,14 +172,14 @@ export async function POST(req: Request) {
     }
 
     // ── Application approval gate ─────────────────────────────────────────
-    if ((user as any).applicationStatus === "PENDING") {
+    if (user.applicationStatus === "PENDING") {
       return NextResponse.json(
         { error: "Your account application is still under review. You will be able to apply for a loan once your application is approved." },
         { status: 403 }
       );
     }
 
-    if ((user as any).applicationStatus === "REJECTED") {
+    if (user.applicationStatus === "REJECTED") {
       return NextResponse.json(
         { error: "Your account application was not approved. Please contact support for assistance." },
         { status: 403 }
@@ -346,12 +363,8 @@ export async function POST(req: Request) {
           applicantPersalNumber: resolvedPersalNumber,
           applicantBankName: resolvedBankName,
           applicantAccountNumber: resolvedAccountNumber,
-          applicantAccountType: resolvedAccountType,
+          applicantAccountType: resolvedAccountType as "CHEQUE" | "SAVINGS" | "TRANSMISSION" | null,
           applicantBranchCode: resolvedBranchCode,
-          faceRegistrationPhotoSnapshot: faceSnapshots.faceIdRegistrationPhoto,
-          faceVerificationPhoto: faceSnapshots.faceIdLastLivePhoto,
-          faceMatchPassed: Boolean(faceSnapshots.faceIdLastMatchPassed),
-          faceMatchCheckedAt: faceSnapshots.faceIdLastMatchedAt ? new Date(faceSnapshots.faceIdLastMatchedAt) : null,
           status: "PENDING",
           debitMandateAccepted,
           debitMandateAcceptedAt: debitMandateAccepted ? now : null,
@@ -378,6 +391,15 @@ export async function POST(req: Request) {
 
       throw error;
     }
+
+    await prisma.$executeRaw`
+      UPDATE "Loan"
+      SET "faceRegistrationPhotoSnapshot" = ${faceSnapshots.faceIdRegistrationPhoto},
+          "faceVerificationPhoto" = ${faceSnapshots.faceIdLastLivePhoto},
+          "faceMatchPassed" = ${Boolean(faceSnapshots.faceIdLastMatchPassed)},
+          "faceMatchCheckedAt" = ${faceSnapshots.faceIdLastMatchedAt ? new Date(faceSnapshots.faceIdLastMatchedAt) : null}
+      WHERE "id" = ${loan.id}
+    `;
 
     console.info("[audit] debit-mandate-captured", {
       userId: user.id,

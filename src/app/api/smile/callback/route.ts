@@ -36,16 +36,28 @@ export async function POST(req: NextRequest) {
           faceIdVerifiedAt: new Date(),
           faceIdLastCheckedAt: new Date(),
           faceIdLastError: null,
-          faceIdLastMatchPassed: true,
-          faceIdLastMatchedAt: new Date(),
         }
       : {
           faceIdStatus: "ENROLLED",
           faceIdLastCheckedAt: new Date(),
           faceIdLastError: resultText || "verification_failed",
-          faceIdLastMatchPassed: false,
         },
   });
+
+  if (approved) {
+    await prisma.$executeRaw`
+      UPDATE "User"
+      SET "faceIdLastMatchPassed" = true,
+          "faceIdLastMatchedAt" = ${new Date()}
+      WHERE "faceIdExternalUserId" = ${externalUserId}
+    `;
+  } else {
+    await prisma.$executeRaw`
+      UPDATE "User"
+      SET "faceIdLastMatchPassed" = false
+      WHERE "faceIdExternalUserId" = ${externalUserId}
+    `;
+  }
 
   return NextResponse.json({ ok: true }, { status: 200 });
 }

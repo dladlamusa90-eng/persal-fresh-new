@@ -11,6 +11,35 @@ import {
 } from "@/lib/loanPolicy";
 import ApplicationDecisionCard from "./ApplicationDecisionCard";
 
+type LoanRow = {
+  id: string;
+  userId: string;
+  amount: number;
+  termDays: number;
+  applicationData: unknown;
+  applicationDocuments: unknown;
+  grossSalary: number | null;
+  disposableIncome: number | null;
+  status: "PENDING" | "APPROVED" | "REJECTED" | "PAID";
+  rejectionReason: string | null;
+  createdAt: Date;
+  disbursementSentAt: Date | null;
+  disbursementReference: string | null;
+  applicantFullName: string | null;
+  applicantEmail: string | null;
+  applicantPhone: string | null;
+  applicantIdNumber: string | null;
+  applicantPersalNumber: string | null;
+  applicantBankName: string | null;
+  applicantAccountNumber: string | null;
+  applicantAccountType: string | null;
+  applicantBranchCode: string | null;
+  faceRegistrationPhotoSnapshot: string | null;
+  faceVerificationPhoto: string | null;
+  faceMatchPassed: boolean;
+  faceMatchCheckedAt: Date | null;
+};
+
 type PageProps = {
   params: Promise<{ id: string }>;
 };
@@ -53,7 +82,7 @@ export default async function AdminLoanApplicationPage({ params }: PageProps) {
       faceMatchPassed: true,
       faceMatchCheckedAt: true,
     } as any,
-  });
+  }) as unknown as LoanRow | null;
 
   if (!loan) {
     redirect("/admin");

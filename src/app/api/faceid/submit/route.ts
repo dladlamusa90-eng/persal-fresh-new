@@ -73,11 +73,11 @@ export async function POST(req: NextRequest) {
           faceIdVerifiedAt: new Date(),
           faceIdLastCheckedAt: new Date(),
           faceIdLastError: null,
-          faceIdLastLivePhoto: selfieBase64,
           faceIdLastMatchPassed: true,
           faceIdLastMatchedAt: new Date(),
-        },
+        } as any,
       });
+      await prisma.$executeRaw`UPDATE "User" SET "faceIdLastLivePhoto" = ${selfieBase64} WHERE id = ${user.id}`;
 
       return NextResponse.json({ verified: true, status: "VERIFIED" }, { status: 200 });
     }
@@ -88,10 +88,10 @@ export async function POST(req: NextRequest) {
         faceIdStatus: user.faceIdEnrolled ? "ENROLLED" : "PENDING",
         faceIdLastCheckedAt: new Date(),
         faceIdLastError: result.resultText || "verification_failed",
-        faceIdLastLivePhoto: selfieBase64,
         faceIdLastMatchPassed: false,
-      },
+      } as any,
     });
+    await prisma.$executeRaw`UPDATE "User" SET "faceIdLastLivePhoto" = ${selfieBase64} WHERE id = ${user.id}`;
 
     return NextResponse.json(
       { verified: false, status: user.faceIdEnrolled ? "ENROLLED" : "PENDING", reason: result.resultText },

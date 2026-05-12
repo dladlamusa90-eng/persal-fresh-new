@@ -59,7 +59,7 @@ function FaceRegistrationContent() {
 
       setDraft(parsed);
     } catch {
-      setError("Unable to load your application details. Please start again.");
+      setError("Unable to load your signup details. Please start again.");
     }
   }, []);
 
@@ -153,14 +153,14 @@ function FaceRegistrationContent() {
 
       const body = (await response.json().catch(() => ({}))) as { error?: string };
       if (!response.ok) {
-        setError(body.error || "Application submission failed. Please try again.");
+        setError(body.error || "Signup failed. Please try again.");
         return;
       }
 
       sessionStorage.removeItem(SIGNUP_DRAFT_KEY);
       router.push("/auth/application-submitted");
     } catch {
-      setError("Application submission failed. Please try again.");
+      setError("Signup failed. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -177,7 +177,7 @@ function FaceRegistrationContent() {
               </a>
               <nav className="flex gap-4 items-center">
                 <a href="/auth/login" className="text-persal-dark font-medium px-4 py-2 rounded hover:bg-teal-50 transition">Login</a>
-                <span className="px-4 py-2 rounded bg-gray-200 text-gray-500 font-semibold cursor-not-allowed select-none">Apply</span>
+                <span className="px-4 py-2 rounded bg-gray-200 text-gray-500 font-semibold cursor-not-allowed select-none">SignUp</span>
               </nav>
             </div>
           </header>
@@ -186,14 +186,14 @@ function FaceRegistrationContent() {
             <form onSubmit={handleSubmit} className="w-full max-w-5xl mx-auto bg-white/70 backdrop-blur-sm border border-gray-200 rounded-3xl p-5 md:p-8 shadow-sm">
               <h1 className="text-2xl md:text-3xl text-gray-800 font-medium mb-2">Face Registration</h1>
               <p className="text-sm md:text-base text-gray-600 mb-7">
-                Capture your face to complete your application. This selfie is securely matched during future verification.
+                Capture your face to complete signup. This selfie is securely matched during future verification.
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-start">
                 <label className="text-gray-700 text-lg md:text-xl md:pt-2">Face Registration</label>
                 <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 md:p-5">
                   <canvas ref={canvasRef} className="hidden" />
-                  <p className="text-sm text-amber-900 font-semibold">Required for first-time application</p>
+                  <p className="text-sm text-amber-900 font-semibold">Required for first-time signup</p>
                   <p className="mt-1 text-xs md:text-sm text-amber-800">
                     We store this as your registered face and compare it with your live face when you apply for a loan.
                   </p>
@@ -268,18 +268,18 @@ function FaceRegistrationContent() {
                   disabled={isSubmitting || !draft}
                   className="bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl px-7 py-2.5 text-lg md:text-xl min-w-[220px] transition disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  {isSubmitting ? "Submitting..." : "Submit Application"}
+                  {isSubmitting ? "Submitting..." : "Complete Signup"}
                 </button>
               </div>
 
               {!draft && (
                 <p className="mt-5 text-sm font-medium text-amber-700">
-                  Details are missing. Go back to the details screen and complete your application information.
+                  Details are missing. Go back to the details screen and complete your signup information.
                 </p>
               )}
               {error && <div className="mt-5 text-sm font-medium text-red-600">{error}</div>}
               <p className="mt-4 text-sm text-gray-700">
-                Already applied? <Link href="/auth/login" className="text-teal-600 hover:underline">Log in</Link>
+                Already have an account? <Link href="/auth/login" className="text-teal-600 hover:underline">Log in</Link>
               </p>
             </form>
           </div>

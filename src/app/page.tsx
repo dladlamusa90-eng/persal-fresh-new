@@ -222,7 +222,7 @@ export default function Home() {
             </a>
             <nav className="flex gap-4 items-center">
               <a href="/auth/login" className="text-persal-dark font-medium px-4 py-2 rounded hover:bg-teal-50 transition">Login</a>
-              <a href="/auth/signup?from=login" className="bg-persal-blue text-white font-semibold px-4 py-2 rounded shadow hover:bg-persal-dark transition">Apply</a>
+              <a href="/auth/signup?from=login" className="bg-persal-blue text-white font-semibold px-4 py-2 rounded shadow hover:bg-persal-dark transition">SignUp</a>
             </nav>
           </div>
         </header>
@@ -528,8 +528,8 @@ export default function Home() {
                     </div>
                     <div className="text-center md:text-right">
                       <Link
-                        href={!error && desiredLoan >= 100 && desiredLoan <= maxLoan ? "/auth/signup?from=login" : "#"}
-                        className={`inline-block px-4 py-2 rounded-lg font-semibold text-base transition text-center max-[480px]:w-full ${!error && desiredLoan >= 100 && desiredLoan <= maxLoan ? 'bg-orange-500 text-white hover:bg-orange-600 cursor-pointer' : 'bg-gray-300 text-gray-400 cursor-not-allowed pointer-events-none'}`}
+                        href={!error && desiredLoan >= 100 ? `/apply?loan=${desiredLoan}&days=${termDays}` : "#"}
+                        className={`inline-block px-4 py-2 rounded-lg font-semibold text-base transition text-center max-[480px]:w-full ${!error && desiredLoan >= 100 ? 'bg-orange-500 text-white hover:bg-orange-600 cursor-pointer' : 'bg-gray-300 text-gray-400 cursor-not-allowed pointer-events-none'}`}
                       >
                         Apply Now
                       </Link>
@@ -639,7 +639,7 @@ export default function Home() {
           <section className="flex-1 bg-persal-blue rounded-t-2xl md:rounded-l-2xl md:rounded-tr-none shadow p-8 flex flex-col items-start justify-center">
             <h2 className="text-2xl font-bold text-white mb-3">Ready to get started?</h2>
             <p className="text-teal-100 mb-5">Apply for your Persal payroll loan today and experience fast, fair, and stress-free borrowing.</p>
-            <a href="/auth/signup?from=login" className="inline-block bg-white text-persal-blue font-semibold px-6 py-3 rounded-lg shadow hover:bg-teal-50 transition">Apply Now</a>
+            <a href="/auth/signup?from=login" className="inline-block bg-white text-persal-blue font-semibold px-6 py-3 rounded-lg shadow hover:bg-teal-50 transition">SignUp</a>
           </section>
           <div className="flex-1 flex items-stretch">
             {/* Sliding image carousel */}

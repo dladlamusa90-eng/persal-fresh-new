@@ -80,7 +80,7 @@ export async function POST(
     // ── Delete the user account so they can re-register with the same details ──
     // Cascade-delete all related records first, then remove the user.
     await prisma.$transaction([
-      prisma.notification.deleteMany({ where: { userId } }),
+      prisma.adminNotification.deleteMany({ where: { userId } }),
       prisma.loanApplicationDraft.deleteMany({ where: { userId } }),
       prisma.loginOtp.deleteMany({ where: { userId } }),
       prisma.passwordResetOtp.deleteMany({ where: { userId } }),

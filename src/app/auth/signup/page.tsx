@@ -96,7 +96,7 @@ function SignupPageContent() {
             </a>
             <nav className="flex gap-4 items-center">
               <a href="/auth/login" className="text-persal-dark font-medium px-4 py-2 rounded hover:bg-teal-50 transition">Login</a>
-              <span className="px-4 py-2 rounded bg-gray-200 text-gray-500 font-semibold cursor-not-allowed select-none">Apply</span>
+              <span className="px-4 py-2 rounded bg-gray-200 text-gray-500 font-semibold cursor-not-allowed select-none">SignUp</span>
             </nav>
           </div>
         </header>
@@ -104,7 +104,7 @@ function SignupPageContent() {
         <div className="w-full px-4 md:px-8 pt-4 pb-10">
           <div className="w-full max-w-7xl mx-auto">
         <form onSubmit={handleNext} className="w-full max-w-5xl mx-auto bg-white/70 backdrop-blur-sm border border-gray-200 rounded-3xl p-5 md:p-8 shadow-sm">
-          <h1 className="text-2xl md:text-3xl text-gray-800 font-medium mb-7">Submit Application</h1>
+          <h1 className="text-2xl md:text-3xl text-gray-800 font-medium mb-7">Sign Up</h1>
 
           <div className="space-y-7">
             <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
@@ -220,7 +220,7 @@ function SignupPageContent() {
 
           <div className="mt-8 flex items-center justify-between gap-4">
             <p className="text-gray-700 text-base md:text-lg">
-              Already applied? <Link href="/auth/login" className="text-teal-600 hover:underline">Log in</Link>
+              Already have an account? <Link href="/auth/login" className="text-teal-600 hover:underline">Log in</Link>
             </p>
             <button
               type="submit"
@@ -237,13 +237,13 @@ function SignupPageContent() {
       </div>
 
       {showRequirementsPopup && (
-        <div className="fixed inset-0 z-50 bg-black/45 flex items-center justify-center px-4" role="dialog" aria-modal="true" aria-label="Application requirements">
+        <div className="fixed inset-0 z-50 bg-black/45 flex items-center justify-center px-4" role="dialog" aria-modal="true" aria-label="Signup requirements">
           <div className="w-full max-w-xl rounded-2xl bg-[#efefef] p-5 md:p-6 shadow-2xl">
             <div className="flex justify-center mb-4">
               <AlertCircle className="text-teal-500" size={48} strokeWidth={1.5} />
             </div>
 
-            <h2 className="text-xl md:text-2xl text-gray-700 text-center mb-5">What you&apos;ll need for your application:</h2>
+            <h2 className="text-xl md:text-2xl text-gray-700 text-center mb-5">What you&apos;ll need for signup:</h2>
 
             <ul className="space-y-3 text-gray-700 text-base md:text-lg">
               <li className="flex items-start gap-3">
