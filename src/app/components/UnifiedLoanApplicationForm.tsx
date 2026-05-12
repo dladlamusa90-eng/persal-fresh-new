@@ -318,7 +318,7 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
         {/* Loan Summary */}
         <div className={isLoggedIn ? "mt-0 mb-8" : "bg-persal-dark text-white rounded-2xl p-6 mb-8 shadow-lg"}>
           <h1 className={isLoggedIn ? "text-2xl font-semibold mb-6" : "text-xl font-bold mb-1"}>Your Loan Application</h1>
-          {!isLoggedIn && <p className="text-teal-200 text-sm mb-5">No account needed  just fill in your details below.</p>}
+          {!isLoggedIn && <p className="text-teal-200 text-sm mb-5">No account needed — just fill in your details below.</p>}
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
               <div className={isLoggedIn ? "text-lg font-bold text-gray-900" : "text-3xl font-bold text-white"}>R{formatWithCommas(amount)}</div>
