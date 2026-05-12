@@ -18,8 +18,8 @@ export default function ApplicationSubmittedPage() {
                 />
               </a>
               <nav className="flex gap-4 items-center">
-                <Link href="/auth/login" className="text-persal-dark font-medium px-4 py-2 rounded hover:bg-teal-50 transition">
-                  Login
+                <Link href="/auth/login" className="bg-persal-blue text-white font-semibold px-4 py-2 rounded shadow hover:bg-persal-dark transition">
+                  LogIn
                 </Link>
               </nav>
             </div>
@@ -40,14 +40,14 @@ export default function ApplicationSubmittedPage() {
               </p>
 
               <p className="text-gray-500 text-sm md:text-base mb-8">
-                We will verify your Persal number and personal details. Once approved, you&apos;ll be able to log in and proceed with a loan application. This typically takes 1&ndash;2 business days.
+                We will verify your Persal number and personal details. Once approved, you&apos;ll be able to LogIn and proceed with a loan application. This typically takes 1&ndash;2 business days.
               </p>
 
               <Link
                 href="/auth/login"
-                className="inline-block bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl px-8 py-3 text-lg transition"
+                className="bg-persal-blue text-white font-semibold px-4 py-2 rounded shadow hover:bg-persal-dark transition"
               >
-                Go to Login
+                LogIn
               </Link>
             </div>
           </div>

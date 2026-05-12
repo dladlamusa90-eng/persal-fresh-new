@@ -125,11 +125,27 @@ export default function Home() {
         document.removeEventListener('visibilitychange', onVisibilityChange);
       };
     }, []);
+
+  // Hydration check for urgent banner
+  const [hydrated, setHydrated] = useState(false);
+  const [showTopAd, setShowTopAd] = useState(true);
+  useEffect(() => {
+    setHydrated(true);
+    const lastClosed = localStorage.getItem('persal-top-ad-last-closed');
+    if (lastClosed) {
+      const last = parseInt(lastClosed, 10);
+      if (!isNaN(last)) {
+        const now = Date.now();
+        if (now - last < 30 * 60 * 1000) {
+          setShowTopAd(false);
+        }
+      }
+    }
+  }, []);
   const maxLoan = 5000;
   const [desiredLoan, setDesiredLoan] = useState(1500);
   const [selectedDays, setSelectedDays] = useState(60);
   const [error, setError] = useState("");
-  const [showTopAd, setShowTopAd] = useState(true);
   const [showFeeBreakdown, setShowFeeBreakdown] = useState(false);
   const repayDateInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -192,23 +208,26 @@ export default function Home() {
       <canvas id="bg-balls-canvas" className="fixed inset-0 w-full h-full z-0 pointer-events-none" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 0 }} />
       <div className="relative z-10">
       {/* Top Bar (urgent message) */}
-      {showTopAd && (
-        <div className="relative w-full bg-persal-dark text-teal-100 py-2 px-4 font-semibold text-xs md:text-sm tracking-wide" role="region" aria-label="Promotional banner">
-          <div className="max-w-5xl mx-auto flex items-center justify-center gap-3">
-            <div className="text-center flex-1">
-              Need cash today?<br className="hidden md:block" />
-              <span className="font-normal">Complete your application today and get cash in your account in under 1 hour!</span>
+      {hydrated && showTopAd && (
+          <div className="relative w-full bg-persal-dark text-teal-100 py-2 px-4 font-semibold text-xs md:text-sm tracking-wide" role="region" aria-label="Promotional banner">
+            <div className="max-w-5xl mx-auto flex items-center justify-center gap-3">
+              <div className="text-center flex-1">
+                Need cash today?<br className="hidden md:block" />
+                <span className="font-normal">Complete your application today and get cash in your account in under 24 hours!</span>
+              </div>
             </div>
+            <button
+              type="button"
+              onClick={() => {
+                setShowTopAd(false);
+                localStorage.setItem('persal-top-ad-last-closed', Date.now().toString());
+              }}
+              className="absolute top-0.5 right-2 md:right-3 text-teal-100 hover:text-white transition leading-none text-base md:text-lg"
+              aria-label="Close promotional banner"
+            >
+              ×
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowTopAd(false)}
-            className="absolute top-0.5 right-2 md:right-3 text-teal-100 hover:text-white transition leading-none text-base md:text-lg"
-            aria-label="Close promotional banner"
-          >
-            ×
-          </button>
-        </div>
       )}
       <div className="min-h-screen flex flex-col bg-transparent relative z-10">
         {/* Header with logo and auth buttons */}
@@ -218,8 +237,12 @@ export default function Home() {
               <img src="/logo.png" alt="Persal Logo" className="w-[100px] h-[100px] object-contain -my-5" style={{ width: '100px', height: '100px' }} />
             </a>
             <nav className="flex gap-4 items-center">
-              <a href="/auth/login" className="text-persal-dark font-medium px-4 py-2 rounded hover:bg-teal-50 transition">Login</a>
-              <a href="/auth/signup?from=login" className="bg-persal-blue text-white font-semibold px-4 py-2 rounded shadow hover:bg-persal-dark transition">SignUp</a>
+              <a
+                href="/auth/login"
+                className="bg-persal-blue text-white font-semibold px-4 py-2 rounded shadow hover:bg-persal-dark transition"
+              >
+                LogIn
+              </a>
             </nav>
           </div>
         </header>
@@ -637,7 +660,6 @@ export default function Home() {
           <section className="flex-1 bg-persal-blue rounded-t-2xl md:rounded-l-2xl md:rounded-tr-none shadow p-8 flex flex-col items-start justify-center">
             <h2 className="text-2xl font-bold text-white mb-3">Ready to get started?</h2>
             <p className="text-teal-100 mb-5">Apply for your Persal payroll loan today and experience fast, fair, and stress-free borrowing.</p>
-            <a href="/auth/signup?from=login" className="inline-block bg-white text-persal-blue font-semibold px-6 py-3 rounded-lg shadow hover:bg-teal-50 transition">SignUp</a>
           </section>
           <div className="flex-1 flex items-stretch">
             {/* Sliding image carousel */}

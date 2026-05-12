@@ -109,8 +109,8 @@ export default function HowItWorksPage() {
               <img src="/logo.png" alt="Persal Logo" className="w-[100px] h-[100px] object-contain -my-5" style={{ width: "100px", height: "100px" }} />
             </a>
             <nav className="flex gap-4 items-center">
-              <a href="/auth/login" className="text-persal-dark font-medium px-4 py-2 rounded hover:bg-teal-50 transition">Login</a>
-              <a href="/auth/signup?from=login" className="bg-persal-blue text-white font-semibold px-4 py-2 rounded shadow hover:bg-persal-dark transition">Apply</a>
+              <a href="/auth/login" className="bg-persal-blue text-white font-semibold px-4 py-2 rounded shadow hover:bg-persal-dark transition">LogIn</a>
+              <a href="/auth/signup?from=login" className="bg-persal-blue text-white font-semibold px-4 py-2 rounded shadow hover:bg-persal-dark transition">Sign Up</a>
             </nav>
           </div>
         </header>
@@ -156,7 +156,7 @@ export default function HowItWorksPage() {
               </p>
               <ol className="list-decimal pl-5 text-sm leading-relaxed mb-6 space-y-1">
                 <li>Connect to our site using a mobile phone, tablet, or desktop PC.</li>
-                <li>Create your account and log in.</li>
+                <li>Create your account and LogIn.</li>
                 <li>Specify your desired amount of Rand.</li>
                 <li>Specify your desired repayment period.</li>
                 <li>Complete your application via our secure form.</li>

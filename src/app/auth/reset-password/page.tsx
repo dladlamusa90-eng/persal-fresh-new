@@ -105,7 +105,7 @@ export default function ResetPasswordPage() {
         return;
       }
 
-      setMessage("Password reset successful. You can now log in.");
+      setMessage("Password reset successful. You can now LogIn.");
       setStep("request");
       setOtpCode("");
       setNewPassword("");
@@ -137,7 +137,7 @@ export default function ResetPasswordPage() {
                   href="/auth/login"
                   className="bg-persal-blue text-white font-semibold px-4 py-2 rounded shadow hover:bg-persal-dark transition"
                 >
-                  Login
+                  LogIn
                 </a>
                 <a
                   href="/auth/signup?from=login"

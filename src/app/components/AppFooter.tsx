@@ -17,8 +17,8 @@ export default function AppFooter({ isAuthenticated = false }: AppFooterProps) {
         <nav className="flex flex-col md:flex-row md:flex-wrap gap-3 md:gap-5 text-sm items-center md:items-start md:justify-center">
           <a href="/about" className="hover:underline">About</a>
           <a href="/how-it-works" className="hover:underline">How It Works</a>
-          {!isAuthenticated && <a href="/auth/login" className="hover:underline">Login</a>}
-          <a href="/auth/login" className="hover:underline">Apply</a>
+          {!isAuthenticated && <a href="/auth/login" className="bg-persal-blue text-white font-semibold px-4 py-2 rounded shadow hover:bg-persal-dark transition">LogIn</a>}
+          <a href="/auth/login" className="bg-persal-blue text-white font-semibold px-4 py-2 rounded shadow hover:bg-persal-dark transition">LogIn</a>
           <a href="mailto:support@persal.co.za" className="hover:underline">Contact</a>
           <a href="/privacy-policy" className="hover:underline">Privacy Policy</a>
           <a href="/terms-and-conditions" className="hover:underline">Terms &amp; Conditions</a>

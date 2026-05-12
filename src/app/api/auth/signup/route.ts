@@ -103,34 +103,34 @@ export async function POST(req: NextRequest) {
     if (existingUser) {
       if ((existingUser.email ?? "").toLowerCase() === normalizedEmail) {
         return NextResponse.json(
-          { error: "An account with this Email already exists. Please sign in." },
+          { error: "An account with this Email already exists. Please LogIn." },
           { status: 409 }
         );
       }
 
       if ((existingUser.persalNumber ?? "").trim() === normalizedPersal) {
         return NextResponse.json(
-          { error: "An account with this Persal Number already exists. Please sign in." },
+          { error: "An account with this Persal Number already exists. Please LogIn." },
           { status: 409 }
         );
       }
 
       if ((existingUser.idNumber ?? "").trim() === normalizedIdNumber) {
         return NextResponse.json(
-          { error: "An account with this ID Number already exists. Please sign in." },
+          { error: "An account with this ID Number already exists. Please LogIn." },
           { status: 409 }
         );
       }
 
       if ((existingUser.phone ?? "").trim() === normalizedPhone) {
         return NextResponse.json(
-          { error: "An account with this Cell Number already exists. Please sign in." },
+          { error: "An account with this Cell Number already exists. Please LogIn." },
           { status: 409 }
         );
       }
 
       return NextResponse.json(
-        { error: "An account with these details already exists. Please sign in." },
+        { error: "An account with these details already exists. Please LogIn." },
         { status: 409 }
       );
     }

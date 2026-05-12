@@ -256,7 +256,7 @@ export default function ApplyFaceVerificationPage() {
           </a>
           <nav className="flex gap-4 items-center">
             <Link href="/auth/login" className="text-persal-dark font-medium px-4 py-2 rounded hover:bg-teal-50 transition">
-              Sign In
+              LogIn
             </Link>
             <Link href="/auth/signup?from=apply" className="bg-persal-blue text-white font-semibold px-4 py-2 rounded shadow hover:bg-persal-dark transition">
               SignUp

@@ -12,6 +12,7 @@ function SignupPageContent() {
   const [firstName, setFirstName] = useState("");
   const [surname, setSurname] = useState("");
   const [idNumber, setIdNumber] = useState("");
+  const [persalNumber, setPersalNumber] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -77,7 +78,12 @@ function SignupPageContent() {
         return;
       }
       setError("");
-      router.push("/auth/login?from=signup");
+      // If coming from guest loan application, go to statement page
+      if (searchParams.get("from") === "apply") {
+        router.push("/apply/statement");
+      } else {
+        router.push("/auth/login?from=signup");
+      }
     } catch {
       setError("Unable to continue. Please try again.");
     }
@@ -93,8 +99,8 @@ function SignupPageContent() {
               <img src="/logo.png" alt="Persal Logo" className="w-[100px] h-[100px] object-contain -my-5" style={{ width: "100px", height: "100px" }} />
             </a>
             <nav className="flex gap-4 items-center">
-              <a href="/auth/login" className="text-persal-dark font-medium px-4 py-2 rounded hover:bg-teal-50 transition">Login</a>
-              <span className="px-4 py-2 rounded bg-gray-200 text-gray-500 font-semibold cursor-not-allowed select-none">SignUp</span>
+              <a href="/auth/login" className="bg-persal-blue text-white font-semibold px-4 py-2 rounded shadow hover:bg-persal-dark transition">LogIn</a>
+              <span className="px-4 py-2 rounded bg-gray-200 text-gray-500 font-semibold cursor-not-allowed select-none">Sign Up</span>
             </nav>
           </div>
         </header>
@@ -218,7 +224,7 @@ function SignupPageContent() {
 
           <div className="mt-8 flex items-center justify-between gap-4">
             <p className="text-gray-700 text-base md:text-lg">
-              Already have an account? <Link href="/auth/login" className="text-teal-600 hover:underline">Log in</Link>
+              Already have an account? <Link href="/auth/login" className="text-teal-600 hover:underline">LogIn</Link>
             </p>
             <button
               type="submit"

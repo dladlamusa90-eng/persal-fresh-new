@@ -161,8 +161,8 @@ export default function LoginPage() {
               <img src="/logo.png" alt="Persal Logo" className="w-[100px] h-[100px] object-contain -my-5" style={{ width: "100px", height: "100px" }} />
             </a>
             <nav className="flex gap-4 items-center">
-              <span className="px-4 py-2 rounded bg-gray-100 text-gray-400 font-medium cursor-not-allowed select-none">Login</span>
-              <a href="/auth/signup?from=login" className="bg-persal-blue text-white font-semibold px-4 py-2 rounded shadow hover:bg-persal-dark transition">Apply</a>
+              <a href="/auth/login" className="bg-persal-blue text-white font-semibold px-4 py-2 rounded shadow hover:bg-persal-dark transition">LogIn</a>
+              <a href="/auth/signup?from=login" className="bg-persal-blue text-white font-semibold px-4 py-2 rounded shadow hover:bg-persal-dark transition">Sign Up</a>
             </nav>
           </div>
         </header>
@@ -179,7 +179,7 @@ export default function LoginPage() {
               }}
               className={`w-1/2 rounded-full py-2.5 text-sm md:text-base font-medium transition ${activeTab === "id" ? "bg-white text-teal-600 shadow" : "text-gray-700 hover:text-gray-900"}`}
             >
-              ID number login
+              ID number LogIn
             </button>
             <button
               type="button"
@@ -190,7 +190,7 @@ export default function LoginPage() {
               }}
               className={`w-1/2 rounded-full py-2.5 text-sm md:text-base font-medium transition ${activeTab === "email" ? "bg-white text-teal-600 shadow" : "text-gray-700 hover:text-gray-900"}`}
             >
-              Email login
+              Email LogIn
             </button>
             </div>
           )}
@@ -211,9 +211,9 @@ export default function LoginPage() {
                   <span>Back</span>
                 </button>
 
-                <h1 className="text-2xl md:text-[42px] text-gray-800 font-medium leading-tight">Log in with OTP</h1>
+                <h1 className="text-2xl md:text-[42px] text-gray-800 font-medium leading-tight">LogIn with OTP</h1>
                 <p className="text-base md:text-[18px] text-gray-600 max-w-[920px] leading-relaxed">
-                  We&apos;ve sent an OTP via SMS to the cellphone number registered to this account. Please enter the OTP to log in.
+                  We&apos;ve sent an OTP via SMS to the cellphone number registered to this account. Please enter the OTP to LogIn.
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] items-center gap-4 md:gap-9 pt-2">
@@ -280,20 +280,20 @@ export default function LoginPage() {
                 <div className="flex justify-end pt-2">
                   <div className="w-full md:w-[320px]">
                     <p className="text-base text-right text-gray-700 mb-4">
-                      Trouble logging in? <button type="button" onClick={() => { setShowOtpStep(false); setActiveTab("email"); }} className="text-teal-600 hover:underline">Log in with your email</button>
+                      Trouble logging in? <button type="button" onClick={() => { setShowOtpStep(false); setActiveTab("email"); }} className="text-teal-600 hover:underline">LogIn with your email</button>
                     </p>
                     <button
                       type="submit"
                       className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl px-7 py-2.5 text-lg transition"
                     >
-                      Log in
+                      LogIn
                     </button>
                   </div>
                 </div>
               </form>
             ) : (
               <>
-            <h1 className="text-2xl md:text-3xl text-gray-800 font-medium">Welcome back, please log in</h1>
+            <h1 className="text-2xl md:text-3xl text-gray-800 font-medium">Welcome back, please LogIn</h1>
 
             {activeTab === "id" ? (
               <form onSubmit={handleOtpRequest} className="mt-7 space-y-8">
@@ -311,7 +311,7 @@ export default function LoginPage() {
                 </div>
                 {otpInfo && <p className="text-sm font-medium text-teal-700">{otpInfo}</p>}
                 <div className="flex items-center justify-between gap-4 pt-6">
-                  <p className="text-gray-700 text-base md:text-lg">Don&apos;t have an account? <a href="/auth/signup?from=login" className="text-teal-600 hover:underline">Apply</a></p>
+                  <p className="text-gray-700 text-base md:text-lg">Don&apos;t have an account? <a href="/auth/signup?from=login" className="text-teal-600 hover:underline">Sign Up</a></p>
                   <button type="submit" disabled={isRequestingOtp} className="bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl px-7 py-2.5 text-lg md:text-xl min-w-[200px] md:min-w-[230px] transition disabled:opacity-60 disabled:cursor-not-allowed">
                     {isRequestingOtp ? "Checking..." : "Get OTP"}
                   </button>
@@ -374,7 +374,7 @@ export default function LoginPage() {
                           }}
                           className="text-teal-600 hover:underline"
                         >
-                          Log in with your cellphone
+                          LogIn with your cellphone
                         </button>
                     </p>
                     <button
@@ -382,7 +382,7 @@ export default function LoginPage() {
                       disabled={isSubmitting}
                       className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl px-8 py-3 text-xl transition disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                      {isSubmitting ? "Logging in..." : "Log in"}
+                      {isSubmitting ? "Logging in..." : "LogIn"}
                     </button>
                   </div>
                 </div>

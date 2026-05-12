@@ -297,12 +297,12 @@ export async function POST(req: Request) {
           const field = e?.meta?.target?.[0];
           if (field === "persalNumber") {
             return NextResponse.json(
-              { error: "A Persal number is already registered. If this is your account, please sign in instead." },
+              { error: "A Persal number is already registered. If this is your account, please LogIn instead." },
               { status: 409 }
             );
           }
           return NextResponse.json(
-            { error: "An account with this email already exists. Please sign in to apply." },
+            { error: "An account with this email already exists. Please LogIn to apply." },
             { status: 409 }
           );
         }

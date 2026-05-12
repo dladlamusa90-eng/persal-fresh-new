@@ -84,13 +84,13 @@ export async function POST(
     void sendSystemNotification(
       user.id,
       "Application Approved",
-      "Your account application has been approved. You can now log in and continue with your loan application."
+      "Your account application has been approved. You can now LogIn and continue with your loan application."
     );
 
     if (user.phone) {
       void sendSms(
         user.phone,
-        "Persal update: Your application has been approved. You can now log in and continue with your loan application."
+        "Persal update: Your application has been approved. You can now LogIn and continue with your loan application."
       ).catch(() => {
         // Non-blocking: approval/rejection should not fail when SMS is not configured.
       });

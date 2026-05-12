@@ -18,7 +18,7 @@ export default function SupportPage() {
           </p>
 
           <p className="text-[17px] md:text-[18px] leading-[1.5] text-gray-700 mb-3">
-            Simply <a href="#" className="text-persal-blue hover:underline">login</a> to your account to view a variety of self-service features, including:
+            Simply <a href="#" className="text-persal-blue hover:underline">LogIn</a> to your account to view a variety of self-service features, including:
           </p>
 
           <ul className="list-disc pl-6 text-[17px] md:text-[18px] leading-[1.5] text-gray-700 space-y-1">

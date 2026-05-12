@@ -51,7 +51,7 @@ function SubmittedContent() {
                   <p className="text-orange-800 font-semibold text-sm mb-1">Account created for you</p>
                   <p className="text-orange-700 text-sm">
                     We have created a Persal account using your email. You can{" "}
-                    <Link href="/auth/login" className="underline font-medium">sign in</Link>{" "}
+                    <Link href="/auth/login" className="underline font-medium">LogIn</Link>{" "}
                     to track your application, earn points, and access more features.
                   </p>
                 </div>

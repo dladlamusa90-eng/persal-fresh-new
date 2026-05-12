@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
         );
       } catch {
         return NextResponse.json(
-          { error: "OTP login is temporarily unavailable. Please use Email login with your password." },
+          { error: "OTP LogIn is temporarily unavailable. Please use Email LogIn with your password." },
           { status: 503 }
         );
       }
