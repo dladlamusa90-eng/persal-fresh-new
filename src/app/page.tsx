@@ -232,7 +232,7 @@ export default function Home() {
           <div className="w-full">
             <div id="calc" className="bg-white rounded-2xl shadow-[0_-10px_18px_-16px_rgba(2,12,27,0.35),0_22px_42px_-22px_rgba(2,12,27,0.58),0_10px_18px_-14px_rgba(2,12,27,0.35)] overflow-hidden">
               <div className="grid grid-cols-1 md:grid-cols-12">
-                <aside className="relative overflow-hidden md:col-span-4 bg-persal-dark text-white">
+                <aside className="relative overflow-hidden md:col-span-4 bg-persal-dark text-white hidden md:block">
                   <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
                     <div className="absolute inset-0 bg-gradient-to-b from-teal-700/25 via-teal-800/10 to-transparent" />
                     <svg
@@ -309,43 +309,43 @@ export default function Home() {
                   </div>
                 </aside>
 
-                <div className="md:col-span-8 bg-gray-50 flex flex-col h-full">
+                <div className="md:col-span-8 bg-gray-50 flex flex-col h-full max-[480px]:min-w-0">
                   <div className="p-4 md:p-6 flex-1">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 items-end">
                       <div className="flex flex-col">
-                        <div className="text-base md:text-lg text-gray-700 mb-1">Loan Amount</div>
-                        <div className="h-12 md:h-14 flex items-end">
-                          <div className="text-4xl md:text-5xl font-normal text-persal-blue leading-none">R{desiredLoan}</div>
+                        <div className="text-base md:text-lg text-gray-700 mb-1 max-[480px]:text-sm">Loan Amount</div>
+                        <div className="h-12 md:h-14 flex items-end max-[480px]:h-10">
+                          <div className="text-4xl md:text-5xl font-normal text-persal-blue leading-none max-[480px]:text-3xl">R{desiredLoan}</div>
                         </div>
                         <div className="h-px bg-gray-300 mt-2" />
                       </div>
                       <div className="flex flex-col">
-                        <div className="text-base md:text-lg text-gray-700 mb-1">Loan Period</div>
-                        <div className="h-12 md:h-14 flex items-end">
-                          <div className="inline-flex items-end gap-1.5 text-4xl md:text-5xl font-normal text-persal-blue leading-none">
+                        <div className="text-base md:text-lg text-gray-700 mb-1 max-[480px]:text-sm">Loan Period</div>
+                        <div className="h-12 md:h-14 flex items-end max-[480px]:h-10">
+                          <div className="inline-flex items-end gap-1.5 text-4xl md:text-5xl font-normal text-persal-blue leading-none max-[480px]:text-3xl">
                             <span>{termDays}</span>
-                            <span className="text-xl md:text-2xl text-gray-700 font-normal leading-none">days</span>
+                            <span className="text-xl md:text-2xl text-gray-700 font-normal leading-none max-[480px]:text-lg">days</span>
                           </div>
                         </div>
                         <div className="h-px bg-gray-300 mt-2" />
                       </div>
                     </div>
 
-                    <div className="mt-16 space-y-6">
+                    <div className="mt-16 space-y-6 max-[480px]:mt-10 max-[480px]:space-y-5">
                       <div>
-                        <div className="text-lg md:text-xl text-gray-700 mb-2">How much do you need?</div>
-                        <div className="flex items-center gap-3 md:gap-4">
+                        <div className="text-lg md:text-xl text-gray-700 mb-2 max-[480px]:text-base">How much do you need?</div>
+                        <div className="flex items-center gap-3 md:gap-4 max-[480px]:gap-2">
                           <button
                             type="button"
                             onClick={() => updateDesiredLoan(Math.max(100, desiredLoan - 100))}
-                            className="w-8 h-8 rounded-full border border-gray-300 bg-white text-persal-blue shadow-sm hover:bg-gray-100 transition flex items-center justify-center p-0"
+                            className="w-8 h-8 rounded-full border border-gray-300 bg-white text-persal-blue shadow-sm hover:bg-gray-100 transition flex items-center justify-center p-0 max-[480px]:w-7 max-[480px]:h-7"
                             aria-label="Decrease amount"
                           >
-                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                            <svg className="w-4 h-4 max-[480px]:w-3.5 max-[480px]:h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
                               <line x1="5" y1="12" x2="19" y2="12" />
                             </svg>
                           </button>
-                          <div className="relative flex-1 h-10">
+                          <div className="relative flex-1 h-10 max-[480px]:h-9">
                             <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-1.5 bg-gray-200 rounded-full" />
                             <div className="absolute left-0 top-1/2 -translate-y-1/2 h-1.5 bg-persal-blue rounded-full" style={{ width: `${amountPercent}%` }} />
                             <input
@@ -359,10 +359,10 @@ export default function Home() {
                               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                             />
                             <div
-                              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white border border-gray-300 shadow-md flex items-center justify-center pointer-events-none"
+                              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white border border-gray-300 shadow-md flex items-center justify-center pointer-events-none max-[480px]:w-8 max-[480px]:h-8"
                               style={{ left: `${amountKnobPercent}%` }}
                             >
-                              <svg className="w-7 h-7 text-persal-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                              <svg className="w-7 h-7 text-persal-blue max-[480px]:w-5.5 max-[480px]:h-5.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                                 <polyline points="10 8 6 12 10 16" />
                                 <polyline points="14 8 18 12 14 16" />
                               </svg>
@@ -371,10 +371,10 @@ export default function Home() {
                           <button
                             type="button"
                             onClick={() => updateDesiredLoan(Math.min(5000, desiredLoan + 100))}
-                            className="w-8 h-8 rounded-full border border-gray-300 bg-white text-persal-blue shadow-sm hover:bg-gray-100 transition flex items-center justify-center p-0"
+                            className="w-8 h-8 rounded-full border border-gray-300 bg-white text-persal-blue shadow-sm hover:bg-gray-100 transition flex items-center justify-center p-0 max-[480px]:w-7 max-[480px]:h-7"
                             aria-label="Increase amount"
                           >
-                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                            <svg className="w-4 h-4 max-[480px]:w-3.5 max-[480px]:h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
                               <line x1="12" y1="5" x2="12" y2="19" />
                               <line x1="5" y1="12" x2="19" y2="12" />
                             </svg>
@@ -383,8 +383,8 @@ export default function Home() {
                       </div>
 
                       <div>
-                        <div className="text-lg md:text-xl text-gray-700 mb-2">Over how many days?</div>
-                        <div className="mb-3 flex items-center gap-2">
+                        <div className="text-lg md:text-xl text-gray-700 mb-2 max-[480px]:text-base">Over how many days?</div>
+                        <div className="mb-3 flex items-center gap-2 max-[480px]:flex-wrap max-[480px]:gap-1.5">
                           <button
                             type="button"
                             onClick={() => {
@@ -394,10 +394,10 @@ export default function Home() {
                                 repayDateInputRef.current?.focus();
                               }
                             }}
-                            className="px-2.5 py-1.5 rounded-md border border-gray-300 bg-white text-gray-700 text-sm inline-flex items-center gap-2 hover:bg-gray-50 transition"
+                            className="px-2.5 py-1.5 rounded-md border border-gray-300 bg-white text-gray-700 text-sm inline-flex items-center gap-2 hover:bg-gray-50 transition max-[480px]:text-xs"
                             aria-label="Set repayment date"
                           >
-                            <svg className="w-4 h-4 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <svg className="w-4 h-4 text-gray-500 max-[480px]:w-3.5 max-[480px]:h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                               <rect x="3" y="5" width="18" height="16" rx="2" />
                               <line x1="16" y1="3" x2="16" y2="7" />
                               <line x1="8" y1="3" x2="8" y2="7" />
@@ -405,7 +405,7 @@ export default function Home() {
                             </svg>
                             <span>{repayDateDisplay}</span>
                           </button>
-                          <span className="text-sm text-gray-600">Choose repayment date</span>
+                          <span className="text-sm text-gray-600 max-[480px]:text-xs">Choose repayment date</span>
                           <input
                             ref={repayDateInputRef}
                             type="date"
@@ -420,18 +420,18 @@ export default function Home() {
                             className="sr-only"
                           />
                         </div>
-                        <div className="flex items-center gap-3 md:gap-4">
+                        <div className="flex items-center gap-3 md:gap-4 max-[480px]:gap-2">
                           <button
                             type="button"
                             onClick={() => setSelectedDays(Math.max(6, termDays - 1))}
-                            className="w-8 h-8 rounded-full border border-gray-300 bg-white text-persal-blue shadow-sm hover:bg-gray-100 transition flex items-center justify-center p-0"
+                            className="w-8 h-8 rounded-full border border-gray-300 bg-white text-persal-blue shadow-sm hover:bg-gray-100 transition flex items-center justify-center p-0 max-[480px]:w-7 max-[480px]:h-7"
                             aria-label="Decrease period"
                           >
-                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                            <svg className="w-4 h-4 max-[480px]:w-3.5 max-[480px]:h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
                               <line x1="5" y1="12" x2="19" y2="12" />
                             </svg>
                           </button>
-                          <div className="relative flex-1 h-10">
+                          <div className="relative flex-1 h-10 max-[480px]:h-9">
                             <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 flex gap-1.5">
                               <div className="relative h-1.5 flex-1 rounded-full bg-gray-200 overflow-hidden">
                                 <div
@@ -463,10 +463,10 @@ export default function Home() {
                               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                             />
                             <div
-                              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white border border-gray-300 shadow-md flex items-center justify-center pointer-events-none"
+                              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white border border-gray-300 shadow-md flex items-center justify-center pointer-events-none max-[480px]:w-8 max-[480px]:h-8"
                               style={{ left: `${dayKnobPercent}%` }}
                             >
-                              <svg className="w-7 h-7 text-persal-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                              <svg className="w-7 h-7 text-persal-blue max-[480px]:w-5.5 max-[480px]:h-5.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                                 <polyline points="10 8 6 12 10 16" />
                                 <polyline points="14 8 18 12 14 16" />
                               </svg>
@@ -475,18 +475,18 @@ export default function Home() {
                           <button
                             type="button"
                             onClick={() => setSelectedDays(Math.min(90, termDays + 1))}
-                            className="w-8 h-8 rounded-full border border-gray-300 bg-white text-persal-blue shadow-sm hover:bg-gray-100 transition flex items-center justify-center p-0"
+                            className="w-8 h-8 rounded-full border border-gray-300 bg-white text-persal-blue shadow-sm hover:bg-gray-100 transition flex items-center justify-center p-0 max-[480px]:w-7 max-[480px]:h-7"
                             aria-label="Increase period"
                           >
-                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                            <svg className="w-4 h-4 max-[480px]:w-3.5 max-[480px]:h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
                               <line x1="12" y1="5" x2="12" y2="19" />
                               <line x1="5" y1="12" x2="19" y2="12" />
                             </svg>
                           </button>
                         </div>
-                        <div className="mt-1 flex items-center gap-3 md:gap-4" aria-hidden="true">
+                        <div className="mt-1 flex items-center gap-3 md:gap-4 max-[480px]:gap-2" aria-hidden="true">
                           <div className="w-8" />
-                          <div className="flex-1 grid grid-cols-3 text-[10px] md:text-[11px] text-gray-500/50">
+                          <div className="flex-1 grid grid-cols-3 text-[10px] md:text-[11px] text-gray-500/50 max-[480px]:text-[9px]">
                             <span className="text-center">1st Month</span>
                             <span className="text-center">2nd Month</span>
                             <span className="text-center">3rd Month</span>
@@ -529,7 +529,7 @@ export default function Home() {
                     <div className="text-center md:text-right">
                       <Link
                         href={!error && desiredLoan >= 100 && desiredLoan <= maxLoan ? "/auth/signup?from=login" : "#"}
-                        className={`inline-block px-4 py-2 rounded-lg font-semibold text-base transition text-center ${!error && desiredLoan >= 100 && desiredLoan <= maxLoan ? 'bg-orange-500 text-white hover:bg-orange-600 cursor-pointer' : 'bg-gray-300 text-gray-400 cursor-not-allowed pointer-events-none'}`}
+                        className={`inline-block px-4 py-2 rounded-lg font-semibold text-base transition text-center max-[480px]:w-full ${!error && desiredLoan >= 100 && desiredLoan <= maxLoan ? 'bg-orange-500 text-white hover:bg-orange-600 cursor-pointer' : 'bg-gray-300 text-gray-400 cursor-not-allowed pointer-events-none'}`}
                       >
                         Apply Now
                       </Link>
