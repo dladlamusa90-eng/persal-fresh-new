@@ -228,8 +228,8 @@ export default function Home() {
 
   return (
     <>
-      {/* Animated blue balls background */}
-      <canvas id="bg-balls-canvas" className="fixed inset-0 w-full h-full z-0 pointer-events-none" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 0 }} />
+      {/* Animated blue balls background (hidden on mobile) */}
+      <canvas id="bg-balls-canvas" className="hidden md:block fixed inset-0 w-full h-full z-0 pointer-events-none" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 0 }} />
       <div className="relative z-10">
       {/* Top Bar (urgent message) */}
       {hydrated && showTopAd && (

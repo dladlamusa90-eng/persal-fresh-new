@@ -39,20 +39,24 @@ const SA_PHONE_PATTERN = /^(\+27|0)(6|7|8)[0-9]{8}$/;
 const MAX_BANK_STATEMENT_SIZE_BYTES = 2 * 1024 * 1024;
 
 export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfterSubmit }: UnifiedLoanApplicationFormProps) {
-  // ...state declarations...
-
-  // ...state declarations...
-
-
   // --- STATE DECLARATIONS ---
-  const [amount, setAmount] = useState(() => {
+  const searchParams = useSearchParams();
+  const initialAmount = (() => {
     if (initialDraft?.amount) return initialDraft.amount;
+    const loanParam = searchParams.get("loan");
+    if (loanParam) return Math.max(100, Math.min(5000, Number(loanParam)));
     return Math.max(100, Math.min(5000, Number(initialDraft?.loan) || 1500));
-  });
-  const [termDays, setTermDays] = useState(() => {
+  })();
+  const initialTermDays = (() => {
     if (initialDraft?.termDays) return initialDraft.termDays;
+    const termDaysParam = searchParams.get("termDays");
+    if (termDaysParam) return Math.max(6, Math.min(90, Number(termDaysParam)));
+    const termParam = searchParams.get("term");
+    if (termParam) return Math.max(6, Math.min(90, Number(termParam) * 30));
     return Math.max(6, Math.min(90, Number(initialDraft?.days) || 60));
-  });
+  })();
+  const [amount, setAmount] = useState(initialAmount);
+  const [termDays, setTermDays] = useState(initialTermDays);
   const [fullName, setFullName] = useState(initialDraft?.fullName || "");
   const [email, setEmail] = useState(initialDraft?.email || "");
   const [emailTouched, setEmailTouched] = useState(false);
@@ -82,7 +86,6 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
 
   // --- OTHER HOOKS ---
   const router = useRouter();
-  const searchParams = useSearchParams();
   const isLoggedIn = !!user?.isLoggedIn;
   const isReturningUser = user?.isReturningUser ?? false;
   const hasActiveLoan = user?.hasActiveLoan ?? false;
