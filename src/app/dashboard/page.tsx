@@ -124,7 +124,7 @@ export default function DashboardHomePage() {
   const repayDateISO = repayDate.toISOString().split("T")[0];
   const repayDateDisplay = repayDateISO.replace(/-/g, "/");
   const repayDateLabelCompact = repayDateLabel.replace(/\s+/g, "");
-  const applyNowHref = `/dashboard/lending/verify-number?loan=${desiredLoan}&term=${termMonths}&termDays=${termDays}`;
+  const applyNowHref = `/dashboard/lending/apply?loan=${desiredLoan}&term=${termMonths}&termDays=${termDays}`;
 
   function handleApplyNowClick(event: React.MouseEvent<HTMLAnchorElement>) {
     if (!canApply) {

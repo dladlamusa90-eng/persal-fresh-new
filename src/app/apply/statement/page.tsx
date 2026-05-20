@@ -1,4 +1,6 @@
+"use client";
 import React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export default function LoanApplicationStatementPage() {
@@ -18,7 +20,27 @@ export default function LoanApplicationStatementPage() {
   }
 
   return (
-    <div className="max-w-xl mx-auto py-12 px-4">
+    <div className="min-h-screen bg-gray-50">
+      <header className="w-full flex items-center justify-center py-2 px-4 md:px-8 mb-2 bg-white shadow-none">
+        <div className="flex w-full max-w-5xl items-center justify-between">
+          <a href="/" className="flex items-center gap-2">
+            <img src="/logo.png" alt="Persal" className="w-[100px] h-[100px] object-contain -my-5" style={{ width: "100px", height: "100px" }} />
+          </a>
+          <nav className="flex gap-4 items-center">
+            <Link
+              href="/auth/login"
+              className="bg-persal-blue text-white font-semibold px-4 py-2 rounded shadow hover:bg-persal-dark transition"
+            >
+              LogIn
+            </Link>
+            <Link href="/auth/signup?from=apply" className="bg-persal-blue text-white font-semibold px-4 py-2 rounded shadow hover:bg-persal-dark transition">
+              SignUp
+            </Link>
+          </nav>
+        </div>
+      </header>
+
+      <main className="max-w-xl mx-auto py-12 px-4">
       <h1 className="text-2xl font-bold mb-6 text-persal-dark">Loan Application Statement</h1>
       <div className="bg-white rounded-xl shadow p-6 mb-8">
         <h2 className="text-lg font-semibold mb-4">Application Breakdown</h2>
@@ -43,6 +65,7 @@ export default function LoanApplicationStatementPage() {
       >
         Next: Face Verification
       </button>
+      </main>
     </div>
   );
 }

@@ -36,7 +36,7 @@ const statusConfig = {
   },
 } as const;
 
-const START_APPLICATION_HREF = "/dashboard/lending/verify-number?loan=1500&term=1&termDays=30";
+const START_APPLICATION_HREF = "/dashboard/lending/apply?loan=1500&term=1&termDays=30";
 
 export default async function ApplicationStatusPage() {
   const session = await getServerSession(authOptions);

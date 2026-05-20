@@ -52,6 +52,23 @@ export async function POST(req: Request) {
       accountType?: string;
       branchCode?: string;
       debitMandateAccepted?: boolean;
+        documents?: {
+          selfiePhoto?: {
+            name?: string;
+            type?: string;
+            size?: number;
+            dataUrl?: string;
+          };
+          identityDocument?: {
+            name?: string;
+            type?: string;
+            size?: number;
+            dataUrl?: string;
+          };
+          proofOfIncome?: any;
+          proofOfResidence?: any;
+          bankStatement?: any;
+        };
     };
     const amount = Number(body.amount);
     const termDays = Number(body.termDays);
@@ -221,6 +238,24 @@ export async function POST(req: Request) {
       },
     });
 
+    // Merge uploaded documents from request body (if present)
+    let mergedDocuments = { ...((applicationDraft?.documents as Record<string, unknown> | null) ?? {}) };
+    if (body.documents) {
+      mergedDocuments = { ...mergedDocuments, ...body.documents };
+    }
+
+    // Validate idDocumentFront and idDocumentBack for logged-in users
+    if (!mergedDocuments.idDocumentFront || !mergedDocuments.idDocumentBack) {
+      return NextResponse.json({ error: "Please upload both front and back of your ID Document (JPG or PNG)." }, { status: 400 });
+    }
+    const allowedIdTypes = ["image/jpeg", "image/png"];
+    if (!allowedIdTypes.includes(mergedDocuments.idDocumentFront.type) || !allowedIdTypes.includes(mergedDocuments.idDocumentBack.type)) {
+      return NextResponse.json({ error: "ID Document must be a JPG or PNG image." }, { status: 400 });
+    }
+    if (mergedDocuments.idDocumentFront.size > 2 * 1024 * 1024 || mergedDocuments.idDocumentBack.size > 2 * 1024 * 1024) {
+      return NextResponse.json({ error: "ID Document file must be 2MB or smaller." }, { status: 400 });
+    }
+
     const approvedLoan = await prisma.loan.findFirst({
       where: {
         userId: user.id,
@@ -353,7 +388,7 @@ export async function POST(req: Request) {
             accountType: resolvedAccountType,
             branchCode: resolvedBranchCode,
           } as Prisma.InputJsonValue,
-          applicationDocuments: (((applicationDraft?.documents as Record<string, unknown> | null) ?? {}) as Prisma.InputJsonValue),
+          applicationDocuments: mergedDocuments as Prisma.InputJsonValue,
           grossSalary,
           disposableIncome,
           applicantFullName: user.fullName,

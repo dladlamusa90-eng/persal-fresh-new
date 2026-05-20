@@ -12,6 +12,7 @@ import {
   normalizeIdNumber,
   normalizePhoneNumber,
 } from "@/lib/validators/auth";
+import { buildFaceIdExternalUserId } from "@/lib/faceId";
 
 function getRequestIp(req: NextRequest) {
   const forwardedFor = req.headers.get("x-forwarded-for");
@@ -31,13 +32,14 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await req.json();
-    const { fullName, email, password, phone, idNumber, bankName, accountNumber, address } = data;
+    const { fullName, email, password, phone, idNumber, persalNumber, bankName, accountNumber, address } = data;
     const normalizedFullName = String(fullName ?? "").trim().replace(/\s+/g, " ");
     const normalizedAddress = String(address ?? "").trim();
 
     const normalizedEmail = String(email ?? "").trim().toLowerCase();
     const normalizedIdNumber = normalizeIdNumber(String(idNumber ?? "").trim());
     const normalizedPhone = normalizePhoneNumber(String(phone ?? "").trim());
+    const normalizedPersal = String(persalNumber ?? "").trim();
     const normalizedAccountNumber = normalizeAccountNumber(String(accountNumber ?? "").trim());
     const normalizedBankName = String(bankName ?? "").trim();
 

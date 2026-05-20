@@ -187,6 +187,24 @@ export async function POST(req: Request) {
     const bankStatementDataUrl = String(bankStatementDocument?.dataUrl ?? "").trim();
     const allowedStatementType = ["application/pdf", "image/jpeg", "image/png"].includes(bankStatementType);
 
+    // Accept selfie and ID document from request
+    const selfiePhoto = body.selfiePhoto;
+    // New: Accept guest ID front and back
+    const guestIdFront = body.guestIdFront;
+    const guestIdBack = body.guestIdBack;
+
+    // Validate guest ID front and back (required)
+    if (!guestIdFront || !guestIdBack) {
+      return NextResponse.json({ error: "Please upload both front and back of your ID Document (JPG or PNG)." }, { status: 400 });
+    }
+    const allowedIdTypes = ["image/jpeg", "image/png"];
+    if (!allowedIdTypes.includes(guestIdFront.type) || !allowedIdTypes.includes(guestIdBack.type)) {
+      return NextResponse.json({ error: "ID Document must be a JPG or PNG image." }, { status: 400 });
+    }
+    if (guestIdFront.size > 2 * 1024 * 1024 || guestIdBack.size > 2 * 1024 * 1024) {
+      return NextResponse.json({ error: "ID Document file must be 2MB or smaller." }, { status: 400 });
+    }
+
     if (!bankStatementName || !bankStatementDataUrl || bankStatementDataUrl.length < 100) {
       return NextResponse.json(
         { error: "Please upload your latest 3-month bank statement." },
@@ -343,6 +361,9 @@ export async function POST(req: Request) {
             dataUrl: bankStatementDataUrl,
             uploadedAt: now.toISOString(),
           },
+          idDocumentFront: guestIdFront ? { ...guestIdFront, uploadedAt: now.toISOString() } : undefined,
+          idDocumentBack: guestIdBack ? { ...guestIdBack, uploadedAt: now.toISOString() } : undefined,
+          selfiePhoto: selfiePhoto ? { ...selfiePhoto, uploadedAt: now.toISOString() } : undefined,
         } as Prisma.InputJsonValue,
         status: "PENDING",
       },

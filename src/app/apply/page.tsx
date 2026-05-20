@@ -25,13 +25,8 @@ function GuestApplyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const initialLoan = Math.max(100, Math.min(5000, Number(searchParams.get("loan")) || 1500));
-  const rawDays = Number(searchParams.get("days")) || 30;
-  // Snap to 30/60/90
-  const initialTermDays = rawDays >= 75 ? 90 : rawDays >= 45 ? 60 : 30;
-
-  const [amount] = useState(initialLoan);
-  const [termDays] = useState(initialTermDays);
+  const amount = Math.max(100, Math.min(5000, Number(searchParams.get("loan")) || 1500));
+  const termDays = Math.max(6, Math.min(90, Number(searchParams.get("days")) || 60));
 
   // Personal details
   const [fullName, setFullName] = useState("");
@@ -167,9 +162,6 @@ function GuestApplyContent() {
               className="bg-persal-blue text-white font-semibold px-4 py-2 rounded shadow hover:bg-persal-dark transition"
             >
               LogIn
-            </Link>
-            <Link href="/auth/signup?from=apply" className="bg-persal-blue text-white font-semibold px-4 py-2 rounded shadow hover:bg-persal-dark transition">
-              SignUp
             </Link>
           </nav>
         </div>

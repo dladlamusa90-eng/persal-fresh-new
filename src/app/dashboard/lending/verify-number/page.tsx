@@ -20,6 +20,10 @@ function VerifyNumberContent() {
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
 
+  // Read loan and term from query string
+  const loanAmount = Number(searchParams.get("loan")) || 1500;
+  const termDays = Number(searchParams.get("termDays")) || Number(searchParams.get("term")) || 30;
+
   function withWizardQuery(path: string) {
     const query = searchParams.toString();
     return query ? `${path}?${query}` : path;
@@ -79,6 +83,7 @@ function VerifyNumberContent() {
     router.push(withWizardQuery("/dashboard/lending/my-details"));
   }
 
+
   return (
     <section className="max-w-6xl mx-auto px-4 md:px-6 py-4 md:py-6">
       <div className="rounded-2xl bg-white px-6 py-6 md:px-8 md:py-8 shadow-sm">
@@ -86,6 +91,18 @@ function VerifyNumberContent() {
           <div className="text-sm font-medium text-persal-dark tracking-tight">15 %</div>
           <div className="mt-2 h-1 w-full rounded-full bg-gray-300 overflow-hidden">
             <div className="h-full w-[15%] bg-lime-500" />
+          </div>
+        </div>
+
+        {/* Loan summary reflecting current application */}
+        <div className="mb-6 flex gap-8 items-center">
+          <div>
+            <div className="text-xs text-gray-500">Loan Amount</div>
+            <div className="text-lg font-bold text-persal-dark">R{loanAmount.toLocaleString()}</div>
+          </div>
+          <div>
+            <div className="text-xs text-gray-500">Loan Period</div>
+            <div className="text-lg font-bold text-persal-dark">{termDays} days</div>
           </div>
         </div>
 

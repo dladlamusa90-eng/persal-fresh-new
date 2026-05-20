@@ -126,9 +126,15 @@ export default function Home() {
       };
     }, []);
 
-  // Hydration check for urgent banner
+  const maxLoan = 5000;
+  const LOAN_CALC_AMOUNT_KEY = "loanCalculatorAmount";
+  const LOAN_CALC_DAYS_KEY = "loanCalculatorDays";
+
+  // Hydration check for urgent banner and calculator state
   const [hydrated, setHydrated] = useState(false);
   const [showTopAd, setShowTopAd] = useState(true);
+  const [desiredLoan, setDesiredLoan] = useState(1500);
+  const [selectedDays, setSelectedDays] = useState(60);
   useEffect(() => {
     setHydrated(true);
     const lastClosed = localStorage.getItem('persal-top-ad-last-closed');
@@ -141,10 +147,17 @@ export default function Home() {
         }
       }
     }
+    const storedLoan = localStorage.getItem(LOAN_CALC_AMOUNT_KEY);
+    if (storedLoan) {
+      const v = parseInt(storedLoan, 10);
+      if (!isNaN(v) && v >= 100 && v <= maxLoan) setDesiredLoan(v);
+    }
+    const storedDays = localStorage.getItem(LOAN_CALC_DAYS_KEY);
+    if (storedDays) {
+      const v = parseInt(storedDays, 10);
+      if (!isNaN(v) && v >= 6 && v <= 90) setSelectedDays(v);
+    }
   }, []);
-  const maxLoan = 5000;
-  const [desiredLoan, setDesiredLoan] = useState(1500);
-  const [selectedDays, setSelectedDays] = useState(60);
   const [error, setError] = useState("");
   const [showFeeBreakdown, setShowFeeBreakdown] = useState(false);
   const repayDateInputRef = useRef<HTMLInputElement | null>(null);
@@ -156,6 +169,17 @@ export default function Home() {
       setError("");
     }
     setDesiredLoan(value);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(LOAN_CALC_AMOUNT_KEY, value.toString());
+    }
+  }
+
+  function updateSelectedDays(value: number) {
+    const clamped = Math.max(6, Math.min(90, value));
+    setSelectedDays(clamped);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(LOAN_CALC_DAYS_KEY, clamped.toString());
+    }
   }
 
   const termDays = Math.max(6, Math.min(90, selectedDays));
@@ -197,7 +221,7 @@ export default function Home() {
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const rawDays = Math.ceil((selected.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     const clampedDays = Math.max(6, Math.min(90, rawDays));
-    setSelectedDays(clampedDays);
+    updateSelectedDays(clampedDays);
   }
 
 
@@ -376,7 +400,9 @@ export default function Home() {
                               step={100}
                               value={desiredLoan}
                               onChange={e => updateDesiredLoan(Number(e.target.value))}
-                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                              onInput={e => updateDesiredLoan(Number((e.target as HTMLInputElement).value))}
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer touch-pan-y"
+                              style={{ touchAction: "pan-y" }}
                             />
                             <div
                               className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white border border-gray-300 shadow-md flex items-center justify-center pointer-events-none max-[480px]:w-8 max-[480px]:h-8"
@@ -443,7 +469,7 @@ export default function Home() {
                         <div className="flex items-center gap-3 md:gap-4 max-[480px]:gap-2">
                           <button
                             type="button"
-                            onClick={() => setSelectedDays(Math.max(6, termDays - 1))}
+                            onClick={() => updateSelectedDays(Math.max(6, termDays - 1))}
                             className="w-8 h-8 rounded-full border border-gray-300 bg-white text-persal-blue shadow-sm hover:bg-gray-100 transition flex items-center justify-center p-0 max-[480px]:w-7 max-[480px]:h-7"
                             aria-label="Decrease period"
                           >
@@ -479,8 +505,10 @@ export default function Home() {
                               max={90}
                               step={1}
                               value={termDays}
-                              onChange={e => setSelectedDays(Number(e.target.value))}
-                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                              onChange={e => updateSelectedDays(Number(e.target.value))}
+                              onInput={e => updateSelectedDays(Number((e.target as HTMLInputElement).value))}
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer touch-pan-y"
+                              style={{ touchAction: "pan-y" }}
                             />
                             <div
                               className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white border border-gray-300 shadow-md flex items-center justify-center pointer-events-none max-[480px]:w-8 max-[480px]:h-8"
@@ -494,7 +522,7 @@ export default function Home() {
                           </div>
                           <button
                             type="button"
-                            onClick={() => setSelectedDays(Math.min(90, termDays + 1))}
+                            onClick={() => updateSelectedDays(Math.min(90, termDays + 1))}
                             className="w-8 h-8 rounded-full border border-gray-300 bg-white text-persal-blue shadow-sm hover:bg-gray-100 transition flex items-center justify-center p-0 max-[480px]:w-7 max-[480px]:h-7"
                             aria-label="Increase period"
                           >
