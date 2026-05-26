@@ -164,7 +164,7 @@ export default function LoginPage() {
           </div>
         </header>
 
-        <div className="max-w-5xl mx-auto w-full px-4 md:px-6 mt-6 pb-8 bg-white/70 backdrop-blur-sm border border-gray-200 rounded-3xl p-5 md:p-8 shadow-sm">
+        <div className="max-w-5xl mx-auto w-full px-4 md:px-6 mt-6 pb-8 bg-white border border-gray-200 rounded-3xl p-5 md:p-8 shadow-sm">
           {!showOtpStep && (
             <div className="bg-gray-200 rounded-full p-1 flex items-center gap-2">
             <button
