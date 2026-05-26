@@ -22,6 +22,7 @@ type UnifiedLoanApplicationFormProps = {
     hasPendingLoan?: boolean;
     faceIdVerified?: boolean;
     applicationStatus?: "PENDING" | "APPROVED" | "REJECTED" | null;
+    email?: string;
     phone?: string;
     idNumber?: string;
     persalNumber?: string;
@@ -58,7 +59,7 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
   const [amount, setAmount] = useState(initialAmount);
   const [termDays, setTermDays] = useState(initialTermDays);
   const [fullName, setFullName] = useState(initialDraft?.fullName || "");
-  const [email, setEmail] = useState(initialDraft?.email || "");
+  const [email, setEmail] = useState(user?.email || initialDraft?.email || "");
   const [emailTouched, setEmailTouched] = useState(false);
   function validateEmail(email: string) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -149,9 +150,6 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
   // Documents (for logged-in flow)
   const [documents, setDocuments] = useState<Record<string, UploadedDocument | null>>(initialDraft?.documents || {
     idDocumentFront: null,
-    // idDocumentBack removed
-    proofOfIncome: null,
-    proofOfResidence: null,
     bankStatement: null,
   });
 
@@ -267,8 +265,8 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
 
     // Document validation
     if (isLoggedIn) {
-      if (!documents.idDocumentFront || !documents.proofOfIncome || !documents.proofOfResidence || !documents.bankStatement) {
-        setError("Please upload your ID Document, proof of income, proof of residence, and bank statement before submitting your application.");
+      if (!documents.idDocumentFront || !documents.bankStatement) {
+        setError("Please upload your ID Document and 3 months bank statement before submitting your application.");
         return;
       }
     } else {
@@ -367,7 +365,7 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
 
   // --- UI ---
   return (
-    <div className={isLoggedIn ? "max-w-2xl mx-auto py-12" : "min-h-screen bg-gray-50"}>
+    <div className={isLoggedIn ? "max-w-2xl mx-auto py-2" : "min-h-screen bg-gray-50"}>
       {/* Header with logo and login button for guests */}
       {!isLoggedIn && (
         <>
@@ -379,7 +377,7 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
         </>
       )}
 
-      <main className="max-w-2xl mx-auto px-4 py-10">
+      <main className="max-w-2xl mx-auto px-4 py-4">
         {/* Loan Summary */}
         <div className="bg-persal-dark text-white rounded-2xl p-6 mb-8 shadow-lg">
           <h1 className="text-xl font-bold mb-1 text-center">Your Loan Application</h1>
@@ -425,25 +423,24 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
                   required
                 />
               </div>
-              {!isLoggedIn && (
-                <div>
-                  <label className="block text-gray-700 text-sm mb-2" htmlFor="email">Email Address</label>
-                  <input
-                    className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-persal-blue ${emailTouched && !validateEmail(email) ? 'border-red-500' : emailTouched && validateEmail(email) ? 'border-green-500' : 'border-gray-300'}`}
-                    id="email"
-                    type="email"
-                    autoComplete="email"
-                    value={email}
-                    onChange={e => { setEmail(e.target.value); setEmailTouched(true); }}
-                    onBlur={() => setEmailTouched(true)}
-                    placeholder="you@example.com"
-                    required
-                  />
-                  {emailTouched && !validateEmail(email) && email.length > 0 && (
-                    <div className="text-red-600 text-xs mt-1">Please enter a valid email address.</div>
-                  )}
-                </div>
-              )}
+              <div>
+                <label className="block text-gray-700 text-sm mb-2" htmlFor="email">Email Address</label>
+                <input
+                  className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-persal-blue ${isLoggedIn ? 'bg-gray-50 text-gray-500 cursor-not-allowed border-gray-200' : emailTouched && !validateEmail(email) ? 'border-red-500' : emailTouched && validateEmail(email) ? 'border-green-500' : 'border-gray-300'}`}
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={e => { if (!isLoggedIn) { setEmail(e.target.value); setEmailTouched(true); } }}
+                  onBlur={() => { if (!isLoggedIn) setEmailTouched(true); }}
+                  placeholder="you@example.com"
+                  readOnly={isLoggedIn}
+                  required
+                />
+                {!isLoggedIn && emailTouched && !validateEmail(email) && email.length > 0 && (
+                  <div className="text-red-600 text-xs mt-1">Please enter a valid email address.</div>
+                )}
+              </div>
               <div>
                 <label className="block text-gray-700 text-sm mb-2" htmlFor="phone">SA Cell Number</label>
                 <input
@@ -464,23 +461,24 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
               <div>
                 <label className="block text-gray-700 text-sm mb-2" htmlFor="idNumber">SA ID Number</label>
                 <input
-                  className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-persal-blue ${idNumberTouched && idNumber.length > 0 && !isSouthAfricanIdNumber(idNumber) ? 'border-red-500' : idNumberTouched && isSouthAfricanIdNumber(idNumber) ? 'border-green-500' : 'border-gray-300'}`}
+                  className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-persal-blue ${isLoggedIn && idNumber ? 'bg-gray-50 text-gray-500 cursor-not-allowed border-gray-200' : idNumberTouched && idNumber.length > 0 && !isSouthAfricanIdNumber(idNumber) ? 'border-red-500' : idNumberTouched && isSouthAfricanIdNumber(idNumber) ? 'border-green-500' : 'border-gray-300'}`}
                   id="idNumber"
                   type="text"
                   inputMode="numeric"
                   maxLength={13}
                   value={idNumber}
-                  onChange={e => { setIdNumber(e.target.value.replace(/\D/g, "")); setIdNumberTouched(true); }}
-                  onBlur={() => setIdNumberTouched(true)}
+                  onChange={e => { if (!isLoggedIn) { setIdNumber(e.target.value.replace(/\D/g, "")); setIdNumberTouched(true); } }}
+                  onBlur={() => { if (!isLoggedIn) setIdNumberTouched(true); }}
                   placeholder="13-digit SA ID number"
+                  readOnly={isLoggedIn && !!idNumber}
                   required
                 />
-                {idNumberTouched && idNumber.length > 0 && !isSouthAfricanIdNumber(idNumber) && (
+                {!isLoggedIn && idNumberTouched && idNumber.length > 0 && !isSouthAfricanIdNumber(idNumber) && (
                   <div className="text-red-600 text-xs mt-1">
                     {idNumber.length < 13 ? `${13 - idNumber.length} digit${13 - idNumber.length !== 1 ? 's' : ''} remaining` : 'Invalid SA ID number'}
                   </div>
                 )}
-                {idNumberTouched && isSouthAfricanIdNumber(idNumber) && (
+                {(isLoggedIn ? isSouthAfricanIdNumber(idNumber) : idNumberTouched && isSouthAfricanIdNumber(idNumber)) && (
                   <div className="text-green-600 text-xs mt-1 flex items-center gap-1">
                     <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
                     Valid SA ID number
