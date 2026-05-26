@@ -189,20 +189,23 @@ export async function POST(req: Request) {
 
     // Accept selfie and ID document from request
     const selfiePhoto = body.selfiePhoto;
-    // New: Accept guest ID front and back
+    // Accept guest ID document (single file showing front and back)
     const guestIdFront = body.guestIdFront;
-    const guestIdBack = body.guestIdBack;
+    const guestIdBack = body.guestIdBack; // optional
 
-    // Validate guest ID front and back (required)
-    if (!guestIdFront || !guestIdBack) {
-      return NextResponse.json({ error: "Please upload both front and back of your ID Document (JPG or PNG)." }, { status: 400 });
+    // Validate ID document (required)
+    if (!guestIdFront) {
+      return NextResponse.json({ error: "Please upload your ID Document (JPG, PNG, or PDF)." }, { status: 400 });
     }
-    const allowedIdTypes = ["image/jpeg", "image/png"];
-    if (!allowedIdTypes.includes(guestIdFront.type) || !allowedIdTypes.includes(guestIdBack.type)) {
-      return NextResponse.json({ error: "ID Document must be a JPG or PNG image." }, { status: 400 });
+    const allowedIdTypes = ["image/jpeg", "image/png", "application/pdf"];
+    if (!allowedIdTypes.includes(guestIdFront.type)) {
+      return NextResponse.json({ error: "ID Document must be a JPG, PNG, or PDF file." }, { status: 400 });
     }
-    if (guestIdFront.size > 2 * 1024 * 1024 || guestIdBack.size > 2 * 1024 * 1024) {
+    if (guestIdFront.size > 2 * 1024 * 1024) {
       return NextResponse.json({ error: "ID Document file must be 2MB or smaller." }, { status: 400 });
+    }
+    if (guestIdBack && !allowedIdTypes.includes(guestIdBack.type)) {
+      return NextResponse.json({ error: "ID Document (back) must be a JPG, PNG, or PDF file." }, { status: 400 });
     }
 
     if (!bankStatementName || !bankStatementDataUrl || bankStatementDataUrl.length < 100) {

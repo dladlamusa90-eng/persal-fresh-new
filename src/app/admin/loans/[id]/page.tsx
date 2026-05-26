@@ -176,10 +176,13 @@ export default async function AdminLoanApplicationPage({ params }: PageProps) {
 
           <h2 className="text-lg font-semibold text-gray-900 mt-8">Uploaded Documents</h2>
           <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <DocumentCard label="Identity Document" document={applicationDocuments.identityDocument ?? null} />
+            <DocumentCard label="ID Document" document={applicationDocuments.idDocumentFront ?? applicationDocuments.identityDocument ?? null} />
+            {applicationDocuments.idDocumentBack && (
+              <DocumentCard label="ID Document (Back)" document={applicationDocuments.idDocumentBack} />
+            )}
+            <DocumentCard label="Bank Statement" document={applicationDocuments.bankStatement ?? null} />
             <DocumentCard label="Proof of Income" document={applicationDocuments.proofOfIncome ?? null} />
             <DocumentCard label="Proof of Residence" document={applicationDocuments.proofOfResidence ?? null} />
-            <DocumentCard label="Bank Statement" document={applicationDocuments.bankStatement ?? null} />
           </div>
 
           <h2 className="text-lg font-semibold text-gray-900 mt-8">Face Match Evidence</h2>
@@ -268,21 +271,33 @@ function DocumentCard({
   document,
 }: {
   label: string;
-  document: { name?: string; dataUrl?: string } | null;
+  document: { name?: string; dataUrl?: string; type?: string; size?: number } | null;
 }) {
+  const isImage = document?.type?.startsWith("image/");
   return (
     <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
       <p className="text-xs text-gray-500">{label}</p>
       {document?.dataUrl ? (
         <div className="mt-2">
           <p className="text-sm font-semibold text-gray-900">{document.name ?? "Document"}</p>
+          {document.size != null && (
+            <p className="text-xs text-gray-500 mb-2">{Math.round(document.size / 1024)} KB</p>
+          )}
+          {isImage && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={document.dataUrl}
+              alt={label}
+              className="mt-2 mb-2 max-h-48 rounded-lg border border-gray-200 object-contain w-full"
+            />
+          )}
           <a
             href={document.dataUrl}
             target="_blank"
             rel="noreferrer"
-            className="mt-2 inline-flex items-center rounded-lg bg-persal-blue px-3 py-1.5 text-xs font-semibold text-white hover:bg-persal-dark"
+            className="mt-1 inline-flex items-center rounded-lg bg-persal-blue px-3 py-1.5 text-xs font-semibold text-white hover:bg-persal-dark"
           >
-            View Document
+            {isImage ? "View Full Image" : "View / Download PDF"}
           </a>
         </div>
       ) : (

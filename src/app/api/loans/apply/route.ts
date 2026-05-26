@@ -244,15 +244,15 @@ export async function POST(req: Request) {
       mergedDocuments = { ...mergedDocuments, ...body.documents };
     }
 
-    // Validate idDocumentFront and idDocumentBack for logged-in users
-    if (!mergedDocuments.idDocumentFront || !mergedDocuments.idDocumentBack) {
-      return NextResponse.json({ error: "Please upload both front and back of your ID Document (JPG or PNG)." }, { status: 400 });
+    // Validate ID document for logged-in users (idDocumentFront required; idDocumentBack optional)
+    if (!mergedDocuments.idDocumentFront) {
+      return NextResponse.json({ error: "Please upload your ID Document (JPG, PNG, or PDF)." }, { status: 400 });
     }
-    const allowedIdTypes = ["image/jpeg", "image/png"];
-    if (!allowedIdTypes.includes(mergedDocuments.idDocumentFront.type) || !allowedIdTypes.includes(mergedDocuments.idDocumentBack.type)) {
-      return NextResponse.json({ error: "ID Document must be a JPG or PNG image." }, { status: 400 });
+    const allowedIdTypes = ["image/jpeg", "image/png", "application/pdf"];
+    if (!allowedIdTypes.includes((mergedDocuments.idDocumentFront as any).type)) {
+      return NextResponse.json({ error: "ID Document must be a JPG, PNG, or PDF file." }, { status: 400 });
     }
-    if (mergedDocuments.idDocumentFront.size > 2 * 1024 * 1024 || mergedDocuments.idDocumentBack.size > 2 * 1024 * 1024) {
+    if ((mergedDocuments.idDocumentFront as any).size > 2 * 1024 * 1024) {
       return NextResponse.json({ error: "ID Document file must be 2MB or smaller." }, { status: 400 });
     }
 

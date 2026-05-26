@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import AppFooter from "@/app/components/AppFooter";
 import { calculateLoanCharges } from "@/lib/loanPolicy";
 
@@ -135,8 +135,20 @@ export default function Home() {
   const [showTopAd, setShowTopAd] = useState(true);
   const [desiredLoan, setDesiredLoan] = useState(1500);
   const [selectedDays, setSelectedDays] = useState(60);
-  useEffect(() => {
+  useLayoutEffect(() => {
+    const storedLoan = localStorage.getItem(LOAN_CALC_AMOUNT_KEY);
+    if (storedLoan) {
+      const v = parseInt(storedLoan, 10);
+      if (!isNaN(v) && v >= 100 && v <= 5000) setDesiredLoan(v);
+    }
+    const storedDays = localStorage.getItem(LOAN_CALC_DAYS_KEY);
+    if (storedDays) {
+      const v = parseInt(storedDays, 10);
+      if (!isNaN(v) && v >= 6 && v <= 90) setSelectedDays(v);
+    }
     setHydrated(true);
+  }, []);
+  useEffect(() => {
     const lastClosed = localStorage.getItem('persal-top-ad-last-closed');
     if (lastClosed) {
       const last = parseInt(lastClosed, 10);
@@ -146,16 +158,6 @@ export default function Home() {
           setShowTopAd(false);
         }
       }
-    }
-    const storedLoan = localStorage.getItem(LOAN_CALC_AMOUNT_KEY);
-    if (storedLoan) {
-      const v = parseInt(storedLoan, 10);
-      if (!isNaN(v) && v >= 100 && v <= maxLoan) setDesiredLoan(v);
-    }
-    const storedDays = localStorage.getItem(LOAN_CALC_DAYS_KEY);
-    if (storedDays) {
-      const v = parseInt(storedDays, 10);
-      if (!isNaN(v) && v >= 6 && v <= 90) setSelectedDays(v);
     }
   }, []);
   const [error, setError] = useState("");
@@ -359,14 +361,14 @@ export default function Home() {
                       <div className="flex flex-col">
                         <div className="text-base md:text-lg text-gray-700 mb-1 max-[480px]:text-sm">Loan Amount</div>
                         <div className="h-12 md:h-14 flex items-end max-[480px]:h-10">
-                          <div className="text-4xl md:text-5xl font-normal text-persal-blue leading-none max-[480px]:text-3xl">R{desiredLoan}</div>
+                          <div className="text-4xl md:text-5xl font-normal text-persal-blue leading-none max-[480px]:text-3xl" style={{ opacity: hydrated ? 1 : 0 }}>R{desiredLoan}</div>
                         </div>
                         <div className="h-px bg-gray-300 mt-2" />
                       </div>
                       <div className="flex flex-col">
                         <div className="text-base md:text-lg text-gray-700 mb-1 max-[480px]:text-sm">Loan Period</div>
                         <div className="h-12 md:h-14 flex items-end max-[480px]:h-10">
-                          <div className="inline-flex items-end gap-1.5 text-4xl md:text-5xl font-normal text-persal-blue leading-none max-[480px]:text-3xl">
+                          <div className="inline-flex items-end gap-1.5 text-4xl md:text-5xl font-normal text-persal-blue leading-none max-[480px]:text-3xl" style={{ opacity: hydrated ? 1 : 0 }}>
                             <span>{termDays}</span>
                             <span className="text-xl md:text-2xl text-gray-700 font-normal leading-none max-[480px]:text-lg">days</span>
                           </div>
@@ -576,7 +578,7 @@ export default function Home() {
                     </div>
                     <div className="text-center md:text-right">
                       <Link
-                        href={!error && desiredLoan >= 100 ? `/apply?loan=${desiredLoan}&days=${termDays}` : "#"}
+                        href={!error && desiredLoan >= 100 ? `/apply?loan=${desiredLoan}&termDays=${termDays}` : "#"}
                         className={`inline-block px-4 py-2 rounded-lg font-semibold text-base transition text-center max-[480px]:w-full ${!error && desiredLoan >= 100 ? 'bg-orange-500 text-white hover:bg-orange-600 cursor-pointer' : 'bg-gray-300 text-gray-400 cursor-not-allowed pointer-events-none'}`}
                       >
                         Apply Now

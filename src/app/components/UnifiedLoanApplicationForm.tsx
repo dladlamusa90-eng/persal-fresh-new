@@ -109,11 +109,10 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
   function onGuestIdUpload(event: React.ChangeEvent<HTMLInputElement>, side: 'front' | 'back') {
     const file = event.target.files?.[0];
     if (!file) return;
-    const allowed = ["image/jpeg", "image/png"];
+    const allowed = ["image/jpeg", "image/png", "application/pdf"];
     if (!allowed.includes(file.type)) {
-      setError("ID Document must be a JPG or PNG image.");
+      setError("ID Document must be a JPG, PNG, or PDF file.");
       if (side === 'front') setGuestIdFront(null);
-      // Removed guestIdBack logic
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
@@ -181,9 +180,9 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
   function onBankStatementUpload(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
-    const allowed = ["application/pdf", "image/jpeg", "image/png"];
+    const allowed = ["application/pdf"];
     if (!allowed.includes(file.type)) {
-      setError("Please upload a PDF, JPG, or PNG bank statement.");
+      setError("Please upload your bank statement as a PDF file.");
       setBankStatementDocument(null);
       return;
     }
@@ -269,7 +268,7 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
     // Document validation
     if (isLoggedIn) {
       if (!documents.idDocumentFront || !documents.proofOfIncome || !documents.proofOfResidence || !documents.bankStatement) {
-        setError("Please upload both front and back of your ID Document (JPG or PNG), proof of income, proof of residence, and bank statement before submitting your application.");
+        setError("Please upload your ID Document, proof of income, proof of residence, and bank statement before submitting your application.");
         return;
       }
     } else {
@@ -425,14 +424,11 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
                   placeholder="As it appears on your ID"
                   required
                 />
-                {emailTouched && !validateEmail(email) && (
-                  <div className="text-red-600 text-xs mt-1">Please enter a valid email address.</div>
-                )}
               </div>
               <div>
                 <label className="block text-gray-700 text-sm mb-2" htmlFor="phone">SA Cell Number</label>
                 <input
-                  className={`w-full border rounded-lg px-3 py-2.5 text-sm mt-0 focus:outline-none focus:border-persal-blue ${phoneTouched && !validatePhone(phone) ? 'border-red-500' : 'border-gray-300'}`}
+                  className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-persal-blue ${phoneTouched && !validatePhone(phone) ? 'border-red-500' : 'border-gray-300'}`}
                   id="phone"
                   type="tel"
                   autoComplete="tel"
@@ -446,6 +442,45 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
                   <div className="text-red-600 text-xs mt-1">Please enter a valid South African phone number (e.g. 0821234567).</div>
                 )}
               </div>
+              <div>
+                <label className="block text-gray-700 text-sm mb-2" htmlFor="idNumber">SA ID Number</label>
+                <input
+                  className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-persal-blue ${idNumberTouched && idNumber.length > 0 && !isSouthAfricanIdNumber(idNumber) ? 'border-red-500' : idNumberTouched && isSouthAfricanIdNumber(idNumber) ? 'border-green-500' : 'border-gray-300'}`}
+                  id="idNumber"
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={13}
+                  value={idNumber}
+                  onChange={e => { setIdNumber(e.target.value.replace(/\D/g, "")); setIdNumberTouched(true); }}
+                  onBlur={() => setIdNumberTouched(true)}
+                  placeholder="13-digit SA ID number"
+                  required
+                />
+                {idNumberTouched && idNumber.length > 0 && !isSouthAfricanIdNumber(idNumber) && (
+                  <div className="text-red-600 text-xs mt-1">
+                    {idNumber.length < 13 ? `${13 - idNumber.length} digit${13 - idNumber.length !== 1 ? 's' : ''} remaining` : 'Invalid SA ID number'}
+                  </div>
+                )}
+                {idNumberTouched && isSouthAfricanIdNumber(idNumber) && (
+                  <div className="text-green-600 text-xs mt-1 flex items-center gap-1">
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                    Valid SA ID number
+                  </div>
+                )}
+              </div>
+              <div>
+                <label className="block text-gray-700 text-sm mb-2" htmlFor="persalNumber">Persal Number</label>
+                <input
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-persal-blue"
+                  id="persalNumber"
+                  type="text"
+                  inputMode="numeric"
+                  value={persalNumber}
+                  onChange={e => setPersalNumber(e.target.value)}
+                  placeholder="Your Persal employee number"
+                  required
+                />
+              </div>
             </div>
           </div>
           {/* Income */}
@@ -455,14 +490,13 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
               <div>
                 <label className="block text-gray-700 text-sm mb-2" htmlFor="grossSalary">Gross Monthly Salary (R)</label>
                 <input
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm mt-0 focus:outline-none focus:border-persal-blue"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-persal-blue"
                   id="grossSalary"
                   type="number"
                   min={0}
                   value={grossSalary || ""}
                   onChange={e => setGrossSalary(Number(e.target.value))}
                   placeholder="e.g. 12000"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-persal-blue"
                   required
                 />
               </div>
@@ -472,14 +506,13 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
                   <span className="ml-1 text-gray-400 font-normal text-xs">(after expenses)</span>
                 </label>
                 <input
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm mt-0 focus:outline-none focus:border-persal-blue"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-persal-blue"
                   id="disposableIncome"
                   type="number"
                   min={0}
                   value={disposableIncome || ""}
                   onChange={e => setDisposableIncome(Number(e.target.value))}
                   placeholder="e.g. 4000"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-persal-blue"
                   required
                 />
               </div>
@@ -494,11 +527,10 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
               <div>
                 <label className="block text-gray-700 text-sm mb-2" htmlFor="bankName">Bank</label>
                 <select
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm mt-0 focus:outline-none focus:border-persal-blue bg-white"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-persal-blue bg-white"
                   id="bankName"
                   value={bankName}
                   onChange={handleBankChange}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-persal-blue bg-white"
                   required
                 >
                   <option value="">Select your bank</option>
@@ -517,25 +549,23 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
                 <div>
                   <label className="block text-gray-700 text-sm mb-2" htmlFor="accountNumber">Account Number</label>
                   <input
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm mt-0 focus:outline-none focus:border-persal-blue"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-persal-blue"
                     id="accountNumber"
                     type="text"
                     inputMode="numeric"
                     value={accountNumber}
                     onChange={e => setAccountNumber(e.target.value)}
                     placeholder="Bank account number"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-persal-blue"
                     required
                   />
                 </div>
                 <div>
                   <label className="block text-gray-700 text-sm mb-2" htmlFor="accountType">Account Type</label>
                   <select
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm mt-0 focus:outline-none focus:border-persal-blue bg-white"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-persal-blue bg-white"
                     id="accountType"
                     value={accountType}
                     onChange={e => setAccountType(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-persal-blue bg-white"
                   >
                     <option value="CHEQUE">Cheque / Current</option>
                     <option value="SAVINGS">Savings</option>
@@ -553,12 +583,12 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
           <div className="p-6">
             <h2 className="text-base font-semibold text-persal-dark mb-3">Supporting Documents</h2>
             <div>
-              <p className="text-xs text-gray-500 mb-4">Upload your latest 3 months bank statement (PDF, JPG, or PNG up to 2MB).</p>
-              <label className="block text-gray-700 text-sm mb-1" htmlFor="bankStatement">3 Months Bank Statement</label>
+              <p className="text-xs text-gray-500 mb-4">Upload your latest 3 months bank statement as a <strong>PDF</strong> (max 2MB).</p>
+              <label className="block text-gray-700 text-sm mb-1" htmlFor="bankStatement">3 Months Bank Statement <span className="text-red-500">*</span> <span className="text-gray-400 font-normal">(PDF only)</span></label>
               <input
                 id="bankStatement"
                 type="file"
-                accept="application/pdf,image/jpeg,image/png"
+                accept="application/pdf"
                 onChange={isLoggedIn ? (e => handleDocumentChange("bankStatement", e.target.files?.[0] ?? null)) : onBankStatementUpload}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm file:mr-3 file:rounded file:border-0 file:bg-persal-blue file:px-3 file:py-1.5 file:text-white"
                 required
@@ -569,10 +599,11 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
                   : "No file selected yet."}
               </p>
               <div className="mt-6">
-                <label className="block text-gray-700 text-sm mb-1">ID Document (Front, JPG or PNG)</label>
+                <label className="block text-gray-700 text-sm mb-1">ID Document <span className="text-red-500">*</span> <span className="text-gray-400 font-normal">(JPG, PNG or PDF)</span></label>
+                <p className="text-xs text-gray-500 mb-2">The document must clearly show <strong>both the front and back</strong> of your ID or certified copy.</p>
                 <input
                   type="file"
-                  accept="image/jpeg,image/png"
+                  accept="image/jpeg,image/png,application/pdf"
                   onChange={isLoggedIn ? (e => handleDocumentChange("idDocumentFront", e.target.files?.[0] ?? null)) : (e => onGuestIdUpload(e, 'front'))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm file:mr-3 file:rounded file:border-0 file:bg-persal-blue file:px-3 file:py-1.5 file:text-white"
                   required
@@ -616,7 +647,7 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
             className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 rounded-xl text-base shadow-lg transition"
             disabled={submitting}
           >
-            {isLoggedIn ? (submitting ? "Submitting..." : "Submit Application") : "Next"}
+            {isLoggedIn ? (submitting ? "Submitting..." : "Submit Application") : (submitting ? "Saving..." : "Verify")}
           </button>
 
           <p className="text-center text-xs text-gray-500 pb-6">
