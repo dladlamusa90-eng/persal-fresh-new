@@ -34,8 +34,15 @@ export default function DashboardHomePage() {
   const [persalInput, setPersalInput] = useState("");
   const [persalError, setPersalError] = useState("");
   const [persalSubmitting, setPersalSubmitting] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    const savedLoan = localStorage.getItem("calc-loan");
+    const savedDays = localStorage.getItem("calc-days");
+    if (savedLoan) setDesiredLoan(Number(savedLoan));
+    if (savedDays) setSelectedDays(Number(savedDays));
+    setMounted(true);
+
     Promise.all([
       fetch("/api/users/me").then((r) => (r.ok ? r.json() : null)),
       fetch("/api/loans/me").then((r) => (r.ok ? r.json() : null)),
@@ -50,7 +57,8 @@ export default function DashboardHomePage() {
         setHasPendingLoan(status === "PENDING");
         setHasActiveLoan(status === "APPROVED");
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => {});
   }, []);
 
   const persalStatus = getPersalStatus(user);
@@ -92,6 +100,7 @@ export default function DashboardHomePage() {
       setError("");
     }
     setDesiredLoan(value);
+    localStorage.setItem("calc-loan", String(value));
   }
 
   const termDays = Math.max(6, Math.min(90, selectedDays));
@@ -172,39 +181,11 @@ export default function DashboardHomePage() {
     const rawDays = Math.ceil((selected.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     const clampedDays = Math.max(6, Math.min(90, rawDays));
     setSelectedDays(clampedDays);
+    localStorage.setItem("calc-days", String(clampedDays));
   }
 
   return (
     <section className="max-w-6xl mx-auto px-2 md:px-4 -mt-6 md:-mt-10">
-      {/* Persal number prompt */}
-      {user && persalStatus !== "approved" && (
-        <div className="mb-6 p-4 rounded-xl border border-orange-300 bg-orange-50 flex flex-col items-center">
-          <h2 className="text-lg font-semibold text-orange-800 mb-2">Persal Number Required</h2>
-          {persalStatus === "missing" && <p className="mb-2 text-orange-700">Please submit your Persal number to apply for a loan.</p>}
-          {persalStatus === "pending" && <p className="mb-2 text-orange-700">Your Persal number is under review. You will be notified when it is approved.</p>}
-          {persalStatus === "rejected" && <p className="mb-2 text-red-700">Your Persal number was rejected. Please check and resubmit.</p>}
-          <form onSubmit={handlePersalSubmit} className="flex flex-col items-center gap-2 w-full max-w-xs">
-            <input
-              type="text"
-              className="border rounded px-3 py-2 w-full"
-              placeholder="Enter Persal Number"
-              value={persalInput}
-              onChange={(e) => setPersalInput(e.target.value)}
-              disabled={persalStatus === "pending" || persalSubmitting}
-              maxLength={8}
-            />
-            <button
-              type="submit"
-              className="bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded px-4 py-2 mt-1"
-              disabled={persalStatus === "pending" || persalSubmitting}
-            >
-              {persalStatus === "rejected" ? "Resubmit" : "Submit"}
-            </button>
-            {persalError && <div className="text-red-600 text-sm mt-1">{persalError}</div>}
-          </form>
-          <p className="mt-2 text-xs text-gray-600">You can skip for now, but you cannot apply for a loan until your Persal number is approved.</p>
-        </div>
-      )}
       <div className="grid grid-cols-1 md:grid-cols-[190px_1fr] gap-6 md:gap-8">
         <aside className="pt-2">
           <nav className="space-y-3 text-[22px] md:text-base">
@@ -243,7 +224,7 @@ export default function DashboardHomePage() {
                 <div className="p-4 md:p-5 border-b border-white/20">
                   <h3 className="text-orange-300 font-semibold text-lg mb-2">What you can get</h3>
                   <p className="text-white/95 leading-relaxed text-sm md:text-base font-semibold break-words">
-                    New customers can apply for up to <b>R2500</b>, while existing customers can apply for up to <b>R5000</b>, with up to 3 months to repay.
+                    Customers can apply for up to <b>R5000</b>, and can earn points to reduce their interest.
                   </p>
                 </div>
                 <div className="p-4 md:p-5 border-b border-white/20 bg-teal-900/25">
@@ -273,13 +254,7 @@ export default function DashboardHomePage() {
                       <svg className="w-4 h-4 text-teal-200 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <line x1="3" y1="21" x2="21" y2="21" /><line x1="5" y1="21" x2="5" y2="10" /><line x1="9" y1="21" x2="9" y2="10" /><line x1="15" y1="21" x2="15" y2="10" /><line x1="19" y1="21" x2="19" y2="10" /><polygon points="12 3 2 10 22 10 12 3" />
                       </svg>
-                      <span>Bank account details</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-teal-200 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z" /><polyline points="14 2 14 8 20 8" /><polyline points="9 15 11 17 15 13" />
-                      </svg>
-                      <span>Most recent proof of income</span>
+                      <span>3-months bank statement</span>
                     </li>
                   </ul>
                 </div>
@@ -299,7 +274,7 @@ export default function DashboardHomePage() {
                     <div className="flex flex-col">
                       <div className="text-base md:text-lg text-gray-700 mb-1">Loan Amount</div>
                       <div className="h-12 md:h-14 flex items-end">
-                        <div className="text-4xl md:text-5xl font-normal text-persal-blue leading-none">R{desiredLoan}</div>
+                        <div className="text-4xl md:text-5xl font-normal text-persal-blue leading-none">{mounted ? `R${desiredLoan}` : "---"}</div>
                       </div>
                       <div className="h-px bg-gray-300 mt-2" />
                     </div>
@@ -307,8 +282,8 @@ export default function DashboardHomePage() {
                       <div className="text-base md:text-lg text-gray-700 mb-1">Loan Period</div>
                       <div className="h-12 md:h-14 flex items-end">
                         <div className="inline-flex items-end gap-1.5 text-4xl md:text-5xl font-normal text-persal-blue leading-none">
-                          <span>{termDays}</span>
-                          <span className="text-xl md:text-2xl text-gray-700 font-normal leading-none">days</span>
+                          <span>{mounted ? termDays : "---"}</span>
+                          <span className="text-xl md:text-2xl text-gray-700 font-normal leading-none">{mounted ? "days" : ""}</span>
                         </div>
                       </div>
                       <div className="h-px bg-gray-300 mt-2" />
@@ -318,7 +293,7 @@ export default function DashboardHomePage() {
                   <div className="mt-16 space-y-6">
                     <div>
                       <div className="text-lg md:text-xl text-gray-700 mb-2">How much do you need?</div>
-                      <div className="flex items-center gap-3 md:gap-4">
+                      <div className={`flex items-center gap-3 md:gap-4 transition-opacity duration-200 ${mounted ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
                         <button
                           type="button"
                           onClick={() => updateDesiredLoan(Math.max(100, desiredLoan - 100))}
@@ -389,7 +364,7 @@ export default function DashboardHomePage() {
                           </svg>
                           <span>{repayDateDisplay}</span>
                         </button>
-                        <span className="text-sm text-gray-600">Choose repayment date</span>
+                        <span className="text-sm text-gray-600">Last repayment day</span>
                         <input
                           ref={repayDateInputRef}
                           type="date"
@@ -404,10 +379,10 @@ export default function DashboardHomePage() {
                           className="sr-only"
                         />
                       </div>
-                      <div className="flex items-center gap-3 md:gap-4">
+                      <div className={`flex items-center gap-3 md:gap-4 transition-opacity duration-200 ${mounted ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
                         <button
                           type="button"
-                          onClick={() => setSelectedDays(Math.max(6, termDays - 1))}
+                          onClick={() => { const v = Math.max(6, termDays - 1); setSelectedDays(v); localStorage.setItem("calc-days", String(v)); }}
                           className="w-8 h-8 rounded-full border border-gray-300 bg-white text-persal-blue shadow-sm hover:bg-gray-100 transition flex items-center justify-center p-0"
                           aria-label="Decrease period"
                         >
@@ -443,7 +418,7 @@ export default function DashboardHomePage() {
                             max={90}
                             step={1}
                             value={termDays}
-                            onChange={e => setSelectedDays(Number(e.target.value))}
+                            onChange={e => { const v = Number(e.target.value); setSelectedDays(v); localStorage.setItem("calc-days", String(v)); }}
                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                           />
                           <div
@@ -458,7 +433,7 @@ export default function DashboardHomePage() {
                         </div>
                         <button
                           type="button"
-                          onClick={() => setSelectedDays(Math.min(90, termDays + 1))}
+                          onClick={() => { const v = Math.min(90, termDays + 1); setSelectedDays(v); localStorage.setItem("calc-days", String(v)); }}
                           className="w-8 h-8 rounded-full border border-gray-300 bg-white text-persal-blue shadow-sm hover:bg-gray-100 transition flex items-center justify-center p-0"
                           aria-label="Increase period"
                         >
@@ -551,30 +526,45 @@ export default function DashboardHomePage() {
               <h2 className="text-2xl md:text-3xl text-gray-800 font-normal mb-2">Loan documents</h2>
               <p className="text-gray-600 mb-6">All your loan records are available in one place.</p>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Link href="/dashboard/lending/active-loan" className="rounded-xl border border-gray-200 bg-gray-50 p-4 hover:border-persal-blue hover:bg-teal-50/40 transition">
-                  <div className="text-lg text-gray-800">Active Loan</div>
-                  <div className="mt-1 text-sm text-gray-600">View your current active loan details.</div>
+              <div className="flex flex-col gap-5">
+                {/* Document 1 — Statement */}
+                <Link href="/dashboard/lending/statement" className="flex items-start gap-4 rounded-xl border border-gray-200 bg-gray-50 p-5 hover:border-persal-blue hover:bg-teal-50/40 transition">
+                  <div className="shrink-0 w-10 h-10 rounded-lg bg-persal-blue/10 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-persal-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                      <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-lg font-medium text-gray-800">Statement</div>
+                    <div className="mt-1 text-sm text-gray-600">View your points balance, previous loans, and your current active loan.</div>
+                  </div>
                 </Link>
 
-                <Link href="/dashboard/lending/application-status" className="rounded-xl border border-gray-200 bg-gray-50 p-4 hover:border-persal-blue hover:bg-teal-50/40 transition">
-                  <div className="text-lg text-gray-800">Status</div>
-                  <div className="mt-1 text-sm text-gray-600">Check the latest application status.</div>
+                {/* Document 2 — Repayment Schedule */}
+                <Link href="/dashboard/lending/schedule" className="flex items-start gap-4 rounded-xl border border-gray-200 bg-gray-50 p-5 hover:border-persal-blue hover:bg-teal-50/40 transition">
+                  <div className="shrink-0 w-10 h-10 rounded-lg bg-persal-blue/10 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-persal-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-lg font-medium text-gray-800">Repayment Schedule</div>
+                    <div className="mt-1 text-sm text-gray-600">See your monthly deduction dates and current loan details.</div>
+                  </div>
                 </Link>
 
-                <Link href="/dashboard/lending/schedule" className="rounded-xl border border-gray-200 bg-gray-50 p-4 hover:border-persal-blue hover:bg-teal-50/40 transition">
-                  <div className="text-lg text-gray-800">Schedule</div>
-                  <div className="mt-1 text-sm text-gray-600">See your repayment schedule and due dates.</div>
-                </Link>
-
-                <Link href="/dashboard/lending/statement" className="rounded-xl border border-gray-200 bg-gray-50 p-4 hover:border-persal-blue hover:bg-teal-50/40 transition">
-                  <div className="text-lg text-gray-800">Statement</div>
-                  <div className="mt-1 text-sm text-gray-600">Open your latest loan statements.</div>
-                </Link>
-
-                <Link href="/dashboard/lending/history" className="rounded-xl border border-gray-200 bg-gray-50 p-4 hover:border-persal-blue hover:bg-teal-50/40 transition md:col-span-2">
-                  <div className="text-lg text-gray-800">Loan History</div>
-                  <div className="mt-1 text-sm text-gray-600">Review your previous loans and activity.</div>
+                {/* Document 3 — Loan History */}
+                <Link href="/dashboard/lending/history" className="flex items-start gap-4 rounded-xl border border-gray-200 bg-gray-50 p-5 hover:border-persal-blue hover:bg-teal-50/40 transition">
+                  <div className="shrink-0 w-10 h-10 rounded-lg bg-persal-blue/10 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-persal-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="12 8 12 12 14 14"/><path d="M3.05 11a9 9 0 1 1 .5 4m-.5 5v-5h5"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-lg font-medium text-gray-800">Loan History</div>
+                    <div className="mt-1 text-sm text-gray-600">Review your past loans and download previous loan statements.</div>
+                  </div>
                 </Link>
               </div>
             </div>

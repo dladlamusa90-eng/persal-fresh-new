@@ -36,7 +36,7 @@ function SignupPageContent() {
   async function handleNext(e: React.FormEvent) {
     e.preventDefault();
 
-    if (!firstName.trim() || !surname.trim() || !idNumber.trim() || !phone.trim() || !email.trim() || !password.trim() || !address.trim()) {
+    if (!firstName.trim() || !surname.trim() || !idNumber.trim() || !persalNumber.trim() || !phone.trim() || !email.trim() || !password.trim() || !address.trim()) {
       setError("Please complete all required fields.");
       return;
     }
@@ -66,6 +66,7 @@ function SignupPageContent() {
         body: JSON.stringify({
           fullName: `${firstName.trim()} ${surname.trim()}`,
           idNumber: sanitizedId,
+          persalNumber: persalNumber.trim(),
           phone: normalizedPhone,
           email: email.trim().toLowerCase(),
           password,

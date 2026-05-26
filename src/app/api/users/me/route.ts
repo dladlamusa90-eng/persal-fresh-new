@@ -116,6 +116,8 @@ export async function PATCH(req: NextRequest) {
       branchCode?: string;
       profileImage?: string | null;
       address?: string | null;
+      currentPassword?: string;
+      newPassword?: string;
     };
 
     // Allow persalNumber-only update for Persal submission
@@ -152,6 +154,66 @@ export async function PATCH(req: NextRequest) {
         data: { address: body.address ?? null } as any,
       });
       return NextResponse.json({ message: "Address updated" }, { status: 200 });
+    }
+
+    // Phone-only partial update
+    if (Object.keys(body).length === 1 && "phone" in body) {
+      const phone = normalizePhoneNumber(String(body.phone ?? "").trim());
+      if (!isSouthAfricanPhoneNumber(phone)) {
+        return NextResponse.json({ error: "Please enter a valid South African phone number." }, { status: 400 });
+      }
+      const currentUser = await prisma.user.findUnique({
+        where: identity.id ? { id: identity.id } : { email: String(identity.email ?? "") },
+        select: { id: true },
+      });
+      if (!currentUser) return NextResponse.json({ error: "User not found" }, { status: 404 });
+      const conflict = await prisma.user.findFirst({
+        where: { phone, NOT: { id: currentUser.id } },
+        select: { id: true },
+      });
+      if (conflict) return NextResponse.json({ error: "Cell number already belongs to another account." }, { status: 409 });
+      await prisma.user.update({ where: { id: currentUser.id }, data: { phone } });
+      return NextResponse.json({ message: "Phone updated" }, { status: 200 });
+    }
+
+    // Email-only partial update
+    if (Object.keys(body).length === 1 && "email" in body) {
+      const email = String(body.email ?? "").trim().toLowerCase();
+      if (!isValidEmail(email)) {
+        return NextResponse.json({ error: "Please enter a valid email address." }, { status: 400 });
+      }
+      const currentUser = await prisma.user.findUnique({
+        where: identity.id ? { id: identity.id } : { email: String(identity.email ?? "") },
+        select: { id: true },
+      });
+      if (!currentUser) return NextResponse.json({ error: "User not found" }, { status: 404 });
+      const conflict = await prisma.user.findFirst({
+        where: { email: { equals: email, mode: "insensitive" }, NOT: { id: currentUser.id } },
+        select: { id: true },
+      });
+      if (conflict) return NextResponse.json({ error: "Email already belongs to another account." }, { status: 409 });
+      await prisma.user.update({ where: { id: currentUser.id }, data: { email } });
+      return NextResponse.json({ message: "Email updated" }, { status: 200 });
+    }
+
+    // Password update
+    if ("currentPassword" in body && "newPassword" in body) {
+      const newPassword = String(body.newPassword ?? "");
+      if (newPassword.length < 6) {
+        return NextResponse.json({ error: "New password must be at least 6 characters." }, { status: 400 });
+      }
+      const currentUser = await prisma.user.findUnique({
+        where: identity.id ? { id: identity.id } : { email: String(identity.email ?? "") },
+        select: { id: true, password: true },
+      });
+      if (!currentUser) return NextResponse.json({ error: "User not found" }, { status: 404 });
+      const passwordMatch = await compare(String(body.currentPassword ?? ""), currentUser.password);
+      if (!passwordMatch) {
+        return NextResponse.json({ error: "Current password is incorrect." }, { status: 400 });
+      }
+      const hashedPassword = await hash(newPassword);
+      await prisma.user.update({ where: { id: currentUser.id }, data: { password: hashedPassword } });
+      return NextResponse.json({ message: "Password updated" }, { status: 200 });
     }
 
     const data = {

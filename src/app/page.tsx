@@ -305,7 +305,7 @@ export default function Home() {
                   <div className="relative z-10 p-4 md:p-5 border-b border-white/20">
                     <h3 className="text-orange-300 font-semibold text-lg mb-2">What you can get</h3>
                     <p className="text-white/95 leading-relaxed text-sm md:text-base font-semibold break-words">
-                      New customers can apply for up to <b>R2500</b>, while existing customers can apply for up to <b>R5000</b>, with up to 3 months to repay.
+                      Customers can apply for up to <b>R5000</b>, and can earn points to reduce their interest.
                     </p>
                   </div>
                   <div className="relative z-10 p-4 md:p-5 border-b border-white/20 bg-teal-900/25">
@@ -335,13 +335,7 @@ export default function Home() {
                         <svg className="w-4 h-4 text-teal-200 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <line x1="3" y1="21" x2="21" y2="21" /><line x1="5" y1="21" x2="5" y2="10" /><line x1="9" y1="21" x2="9" y2="10" /><line x1="15" y1="21" x2="15" y2="10" /><line x1="19" y1="21" x2="19" y2="10" /><polygon points="12 3 2 10 22 10 12 3" />
                         </svg>
-                        <span>Bank account details</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <svg className="w-4 h-4 text-teal-200 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z" /><polyline points="14 2 14 8 20 8" /><polyline points="9 15 11 17 15 13" />
-                        </svg>
-                        <span>Most recent proof of income</span>
+                        <span>3-months bank statement</span>
                       </li>
                     </ul>
                   </div>
@@ -361,16 +355,16 @@ export default function Home() {
                       <div className="flex flex-col">
                         <div className="text-base md:text-lg text-gray-700 mb-1 max-[480px]:text-sm">Loan Amount</div>
                         <div className="h-12 md:h-14 flex items-end max-[480px]:h-10">
-                          <div className="text-4xl md:text-5xl font-normal text-persal-blue leading-none max-[480px]:text-3xl" style={{ opacity: hydrated ? 1 : 0 }}>R{desiredLoan}</div>
+                          <div className="text-4xl md:text-5xl font-normal text-persal-blue leading-none max-[480px]:text-3xl">{hydrated ? `R${desiredLoan}` : "---"}</div>
                         </div>
                         <div className="h-px bg-gray-300 mt-2" />
                       </div>
                       <div className="flex flex-col">
                         <div className="text-base md:text-lg text-gray-700 mb-1 max-[480px]:text-sm">Loan Period</div>
                         <div className="h-12 md:h-14 flex items-end max-[480px]:h-10">
-                          <div className="inline-flex items-end gap-1.5 text-4xl md:text-5xl font-normal text-persal-blue leading-none max-[480px]:text-3xl" style={{ opacity: hydrated ? 1 : 0 }}>
-                            <span>{termDays}</span>
-                            <span className="text-xl md:text-2xl text-gray-700 font-normal leading-none max-[480px]:text-lg">days</span>
+                          <div className="inline-flex items-end gap-1.5 text-4xl md:text-5xl font-normal text-persal-blue leading-none max-[480px]:text-3xl">
+                            <span>{hydrated ? termDays : "---"}</span>
+                            <span className="text-xl md:text-2xl text-gray-700 font-normal leading-none max-[480px]:text-lg">{hydrated ? "days" : ""}</span>
                           </div>
                         </div>
                         <div className="h-px bg-gray-300 mt-2" />
@@ -380,7 +374,7 @@ export default function Home() {
                     <div className="mt-16 space-y-6 max-[480px]:mt-10 max-[480px]:space-y-5">
                       <div>
                         <div className="text-lg md:text-xl text-gray-700 mb-2 max-[480px]:text-base">How much do you need?</div>
-                        <div className="flex items-center gap-3 md:gap-4 max-[480px]:gap-2">
+                        <div className={`flex items-center gap-3 md:gap-4 max-[480px]:gap-2 transition-opacity duration-200 ${hydrated ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
                           <button
                             type="button"
                             onClick={() => updateDesiredLoan(Math.max(100, desiredLoan - 100))}
@@ -453,7 +447,7 @@ export default function Home() {
                             </svg>
                             <span>{repayDateDisplay}</span>
                           </button>
-                          <span className="text-sm text-gray-600 max-[480px]:text-xs">Choose repayment date</span>
+                          <span className="text-sm text-gray-600 max-[480px]:text-xs">Last repayment day</span>
                           <input
                             ref={repayDateInputRef}
                             type="date"
@@ -468,7 +462,7 @@ export default function Home() {
                             className="sr-only"
                           />
                         </div>
-                        <div className="flex items-center gap-3 md:gap-4 max-[480px]:gap-2">
+                        <div className={`flex items-center gap-3 md:gap-4 max-[480px]:gap-2 transition-opacity duration-200 ${hydrated ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
                           <button
                             type="button"
                             onClick={() => updateSelectedDays(Math.max(6, termDays - 1))}

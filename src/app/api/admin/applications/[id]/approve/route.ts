@@ -84,7 +84,7 @@ export async function POST(
     void sendSystemNotification(
       user.id,
       "Application Approved",
-      "Your account application has been approved. You can now LogIn and continue with your loan application."
+      "Your account application has been approved. You can now continue with your loan application."
     );
 
     if (user.phone) {

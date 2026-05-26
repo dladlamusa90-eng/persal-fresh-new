@@ -82,7 +82,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [showWarning, setShowWarning] = useState(false);
   const [countdown, setCountdown] = useState(WARN_SECONDS);
   const stayLoggedInRef = React.useRef<() => void>(() => {});
-  const handleLogout = () => signOut({ callbackUrl: "/auth/login" });
+  const handleLogout = () => signOut({ redirect: false }).then(() => { window.location.replace("/auth/login"); });
 
   React.useEffect(() => {
     let idleTimer: ReturnType<typeof setTimeout>;
@@ -100,7 +100,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         setCountdown(remaining);
         if (remaining <= 0) {
           clearInterval(countdownInterval);
-          signOut({ callbackUrl: "/auth/login" });
+          signOut({ redirect: false }).then(() => { window.location.replace("/auth/login"); });
         }
       }, 1000);
     };
@@ -160,7 +160,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     function forceSignOut() {
       if (signedOut) return;
       signedOut = true;
-      signOut({ callbackUrl: "/auth/login" });
+      signOut({ redirect: false }).then(() => { window.location.replace("/auth/login"); });
     }
 
     async function loadProfileAndGuardSession() {
@@ -342,7 +342,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               {children}
             </div>
           ) : (
-            <div className="w-full max-w-5xl mx-auto bg-white rounded-2xl shadow p-4 md:p-8 mt-2 md:mt-8 mb-8 md:mb-12">
+            <div className="w-full max-w-5xl mx-auto mt-2 md:mt-8 mb-8 md:mb-12">
               {children}
             </div>
           )}

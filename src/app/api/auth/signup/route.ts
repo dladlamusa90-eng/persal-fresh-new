@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     const normalizedAccountNumber = normalizeAccountNumber(String(accountNumber ?? "").trim());
     const normalizedBankName = String(bankName ?? "").trim();
 
-    if (!normalizedFullName || !email || !password || !normalizedPhone || !normalizedIdNumber) {
+    if (!normalizedFullName || !email || !password || !normalizedPhone || !normalizedIdNumber || !normalizedPersal) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 

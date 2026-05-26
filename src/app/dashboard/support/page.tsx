@@ -68,12 +68,6 @@ export default function SupportPage() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-teal-100 bg-gradient-to-r from-white to-teal-50/40 p-6 md:p-8">
-          <h2 className="text-[26px] md:text-[30px] leading-[1.1] font-normal mb-3">Let&apos;s learn together!</h2>
-          <p className="text-[17px] md:text-[18px] leading-[1.5] text-gray-700">
-            Learn the four pillars of personal finance, check out the <a href="#" className="text-persal-blue hover:underline">Money Academy</a>.
-          </p>
-        </div>
       </div>
     </section>
   );
