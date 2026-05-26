@@ -425,6 +425,25 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
                   required
                 />
               </div>
+              {!isLoggedIn && (
+                <div>
+                  <label className="block text-gray-700 text-sm mb-2" htmlFor="email">Email Address</label>
+                  <input
+                    className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-persal-blue ${emailTouched && !validateEmail(email) ? 'border-red-500' : emailTouched && validateEmail(email) ? 'border-green-500' : 'border-gray-300'}`}
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={e => { setEmail(e.target.value); setEmailTouched(true); }}
+                    onBlur={() => setEmailTouched(true)}
+                    placeholder="you@example.com"
+                    required
+                  />
+                  {emailTouched && !validateEmail(email) && email.length > 0 && (
+                    <div className="text-red-600 text-xs mt-1">Please enter a valid email address.</div>
+                  )}
+                </div>
+              )}
               <div>
                 <label className="block text-gray-700 text-sm mb-2" htmlFor="phone">SA Cell Number</label>
                 <input
