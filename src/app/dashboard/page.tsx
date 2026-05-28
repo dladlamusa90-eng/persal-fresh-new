@@ -368,19 +368,6 @@ function DashboardHomeInner() {
 
                     <div>
                       <div className="text-lg md:text-xl text-gray-700 mb-2 max-[480px]:text-base">Monthly Repayment Day</div>
-                      <div className="mb-3 flex items-center gap-2 max-[480px]:gap-1.5">
-                        {[1, 2, 3].map(m => (
-                          <button
-                            key={m}
-                            type="button"
-                            onClick={() => updateSelectedMonth(m)}
-                            className={`px-3 py-1.5 rounded-md border text-sm font-medium transition max-[480px]:text-xs max-[480px]:px-2.5 ${selectedMonth === m ? "bg-persal-blue text-white border-persal-blue" : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"}`}
-                          >
-                            {m} {m === 1 ? "Month" : "Months"}
-                          </button>
-                        ))}
-                        {mounted && <span className="text-sm text-gray-500 max-[480px]:text-xs ml-1">{repayDateDisplay}</span>}
-                      </div>
                       <div className={`flex items-center gap-3 md:gap-4 max-[480px]:gap-2 transition-opacity duration-200 ${mounted ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
                         <button
                           type="button"
@@ -439,6 +426,19 @@ function DashboardHomeInner() {
                           ))}
                         </div>
                         <div className="w-8" />
+                      </div>
+                      <div className="mt-3 flex items-center gap-2 max-[480px]:gap-1.5">
+                        {[1, 2, 3].map(m => (
+                          <button
+                            key={m}
+                            type="button"
+                            onClick={() => updateSelectedMonth(m)}
+                            className={`px-3 py-1.5 rounded-md border text-sm font-medium transition max-[480px]:text-xs max-[480px]:px-2.5 ${selectedMonth === m ? "bg-persal-blue text-white border-persal-blue" : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"}`}
+                          >
+                            {m} {m === 1 ? "Month" : "Months"}
+                          </button>
+                        ))}
+                        {mounted && <span className="text-sm text-gray-500 max-[480px]:text-xs ml-1">{repayDateDisplay}</span>}
                       </div>
                       {mounted && (
                         <p className="mt-3 text-sm text-gray-600 max-[480px]:text-xs">
