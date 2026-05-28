@@ -30,6 +30,7 @@ type Draft = {
   bankStatementDocument: UploadedDocument;
   guestIdFront?: UploadedDocument;
   debitMandateAccepted: boolean;
+  referralCode?: string;
   createdAt: number;
 };
 

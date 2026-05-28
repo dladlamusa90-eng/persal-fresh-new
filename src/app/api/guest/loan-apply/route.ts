@@ -48,6 +48,7 @@ export async function POST(req: Request) {
       };
       debitMandateAccepted?: boolean;
       faceVerificationToken?: string;
+      referralCode?: string;
       selfiePhoto?: { name?: string; type?: string; size?: number; dataUrl?: string };
       guestIdFront?: { name?: string; type?: string; size?: number; dataUrl?: string };
       guestIdBack?: { name?: string; type?: string; size?: number; dataUrl?: string };
@@ -69,6 +70,9 @@ export async function POST(req: Request) {
     const bankStatementDocument = body.bankStatementDocument;
     const debitMandateAccepted = Boolean(body.debitMandateAccepted);
     const faceVerificationToken = String(body.faceVerificationToken ?? "").trim();
+    const referralCode = typeof body.referralCode === "string"
+      ? body.referralCode.trim().toUpperCase()
+      : null;
 
     const faceSecret = process.env.FACE_VERIFICATION_SECRET || process.env.NEXTAUTH_SECRET || "";
     if (!faceSecret) {
@@ -375,6 +379,39 @@ export async function POST(req: Request) {
       },
       select: { id: true },
     });
+
+    // ── Referral logic ────────────────────────────────────────────────────
+    void (async () => {
+      try {
+        if (referralCode) {
+          const usageRows = await prisma.$queryRaw<{ usedReferralCode: string | null }[]>`
+            SELECT "usedReferralCode" FROM "User" WHERE id = ${userId} LIMIT 1
+          `;
+          if (!usageRows[0]?.usedReferralCode) {
+            const referrerRows = await prisma.$queryRaw<{ id: string }[]>`
+              SELECT id FROM "User"
+              WHERE "referralCode" = ${referralCode}
+                AND id <> ${userId}
+                AND "isBurned" = false
+                AND "isDeleted" = false
+              LIMIT 1
+            `;
+            if (referrerRows.length > 0) {
+              await prisma.$executeRaw`
+                UPDATE "User" SET "referralDiscountPct" = "referralDiscountPct" + 5
+                WHERE id = ${referrerRows[0].id}
+              `;
+              await prisma.$executeRaw`
+                UPDATE "User" SET "usedReferralCode" = ${referralCode}
+                WHERE id = ${userId}
+              `;
+            }
+          }
+        }
+      } catch {
+        // Non-critical
+      }
+    })();
 
     return NextResponse.json(
       {

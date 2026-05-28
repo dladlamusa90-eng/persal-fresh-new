@@ -373,6 +373,7 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
         bankStatementDocument,
         guestIdFront,
         debitMandateAccepted,
+        ...(referralCode.trim() ? { referralCode: referralCode.trim().toUpperCase() } : {}),
         createdAt: Date.now(),
       };
       sessionStorage.setItem("guestLoanApplyDraft", JSON.stringify(draft));
@@ -681,11 +682,10 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
             </div>
           </div>
 
-          {/* Referral Code (logged-in users only) */}
-          {isLoggedIn && (
-            <div className="p-6">
-              <h2 className="text-base font-semibold text-persal-dark mb-1">Referral Code</h2>
-              <p className="text-gray-500 text-sm mb-3">Have a friend's referral code? Enter it here to reward them.</p>
+          {/* Referral Code */}
+          <div className="p-6">
+            <h2 className="text-base font-semibold text-persal-dark mb-1">Referral Code <span className="text-gray-400 font-normal text-sm">(optional)</span></h2>
+            <p className="text-gray-500 text-sm mb-3">Have a friend's referral code? Enter it here to reward them.</p>
               <div className="flex gap-2 flex-wrap">
                 <input
                   type="text"
@@ -726,7 +726,6 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
                 )}
               </div>
             </div>
-          )}
 
           {/* Debit Mandate */}
           <div className="p-6">
