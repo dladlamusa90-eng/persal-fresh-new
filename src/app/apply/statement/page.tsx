@@ -95,10 +95,7 @@ export default function LoanApplicationStatementPage() {
           <a href="/">
             <img src="/logo.png" alt="Persal" className="h-10 w-auto object-contain" />
           </a>
-          <nav className="flex gap-2 items-center">
-            <Link href="/auth/login" className="text-persal-dark text-sm font-semibold px-3 py-1.5 rounded-lg hover:bg-gray-100 transition">Log In</Link>
-            <Link href="/auth/signup?from=apply" className="bg-persal-blue text-white text-sm font-semibold px-3 py-1.5 rounded-lg shadow hover:bg-persal-dark transition">Sign Up</Link>
-          </nav>
+
         </div>
       </header>
 
