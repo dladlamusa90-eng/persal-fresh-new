@@ -9,12 +9,23 @@ const SIGNUP_DRAFT_KEY = "signup-application-draft-v1";
 
 function SignupPageContent() {
   const searchParams = useSearchParams();
-  const [firstName, setFirstName] = useState("");
-  const [surname, setSurname] = useState("");
-  const [idNumber, setIdNumber] = useState("");
-  const [persalNumber, setPersalNumber] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
+
+  // Pre-fill from loan application draft if user came from the apply form
+  const loanDraft = (() => {
+    if (typeof window === "undefined") return null;
+    try { return JSON.parse(sessionStorage.getItem("guestLoanApplyDraft") ?? "null"); } catch { return null; }
+  })();
+  const draftFullName: string = loanDraft?.fullName ?? "";
+  const draftNameParts = draftFullName.trim().split(/\s+/);
+  const draftFirstName = draftNameParts[0] ?? "";
+  const draftSurname = draftNameParts.slice(1).join(" ") ?? "";
+
+  const [firstName, setFirstName] = useState(draftFirstName);
+  const [surname, setSurname] = useState(draftSurname);
+  const [idNumber, setIdNumber] = useState(loanDraft?.idNumber ?? "");
+  const [persalNumber, setPersalNumber] = useState(loanDraft?.persalNumber ?? "");
+  const [phone, setPhone] = useState(loanDraft?.phone ?? "");
+  const [email, setEmail] = useState(loanDraft?.email ?? "");
   const [password, setPassword] = useState("");
   const [address, setAddress] = useState("");
   const [showRequirementsPopup, setShowRequirementsPopup] = useState(searchParams.get("from") === "login");

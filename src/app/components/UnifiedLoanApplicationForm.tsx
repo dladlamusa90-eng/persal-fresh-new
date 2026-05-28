@@ -352,7 +352,8 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
       return;
     }
 
-    // Guest flow: save draft and go to statement page
+    // Guest flow: save draft and redirect to Sign Up so the user creates an account.
+    // After signup the user lands on /apply/statement to review, then face verification.
     setSubmitting(true);
     try {
       const draft = {
@@ -371,13 +372,12 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
         branchCode: branchCode.trim(),
         bankStatementDocument,
         guestIdFront,
-        // guestIdBack removed
         debitMandateAccepted,
         createdAt: Date.now(),
       };
       sessionStorage.setItem("guestLoanApplyDraft", JSON.stringify(draft));
       if (onAfterSubmit) onAfterSubmit();
-      router.push("/apply/statement");
+      router.push("/auth/signup?from=apply");
     } catch {
       setError("Network error. Please try again.");
     } finally {
@@ -428,7 +428,7 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
         {/* Loan Summary */}
         <div className="bg-persal-dark text-white rounded-2xl p-6 mb-8 shadow-lg">
           <h1 className="text-xl font-bold mb-1 text-center">Your Loan Application</h1>
-          <p className="text-teal-200 text-sm mb-5 text-center">No account needed — just fill in your details below.</p>
+          <p className="text-teal-200 text-sm mb-5 text-center">Fill in your details, then create an account to continue.</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
             <div>
               <div className="text-3xl font-bold text-white">R{formatWithCommas(amount)}</div>
@@ -758,7 +758,7 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
             className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 rounded-xl text-base shadow-lg transition"
             disabled={submitting}
           >
-            {isLoggedIn ? (submitting ? "Submitting..." : "Submit Application") : (submitting ? "Saving..." : "Verify")}
+            {isLoggedIn ? (submitting ? "Submitting..." : "Submit Application") : (submitting ? "Saving..." : "Continue to Sign Up →")}
           </button>
 
           <p className="text-center text-xs text-gray-500 pb-6">
