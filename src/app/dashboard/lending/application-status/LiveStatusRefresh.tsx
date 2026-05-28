@@ -7,9 +7,10 @@ const REFRESH_INTERVAL_MS = 5000;
 
 export default function LiveStatusRefresh() {
   const router = useRouter();
-  const [lastRefreshedAt, setLastRefreshedAt] = useState<Date>(new Date());
+  const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null);
 
   useEffect(() => {
+    setLastRefreshedAt(new Date());
     const timer = window.setInterval(() => {
       router.refresh();
       setLastRefreshedAt(new Date());
@@ -20,7 +21,7 @@ export default function LiveStatusRefresh() {
 
   return (
     <p className="mt-2 text-xs text-gray-500">
-      Live status is on. Auto-refreshing every 5 seconds. Last refresh: {lastRefreshedAt.toLocaleTimeString("en-ZA")}.
+      Live status is on. Auto-refreshing every 5 seconds.{lastRefreshedAt ? ` Last refresh: ${lastRefreshedAt.toLocaleTimeString("en-ZA")}.` : ""}
     </p>
   );
 }
