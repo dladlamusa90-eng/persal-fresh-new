@@ -1,6 +1,6 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { getSession, signIn } from "next-auth/react";
 import { ChevronLeft, Eye, EyeOff } from "lucide-react";
 import AppFooter from "@/app/components/AppFooter";
@@ -8,7 +8,19 @@ import AppFooter from "@/app/components/AppFooter";
 type LoginTab = "id" | "email";
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-gray-500">Loading...</div>}>
+      <LoginPageContent />
+    </Suspense>
+  );
+}
+
+function LoginPageContent() {
   const [activeTab, setActiveTab] = useState<LoginTab>("id");
+  const searchParams = useSearchParams();
+  const rawCallback = searchParams.get("callbackUrl") ?? "";
+  // Only allow relative paths to prevent open-redirect
+  const callbackUrl = rawCallback.startsWith("/") ? rawCallback : "/dashboard";
   const [idNumber, setIdNumber] = useState("");
   const [otpInfo, setOtpInfo] = useState("");
   const [showOtpStep, setShowOtpStep] = useState(false);
@@ -107,7 +119,7 @@ export default function LoginPage() {
           return;
         }
 
-        router.push("/dashboard");
+        router.push(callbackUrl);
       })
       .catch(() => {
         setOtpInfo("OTP verification failed. Please try again.");
@@ -145,7 +157,7 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/dashboard");
+      router.push(callbackUrl);
     } finally {
       setIsSubmitting(false);
     }

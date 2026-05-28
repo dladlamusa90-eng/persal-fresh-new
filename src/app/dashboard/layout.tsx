@@ -7,7 +7,7 @@ import ChatWidget from "@/app/components/ChatWidget";
 import LoanStatusBadge from "@/app/components/LoanStatusBadge";
 import AppFooter from "@/app/components/AppFooter";
 import NotificationsBell from "@/app/components/NotificationsBell";
-import { signOut, useSession } from "next-auth/react";
+import { signOut } from "next-auth/react";
 import SessionTimeoutDialog from "@/app/components/SessionTimeoutDialog";
 
 function getProfileInitial(fullName: string) {
@@ -59,13 +59,7 @@ const dashboardMenu: DashboardMenuItem[] = [
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { status } = useSession();
-  const loggedIn = status === "authenticated";
-  React.useEffect(() => {
-    if (status === "unauthenticated") {
-      window.location.replace("/auth/login");
-    }
-  }, [status]);
+  const [loggedIn, setLoggedIn] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileName, setProfileName] = useState("Persal User");
   const [profileImage, setProfileImage] = useState<string | null>(null);
@@ -188,6 +182,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         setProfileName(body.user?.fullName ?? "Persal User");
         setProfileImage(body.user?.profileImage ?? null);
+        setLoggedIn(true);
       } catch {
         return;
       }
