@@ -71,7 +71,7 @@ export default function SupportPage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
         {[
           { icon: ClipboardList, label: "Loan Status", href: "/dashboard/lending/application-status", color: "text-persal-blue" },
-          { icon: FileText, label: "Loan Documents", href: "/dashboard", color: "text-teal-600" },
+          { icon: FileText, label: "Loan Documents", href: "/dashboard?tab=documents", color: "text-teal-600" },
           { icon: CreditCard, label: "Apply for Loan", href: "/dashboard/lending/apply", color: "text-orange-500" },
           { icon: Calendar, label: "My Details", href: "/dashboard/profile", color: "text-purple-500" },
         ].map(({ icon: Icon, label, href, color }) => (

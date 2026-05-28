@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { Lightbulb } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { calculateLoanCharges } from "@/lib/loanPolicy";
 
 const REPAY_DAYS = [1, 15, 25, 30, 31] as const;
@@ -31,7 +31,7 @@ function getPersalStatus(user) {
   return "unknown";
 }
 
-export default function DashboardHomePage() {
+function DashboardHomeInner() {
   const router = useRouter();
   const maxLoan = 5000;
   const LOAN_CALC_AMOUNT_KEY = "loanCalculatorAmount";
@@ -47,7 +47,10 @@ export default function DashboardHomePage() {
   const [overrideError, setOverrideError] = useState("");
   const [error, setError] = useState("");
   const [showFeeBreakdown, setShowFeeBreakdown] = useState(false);
-  const [activeMyLoanSection, setActiveMyLoanSection] = useState<"summary" | "documents">("summary");
+  const searchParams = useSearchParams();
+  const [activeMyLoanSection, setActiveMyLoanSection] = useState<"summary" | "documents">(
+    (searchParams.get("tab") as "summary" | "documents" | null) === "documents" ? "documents" : "summary"
+  );
   const [firstName, setFirstName] = useState("");
   const [user, setUser] = useState(null);
   const [persalInput, setPersalInput] = useState("");
@@ -629,5 +632,13 @@ export default function DashboardHomePage() {
         </div>
       </div>
     </section>
+  );
+}
+
+export default function DashboardHomePage() {
+  return (
+    <Suspense>
+      <DashboardHomeInner />
+    </Suspense>
   );
 }
