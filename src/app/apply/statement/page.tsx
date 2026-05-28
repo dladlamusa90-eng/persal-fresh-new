@@ -89,16 +89,6 @@ export default function LoanApplicationStatementPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="w-full bg-white border-b border-gray-100 sticky top-0 z-10">
-        <div className="max-w-2xl mx-auto flex items-center justify-between px-4 py-3">
-          <a href="/">
-            <img src="/logo.png" alt="Persal" className="h-10 w-auto object-contain" />
-          </a>
-
-        </div>
-      </header>
-
       <main className="max-w-2xl mx-auto px-4 py-8 space-y-4">
 
         {/* Title */}
