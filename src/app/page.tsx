@@ -395,7 +395,7 @@ export default function Home() {
                       </div>
                     </div>
 
-                    <div className="mt-16 space-y-6 max-[480px]:mt-10 max-[480px]:space-y-5">
+                    <div className="mt-6 space-y-6 max-[480px]:mt-4 max-[480px]:space-y-5">
                       <div>
                         <div className="text-lg md:text-xl text-gray-700 mb-2 max-[480px]:text-base">How much do you need?</div>
                         <div className={`flex items-center gap-3 md:gap-4 max-[480px]:gap-2 transition-opacity duration-200 ${hydrated ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
@@ -509,7 +509,7 @@ export default function Home() {
                           </div>
                           <div className="w-8" />
                         </div>
-                        <div className="mt-3 flex items-center gap-2 max-[480px]:gap-1.5">
+                        <div className="mt-6 flex items-center gap-2 max-[480px]:gap-1.5">
                           {[1, 2, 3].map(m => (
                             <button
                               key={m}

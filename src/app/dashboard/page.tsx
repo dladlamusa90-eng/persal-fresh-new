@@ -315,7 +315,7 @@ function DashboardHomeInner() {
                     </div>
                   </div>
 
-                  <div className="mt-16 space-y-6">
+                  <div className="mt-6 space-y-6">
                     <div>
                       <div className="text-lg md:text-xl text-gray-700 mb-2">How much do you need?</div>
                       <div className={`flex items-center gap-3 md:gap-4 transition-opacity duration-200 ${mounted ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
@@ -427,7 +427,7 @@ function DashboardHomeInner() {
                         </div>
                         <div className="w-8" />
                       </div>
-                      <div className="mt-3 flex items-center gap-2 max-[480px]:gap-1.5">
+                      <div className="mt-6 flex items-center gap-2 max-[480px]:gap-1.5">
                         {[1, 2, 3].map(m => (
                           <button
                             key={m}
