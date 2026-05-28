@@ -305,7 +305,7 @@ function DashboardHomeInner() {
                       <div className="h-px bg-gray-300 mt-2" />
                     </div>
                     <div className="flex flex-col">
-                      <div className="text-base md:text-lg text-gray-700 mb-1 max-[480px]:text-sm">Repay Day</div>
+                      <div className="text-base md:text-lg text-gray-700 mb-1 max-[480px]:text-sm">Debit Day</div>
                       <div className="h-12 md:h-14 flex items-end max-[480px]:h-10">
                         <div className="inline-flex items-end gap-1.5 text-4xl md:text-5xl font-normal text-persal-blue leading-none max-[480px]:text-3xl">
                           <span>{mounted ? ordinalLabel(REPAY_DAYS[selectedRepayIdx]) : "---"}</span>
@@ -367,7 +367,7 @@ function DashboardHomeInner() {
                     </div>
 
                     <div>
-                      <div className="text-lg md:text-xl text-gray-700 mb-2 max-[480px]:text-base">Choose your Repay Day</div>
+                      <div className="text-lg md:text-xl text-gray-700 mb-2 max-[480px]:text-base">Monthly Repayment Day</div>
                       <div className="mb-3 flex items-center gap-2 max-[480px]:gap-1.5">
                         {[1, 2, 3].map(m => (
                           <button
