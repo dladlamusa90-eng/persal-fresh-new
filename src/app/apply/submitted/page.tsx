@@ -58,26 +58,15 @@ function SubmittedContent() {
               )}
 
               <div className="bg-teal-50 border border-teal-200 rounded-xl px-4 py-4">
-                <p className="text-teal-800 font-semibold text-sm mb-2">Want more from Persal?</p>
-                <ul className="text-teal-700 text-sm space-y-1">
-                  <li className="flex items-center gap-2">
-                    <svg className="w-3.5 h-3.5 text-teal-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5" /></svg>
-                    Earn points every time you repay on time
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <svg className="w-3.5 h-3.5 text-teal-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5" /></svg>
-                    Join a stokvel savings group
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <svg className="w-3.5 h-3.5 text-teal-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5" /></svg>
-                    Higher loan limits as a returning customer
-                  </li>
-                </ul>
+                <p className="text-teal-800 font-semibold text-sm mb-2">Track Your Application</p>
+                <p className="text-teal-700 text-sm mb-3">
+                  Log in to check your application status, earn points on timely repayments, and access more features.
+                </p>
                 <Link
-                  href="/auth/signup?from=apply-submitted"
-                  className="mt-3 inline-block w-full text-center bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm px-4 py-2.5 rounded-lg transition"
+                  href="/auth/login"
+                  className="mt-1 inline-block w-full text-center bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm px-4 py-2.5 rounded-lg transition"
                 >
-                  Create Your Account
+                  Log In to Your Account
                 </Link>
               </div>
             </div>
