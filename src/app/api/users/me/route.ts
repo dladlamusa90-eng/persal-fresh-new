@@ -79,6 +79,11 @@ export async function GET(req: NextRequest) {
         isBurned: true,
         isDeleted: true,
         applicationStatus: true,
+        employmentStatus: true,
+        employmentGrossIncome: true,
+        employmentNetIncome: true,
+        incomeFrequency: true,
+        salaryDay: true,
       } as any,
     });
 
@@ -154,6 +159,64 @@ export async function PATCH(req: NextRequest) {
         data: { address: body.address ?? null } as any,
       });
       return NextResponse.json({ message: "Address updated" }, { status: 200 });
+    }
+
+    // Employment-only partial update
+    const employmentKeys = ["employmentStatus", "employmentGrossIncome", "employmentNetIncome", "incomeFrequency", "salaryDay"];
+    if (employmentKeys.some(k => k in body) && Object.keys(body).every(k => employmentKeys.includes(k))) {
+      const currentUser = await prisma.user.findUnique({
+        where: identity.id ? { id: identity.id } : { email: String(identity.email ?? "") },
+        select: { id: true },
+      });
+      if (!currentUser) return NextResponse.json({ error: "User not found" }, { status: 404 });
+      await (prisma.user.update as any)({
+        where: { id: currentUser.id },
+        data: {
+          employmentStatus: (body as any).employmentStatus ?? undefined,
+          employmentGrossIncome: (body as any).employmentGrossIncome ?? undefined,
+          employmentNetIncome: (body as any).employmentNetIncome ?? undefined,
+          incomeFrequency: (body as any).incomeFrequency ?? undefined,
+          salaryDay: (body as any).salaryDay ?? undefined,
+        },
+      });
+      return NextResponse.json({ message: "Employment details updated" }, { status: 200 });
+    }
+
+    // Banking-only partial update
+    const bankingKeys = ["bankName", "accountNumber", "accountType", "branchCode"];
+    if (bankingKeys.some(k => k in body) && Object.keys(body).every(k => bankingKeys.includes(k))) {
+      const bankingUser = await prisma.user.findUnique({
+        where: identity.id ? { id: identity.id } : { email: String(identity.email ?? "") },
+        select: { id: true },
+      });
+      if (!bankingUser) return NextResponse.json({ error: "User not found" }, { status: 404 });
+
+      const bName = String(body.bankName ?? "").trim();
+      const bAccount = normalizeAccountNumber(String(body.accountNumber ?? "").trim());
+      const bType = String(body.accountType ?? "").trim().toUpperCase();
+      const bBranch = String(body.branchCode ?? "").trim();
+
+      if (!isSouthAfricanBankName(bName)) {
+        return NextResponse.json({ error: "Please select a valid South African bank." }, { status: 400 });
+      }
+      if (!isValidBankAccountNumber(bName, bAccount)) {
+        return NextResponse.json(
+          { error: `Account Number for ${bName} must be ${getBankAccountConstraintLabel(bName)}.` },
+          { status: 400 },
+        );
+      }
+      if (!isValidBankAccountType(bType)) {
+        return NextResponse.json({ error: "Account type must be Cheque, Savings, or Transmission." }, { status: 400 });
+      }
+      if (!isValidBranchCode(bBranch)) {
+        return NextResponse.json({ error: "Branch code must be exactly 6 digits." }, { status: 400 });
+      }
+
+      await prisma.user.update({
+        where: { id: bankingUser.id },
+        data: { bankName: bName, accountNumber: bAccount, accountType: bType as any, branchCode: bBranch, bankVerified: false },
+      });
+      return NextResponse.json({ message: "Banking details updated" }, { status: 200 });
     }
 
     // Phone-only partial update

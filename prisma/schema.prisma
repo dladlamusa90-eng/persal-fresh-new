@@ -71,6 +71,11 @@ model User {
   faceIdLastLivePhoto String?
   faceIdLastMatchPassed Boolean @default(false)
   faceIdLastMatchedAt DateTime?
+  employmentStatus      String?
+  employmentGrossIncome String?
+  employmentNetIncome   String?
+  incomeFrequency       String?
+  salaryDay             String?
   applicationStatus   ApplicationStatus @default(PENDING)
   applicationApprovedAt DateTime?
   applicationRejectedAt DateTime?

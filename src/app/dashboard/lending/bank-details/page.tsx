@@ -138,11 +138,18 @@ function BankDetailsContent() {
     if (saving) return;
     setSaving(true);
     try {
-      await fetch("/api/loan-application-draft", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ data: { bankName, accountNumber, accountType, branchCode } }),
-      });
+      await Promise.all([
+        fetch("/api/loan-application-draft", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ data: { bankName, accountNumber, accountType, branchCode } }),
+        }),
+        fetch("/api/users/me", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ bankName, accountNumber, accountType, branchCode }),
+        }),
+      ]);
     } catch {
       return;
     } finally {

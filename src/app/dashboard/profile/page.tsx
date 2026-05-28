@@ -1,6 +1,8 @@
 ﻿"use client";
 import { useEffect, useState } from "react";
 import { DashboardProfile, defaultDashboardProfile } from "@/app/dashboard/profile/profileData";
+import FaceIdGate from "@/app/components/FaceIdGate";
+import { SOUTH_AFRICAN_BANK_NAMES } from "@/lib/validators/auth";
 
 function displayValue(value: string | number | null | undefined) {
   if (value == null || value === "") return "Not captured yet";
@@ -19,12 +21,15 @@ function formatAccountType(value: string | null | undefined) {
   if (value === "TRANSMISSION") return "Transmission account";
   return value;
 }
-function stringValue(value: string | number | null | undefined) {
-  if (value == null || value === "") return "";
-  return String(value);
-}
-
 type EditingField = "persalNumber" | "phone" | "email" | "address" | "password" | null;
+
+type BankingMode = "view" | "verifying" | "editing";
+
+const ACCOUNT_TYPE_OPTIONS = [
+  { value: "CHEQUE", label: "Cheque account" },
+  { value: "SAVINGS", label: "Savings account" },
+  { value: "TRANSMISSION", label: "Transmission account" },
+] as const;
 
 const POINTS_TIERS = [
   { label: "Bronze", min: 0,    max: 99,   benefit: "No discount yet — repay on time to earn points.",   color: "bg-amber-700" },
@@ -126,7 +131,6 @@ export default function ProfilePage() {
   const [points, setPoints] = useState(0);
   const [accountType, setAccountType] = useState("");
   const [branchCode, setBranchCode] = useState("");
-  const [applicationData, setApplicationData] = useState<Record<string, string | number | null>>({});
 
   // Inline edit state
   const [editingField, setEditingField] = useState<EditingField>(null);
@@ -137,14 +141,30 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [fieldMessage, setFieldMessage] = useState<{ field: EditingField | "saved"; text: string; ok: boolean } | null>(null);
 
+  // Employment edit state
+  const [employmentStatus, setEmploymentStatus] = useState("Employed");
+  const [employmentGrossIncome, setEmploymentGrossIncome] = useState("");
+  const [employmentNetIncome, setEmploymentNetIncome] = useState("");
+  const [incomeFrequency, setIncomeFrequency] = useState("Monthly");
+  const [salaryDay, setSalaryDay] = useState("");
+  const [editingEmployment, setEditingEmployment] = useState(false);
+  const [employmentSaving, setEmploymentSaving] = useState(false);
+  const [employmentMessage, setEmploymentMessage] = useState<{ text: string; ok: boolean } | null>(null);
+
+  // Banking edit state
+  const [bankingMode, setBankingMode] = useState<BankingMode>("view");
+  const [editBankName, setEditBankName] = useState("Capitec");
+  const [editAccountNumber, setEditAccountNumber] = useState("");
+  const [editAccountType, setEditAccountType] = useState<"CHEQUE" | "SAVINGS" | "TRANSMISSION">("SAVINGS");
+  const [editBranchCode, setEditBranchCode] = useState("");
+  const [bankingSaving, setBankingSaving] = useState(false);
+  const [bankingMessage, setBankingMessage] = useState<{ text: string; ok: boolean } | null>(null);
+
   useEffect(() => {
     let mounted = true;
     async function loadProfile() {
       try {
-        const [response, draftResponse] = await Promise.all([
-          fetch("/api/users/me", { cache: "no-store" }),
-          fetch("/api/loan-application-draft", { cache: "no-store" }),
-        ]);
+        const response = await fetch("/api/users/me", { cache: "no-store" });
         if (!response.ok) return;
         const body = (await response.json()) as {
           user?: {
@@ -153,27 +173,37 @@ export default function ProfilePage() {
             bankName?: string | null; accountNumber?: string | null;
             accountType?: string | null; branchCode?: string | null; address?: string | null;
             points?: number;
+            employmentStatus?: string | null; employmentGrossIncome?: string | null;
+            employmentNetIncome?: string | null; incomeFrequency?: string | null; salaryDay?: string | null;
           };
         };
-        const draftBody = draftResponse.ok
-          ? ((await draftResponse.json()) as { draft?: { data?: Record<string, string | number | null> } })
-          : undefined;
         if (!mounted || !body.user) return;
+        const u = body.user;
         setProfile({
-          fullName: body.user.fullName ?? "",
-          email: body.user.email ?? "",
-          phone: body.user.phone ?? "",
-          idNumber: body.user.idNumber ?? "",
-          persalNumber: body.user.persalNumber ?? "",
-          bankName: body.user.bankName ?? "",
-          accountNumber: body.user.accountNumber ?? "",
+          fullName: u.fullName ?? "",
+          email: u.email ?? "",
+          phone: u.phone ?? "",
+          idNumber: u.idNumber ?? "",
+          persalNumber: u.persalNumber ?? "",
+          bankName: u.bankName ?? "",
+          accountNumber: u.accountNumber ?? "",
           profileImage: null,
-          address: body.user.address ?? "",
+          address: u.address ?? "",
         });
-        setAccountType(body.user.accountType ?? "");
-        setBranchCode(body.user.branchCode ?? "");
-        setPoints(typeof body.user.points === "number" ? body.user.points : 0);
-        setApplicationData(draftBody?.draft?.data ?? {});
+        setAccountType(u.accountType ?? "");
+        setBranchCode(u.branchCode ?? "");
+        setPoints(typeof u.points === "number" ? u.points : 0);
+        // Employment
+        setEmploymentStatus(u.employmentStatus ?? "Employed");
+        setEmploymentGrossIncome(u.employmentGrossIncome ?? "");
+        setEmploymentNetIncome(u.employmentNetIncome ?? "");
+        setIncomeFrequency(u.incomeFrequency ?? "Monthly");
+        setSalaryDay(u.salaryDay ?? "");
+        // Banking edit defaults
+        setEditBankName(u.bankName ?? "Capitec");
+        setEditAccountNumber(u.accountNumber ?? "");
+        setEditAccountType((u.accountType as "CHEQUE" | "SAVINGS" | "TRANSMISSION") ?? "SAVINGS");
+        setEditBranchCode(u.branchCode ?? "");
       } catch {
         // ignore
       } finally {
@@ -242,6 +272,51 @@ export default function ProfilePage() {
       setFieldMessage({ field, text: "Update failed. Please try again.", ok: false });
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function saveEmployment() {
+    if (employmentSaving) return;
+    setEmploymentSaving(true);
+    setEmploymentMessage(null);
+    try {
+      const res = await fetch("/api/users/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ employmentStatus, employmentGrossIncome, employmentNetIncome, incomeFrequency, salaryDay }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) { setEmploymentMessage({ text: data.error ?? "Update failed.", ok: false }); return; }
+      setEmploymentMessage({ text: "Employment details saved.", ok: true });
+      setEditingEmployment(false);
+    } catch {
+      setEmploymentMessage({ text: "Update failed. Please try again.", ok: false });
+    } finally {
+      setEmploymentSaving(false);
+    }
+  }
+
+  async function saveBanking() {
+    if (bankingSaving) return;
+    setBankingSaving(true);
+    setBankingMessage(null);
+    try {
+      const res = await fetch("/api/users/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bankName: editBankName, accountNumber: editAccountNumber, accountType: editAccountType, branchCode: editBranchCode }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) { setBankingMessage({ text: data.error ?? "Update failed.", ok: false }); return; }
+      setProfile(p => ({ ...p, bankName: editBankName, accountNumber: editAccountNumber }));
+      setAccountType(editAccountType);
+      setBranchCode(editBranchCode);
+      setBankingMessage({ text: "Banking details saved.", ok: true });
+      setBankingMode("view");
+    } catch {
+      setBankingMessage({ text: "Update failed. Please try again.", ok: false });
+    } finally {
+      setBankingSaving(false);
     }
   }
 
@@ -415,49 +490,199 @@ export default function ProfilePage() {
 
           {activeSection === "employment" && (
             <div className="space-y-7">
-              <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
-                <div className="text-gray-700">Employment status</div>
-                <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{displayValue(applicationData.employmentStatus)}</div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
-                <div className="text-gray-700">Gross monthly income (before tax &amp; deductions)</div>
-                <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{displayCurrency(applicationData.employmentGrossIncome)}</div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
-                <div className="text-gray-700">Net monthly income (after tax &amp; deductions)</div>
-                <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{displayCurrency(applicationData.employmentNetIncome)}</div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
-                <div className="text-gray-700">Frequency of income</div>
-                <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{displayValue(applicationData.incomeFrequency)}</div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
-                <div className="text-gray-700">Salary day</div>
-                <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{displayValue(applicationData.salaryDay)}</div>
-              </div>
-              <div className="md:pl-[236px]"><a href="/dashboard/lending/employment-details" className="text-persal-blue hover:underline">Change your employment details</a></div>
+              {!editingEmployment ? (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
+                    <div className="text-gray-700">Employment status</div>
+                    <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{displayValue(employmentStatus)}</div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
+                    <div className="text-gray-700">Gross monthly income (before tax &amp; deductions)</div>
+                    <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{displayCurrency(employmentGrossIncome)}</div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
+                    <div className="text-gray-700">Net monthly income (after tax &amp; deductions)</div>
+                    <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{displayCurrency(employmentNetIncome)}</div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
+                    <div className="text-gray-700">Frequency of income</div>
+                    <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{displayValue(incomeFrequency)}</div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
+                    <div className="text-gray-700">Salary day</div>
+                    <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{displayValue(salaryDay)}</div>
+                  </div>
+                  <div>
+                    <button type="button" onClick={() => { setEditingEmployment(true); setEmploymentMessage(null); }} className="text-persal-blue hover:underline text-sm">
+                      Edit employment details
+                    </button>
+                    {employmentMessage && (
+                      <p className={`mt-1 text-sm font-medium ${employmentMessage.ok ? "text-green-700" : "text-red-600"}`}>{employmentMessage.text}</p>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="rounded-2xl border border-gray-200 bg-white p-6 space-y-5">
+                  <h2 className="text-lg font-semibold text-gray-800">Edit Employment Details</h2>
+                  <div className="grid grid-cols-1 gap-5 md:grid-cols-[240px_1fr] md:items-center">
+                    <label className="text-sm font-medium text-gray-700">Employment status</label>
+                    <select
+                      value={employmentStatus}
+                      onChange={e => setEmploymentStatus(e.target.value)}
+                      className="rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-persal-blue"
+                    >
+                      {["Employed","Self-employed","Retired/Pensioner","Grant recipient","Unemployed"].map(opt => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+
+                    <label className="text-sm font-medium text-gray-700">Gross monthly income (before tax &amp; deductions)</label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm">R</span>
+                      <input type="text" inputMode="numeric" value={employmentGrossIncome}
+                        onChange={e => setEmploymentGrossIncome(e.target.value.replace(/\D/g, ""))}
+                        className="w-full rounded-xl border border-gray-300 bg-white pl-8 pr-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-persal-blue" />
+                    </div>
+
+                    <label className="text-sm font-medium text-gray-700">Net monthly income (after tax &amp; deductions)</label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm">R</span>
+                      <input type="text" inputMode="numeric" value={employmentNetIncome}
+                        onChange={e => setEmploymentNetIncome(e.target.value.replace(/\D/g, ""))}
+                        className="w-full rounded-xl border border-gray-300 bg-white pl-8 pr-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-persal-blue" />
+                    </div>
+
+                    <label className="text-sm font-medium text-gray-700">Frequency of income</label>
+                    <select value={incomeFrequency} onChange={e => setIncomeFrequency(e.target.value)}
+                      className="rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-persal-blue">
+                      {["Monthly","Weekly","Fortnightly"].map(opt => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+
+                    <label className="text-sm font-medium text-gray-700">Salary day</label>
+                    <input type="text" inputMode="numeric" value={salaryDay}
+                      onChange={e => setSalaryDay(e.target.value.replace(/\D/g, "").slice(0, 2))}
+                      placeholder="e.g. 25"
+                      className="rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-persal-blue" />
+                  </div>
+                  <div className="flex gap-3 pt-2">
+                    <button type="button" onClick={saveEmployment} disabled={employmentSaving}
+                      className="rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 py-2.5 text-sm transition disabled:opacity-60">
+                      {employmentSaving ? "Saving..." : "Save"}
+                    </button>
+                    <button type="button" onClick={() => { setEditingEmployment(false); setEmploymentMessage(null); }} disabled={employmentSaving}
+                      className="rounded-xl border border-gray-300 bg-white text-gray-600 font-semibold px-6 py-2.5 text-sm transition hover:bg-gray-50">
+                      Cancel
+                    </button>
+                  </div>
+                  {employmentMessage && (
+                    <p className={`text-sm font-medium ${employmentMessage.ok ? "text-green-700" : "text-red-600"}`}>{employmentMessage.text}</p>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
           {activeSection === "banking" && (
             <div className="space-y-7">
-              <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
-                <div className="text-gray-700">Bank name</div>
-                <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{profile.bankName || displayValue(applicationData.bankName)}</div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
-                <div className="text-gray-700">Account number</div>
-                <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{profile.accountNumber || displayValue(applicationData.accountNumber)}</div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
-                <div className="text-gray-700">Account type</div>
-                <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{formatAccountType(accountType || stringValue(applicationData.accountType))}</div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
-                <div className="text-gray-700">Branch code</div>
-                <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{branchCode || displayValue(applicationData.branchCode)}</div>
-              </div>
-              <div className="md:pl-[236px]"><a href="/dashboard/lending/bank-details" className="text-persal-blue hover:underline">Change your banking details</a></div>
+              {bankingMode === "view" && (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
+                    <div className="text-gray-700">Bank name</div>
+                    <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{displayValue(profile.bankName)}</div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
+                    <div className="text-gray-700">Account number</div>
+                    <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{displayValue(profile.accountNumber)}</div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
+                    <div className="text-gray-700">Account type</div>
+                    <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{formatAccountType(accountType)}</div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-center">
+                    <div className="text-gray-700">Branch code</div>
+                    <div className="rounded-xl bg-gray-100 border border-gray-200 px-5 py-3 text-gray-700">{displayValue(branchCode)}</div>
+                  </div>
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => { setBankingMode("verifying"); setBankingMessage(null); }}
+                      className="text-persal-blue hover:underline text-sm"
+                    >
+                      Change your banking details
+                    </button>
+                    {bankingMessage && (
+                      <p className={`mt-1 text-sm font-medium ${bankingMessage.ok ? "text-green-700" : "text-red-600"}`}>{bankingMessage.text}</p>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {bankingMode === "verifying" && (
+                <div className="space-y-5">
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
+                    <p className="text-sm font-semibold text-amber-800">Face verification required</p>
+                    <p className="mt-1 text-xs text-amber-700">
+                      To protect your account, you must verify your identity before changing your banking details.
+                    </p>
+                  </div>
+                  <FaceIdGate onVerified={() => setBankingMode("editing")} />
+                  <button
+                    type="button"
+                    onClick={() => setBankingMode("view")}
+                    className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+
+              {bankingMode === "editing" && (
+                <div className="rounded-2xl border border-gray-200 bg-white p-6 space-y-5">
+                  <h2 className="text-lg font-semibold text-gray-800">Edit Banking Details</h2>
+                  <div className="grid grid-cols-1 gap-5 md:grid-cols-[240px_1fr] md:items-center">
+                    <label className="text-sm font-medium text-gray-700">Bank Name</label>
+                    <select value={editBankName} onChange={e => setEditBankName(e.target.value)}
+                      className="rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-persal-blue">
+                      {SOUTH_AFRICAN_BANK_NAMES.map(bank => (
+                        <option key={bank} value={bank}>{bank}</option>
+                      ))}
+                    </select>
+
+                    <label className="text-sm font-medium text-gray-700">Account Number</label>
+                    <input type="text" inputMode="numeric" value={editAccountNumber}
+                      onChange={e => setEditAccountNumber(e.target.value.replace(/\D/g, ""))}
+                      className="rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-persal-blue" />
+
+                    <label className="text-sm font-medium text-gray-700">Account Type</label>
+                    <select value={editAccountType} onChange={e => setEditAccountType(e.target.value as "CHEQUE" | "SAVINGS" | "TRANSMISSION")}
+                      className="rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-persal-blue">
+                      {ACCOUNT_TYPE_OPTIONS.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+
+                    <label className="text-sm font-medium text-gray-700">Branch Code</label>
+                    <input type="text" inputMode="numeric" value={editBranchCode}
+                      onChange={e => setEditBranchCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                      className="rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-persal-blue" />
+                  </div>
+                  <div className="flex gap-3 pt-2">
+                    <button type="button" onClick={saveBanking} disabled={bankingSaving}
+                      className="rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 py-2.5 text-sm transition disabled:opacity-60">
+                      {bankingSaving ? "Saving..." : "Save"}
+                    </button>
+                    <button type="button" onClick={() => { setBankingMode("view"); setBankingMessage(null); }} disabled={bankingSaving}
+                      className="rounded-xl border border-gray-300 bg-white text-gray-600 font-semibold px-6 py-2.5 text-sm transition hover:bg-gray-50">
+                      Cancel
+                    </button>
+                  </div>
+                  {bankingMessage && (
+                    <p className={`text-sm font-medium ${bankingMessage.ok ? "text-green-700" : "text-red-600"}`}>{bankingMessage.text}</p>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>

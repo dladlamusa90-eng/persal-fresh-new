@@ -1,0 +1,6 @@
+-- AddColumn
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "employmentStatus" TEXT;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "employmentGrossIncome" TEXT;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "employmentNetIncome" TEXT;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "incomeFrequency" TEXT;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "salaryDay" TEXT;

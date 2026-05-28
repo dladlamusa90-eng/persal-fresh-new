@@ -77,19 +77,32 @@ function EmploymentDetailsContent() {
     if (saving) return;
     setSaving(true);
     try {
-      await fetch("/api/loan-application-draft", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          data: {
+      await Promise.all([
+        fetch("/api/loan-application-draft", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            data: {
+              employmentStatus,
+              employmentGrossIncome: grossIncome,
+              employmentNetIncome: netIncome,
+              incomeFrequency,
+              salaryDay,
+            },
+          }),
+        }),
+        fetch("/api/users/me", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
             employmentStatus,
             employmentGrossIncome: grossIncome,
             employmentNetIncome: netIncome,
             incomeFrequency,
             salaryDay,
-          },
+          }),
         }),
-      });
+      ]);
     } catch {
       return;
     } finally {
