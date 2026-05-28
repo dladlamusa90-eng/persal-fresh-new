@@ -96,7 +96,13 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    return NextResponse.json({ user }, { status: 200 });
+    // Fetch referral fields via raw query (Prisma client may be ahead/behind schema)
+    const referralRows = await prisma.$queryRaw<
+      { referralCode: string | null; referralDiscountPct: number }[]
+    >`SELECT "referralCode", "referralDiscountPct" FROM "User" WHERE id = ${(user as any).id}`;
+    const referralData = referralRows[0] ?? { referralCode: null, referralDiscountPct: 0 };
+
+    return NextResponse.json({ user: { ...user, ...referralData } }, { status: 200 });
   } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }

@@ -14,6 +14,20 @@ import {
 } from "@/lib/validators/auth";
 import { buildFaceIdExternalUserId, submitToSmileId } from "@/lib/faceId";
 
+const REFERRAL_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+async function generateUniqueReferralCode(): Promise<string> {
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const code = Array.from({ length: 8 }, () =>
+      REFERRAL_CHARS[Math.floor(Math.random() * REFERRAL_CHARS.length)]
+    ).join("");
+    const existing = await prisma.$queryRaw<{ id: string }[]>`SELECT id FROM "User" WHERE "referralCode" = ${code} LIMIT 1`;
+    if (!existing.length) return code;
+  }
+  // Extremely unlikely to hit — fall back to UUID-derived code
+  return Date.now().toString(36).toUpperCase().slice(-8).padStart(8, "A");
+}
+
 function getRequestIp(req: NextRequest) {
   const forwardedFor = req.headers.get("x-forwarded-for");
   const realIp = req.headers.get("x-real-ip");
@@ -145,6 +159,7 @@ export async function POST(req: NextRequest) {
     const smileConfigured = Boolean(partnerId && apiKey);
 
     const hashedPassword = await hash(password);
+    const referralCode = await generateUniqueReferralCode();
 
     // Create the user first with the registration face photo stored locally.
     // New schema fields are set via a follow-up raw update so stale Prisma client
@@ -162,6 +177,17 @@ export async function POST(req: NextRequest) {
         address: normalizedAddress || null,
       },
     });
+
+    // Back-fill referral code and face-registration fields safely.
+    try {
+      await prisma.$executeRaw`
+        UPDATE "User"
+        SET "referralCode" = ${referralCode}
+        WHERE id = ${user.id} AND "referralCode" IS NULL
+      `;
+    } catch {
+      // Non-fatal
+    }
 
     const externalUserId = buildFaceIdExternalUserId(user.id);
 

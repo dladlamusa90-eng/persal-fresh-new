@@ -76,6 +76,9 @@ model User {
   employmentNetIncome   String?
   incomeFrequency       String?
   salaryDay             String?
+  referralCode        String?   @unique
+  referralDiscountPct Int       @default(0)
+  usedReferralCode    String?
   applicationStatus   ApplicationStatus @default(PENDING)
   applicationApprovedAt DateTime?
   applicationRejectedAt DateTime?

@@ -53,6 +53,7 @@ export async function POST(req: Request) {
       accountType?: string;
       branchCode?: string;
       debitMandateAccepted?: boolean;
+      referralCode?: string;
         documents?: {
           selfiePhoto?: {
             name?: string;
@@ -84,6 +85,9 @@ export async function POST(req: Request) {
     const accountType = String(body.accountType ?? "").trim().toUpperCase();
     const branchCode = String(body.branchCode ?? "").trim();
     const debitMandateAccepted = Boolean(body.debitMandateAccepted);
+    const referralCode = typeof body.referralCode === "string"
+      ? body.referralCode.trim().toUpperCase()
+      : null;
 
     if (!Number.isFinite(amount) || !Number.isFinite(termDays) || !Number.isFinite(grossSalary) || !Number.isFinite(disposableIncome)) {
       return NextResponse.json({ error: "Invalid loan payload" }, { status: 400 });
@@ -436,6 +440,48 @@ export async function POST(req: Request) {
           "faceMatchCheckedAt" = ${faceSnapshots.faceIdLastMatchedAt ? new Date(faceSnapshots.faceIdLastMatchedAt) : null}
       WHERE "id" = ${loan.id}
     `;
+
+    // ── Referral logic ───────────────────────────────────────────────────
+    void (async () => {
+      try {
+        if (referralCode) {
+          // Check if this user has already used a referral code
+          const usageRows = await prisma.$queryRaw<{ usedReferralCode: string | null }[]>`
+            SELECT "usedReferralCode" FROM "User" WHERE id = ${user.id} LIMIT 1
+          `;
+          const alreadyUsed = usageRows[0]?.usedReferralCode;
+
+          if (!alreadyUsed) {
+            // Find referrer (not self, not burned, not deleted)
+            const referrerRows = await prisma.$queryRaw<{ id: string; fullName: string }[]>`
+              SELECT id, "fullName" FROM "User"
+              WHERE "referralCode" = ${referralCode}
+                AND id <> ${user.id}
+                AND "isBurned" = false
+                AND "isDeleted" = false
+              LIMIT 1
+            `;
+            if (referrerRows.length > 0) {
+              const referrerId = referrerRows[0].id;
+              // Award referrer: +5% discount on their next loan
+              await prisma.$executeRaw`
+                UPDATE "User"
+                SET "referralDiscountPct" = "referralDiscountPct" + 5
+                WHERE id = ${referrerId}
+              `;
+              // Mark applicant as having used this code
+              await prisma.$executeRaw`
+                UPDATE "User"
+                SET "usedReferralCode" = ${referralCode}
+                WHERE id = ${user.id}
+              `;
+            }
+          }
+        }
+      } catch {
+        // Non-critical — referral errors must not affect the loan submission
+      }
+    })();
 
     console.info("[audit] debit-mandate-captured", {
       userId: user.id,

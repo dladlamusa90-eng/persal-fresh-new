@@ -148,6 +148,11 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
   // Mandate
   const [debitMandateAccepted, setDebitMandateAccepted] = useState(initialDraft?.debitMandateAccepted || false);
 
+  // Referral code
+  const [referralCode, setReferralCode] = useState("");
+  const [referralValidating, setReferralValidating] = useState(false);
+  const [referralStatus, setReferralStatus] = useState<{ valid: boolean; referrerName?: string } | null>(null);
+
   // Documents (for logged-in flow)
   const [documents, setDocuments] = useState<Record<string, UploadedDocument | null>>(initialDraft?.documents || {
     idDocumentFront: null,
@@ -289,6 +294,7 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
           accountType,
           branchCode,
           debitMandateAccepted,
+          ...(referralCode.trim() ? { referralCode: referralCode.trim().toUpperCase() } : {}),
         }),
       });
       if (response.ok) {
@@ -674,6 +680,53 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
               </div>
             </div>
           </div>
+
+          {/* Referral Code (logged-in users only) */}
+          {isLoggedIn && (
+            <div className="p-6">
+              <h2 className="text-base font-semibold text-persal-dark mb-1">Referral Code</h2>
+              <p className="text-gray-500 text-sm mb-3">Have a friend's referral code? Enter it here to reward them.</p>
+              <div className="flex gap-2 flex-wrap">
+                <input
+                  type="text"
+                  maxLength={8}
+                  placeholder="e.g. ABCD1234"
+                  value={referralCode}
+                  onChange={e => {
+                    const v = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+                    setReferralCode(v);
+                    setReferralStatus(null);
+                  }}
+                  onBlur={async () => {
+                    const code = referralCode.trim().toUpperCase();
+                    if (code.length < 4) return;
+                    setReferralValidating(true);
+                    try {
+                      const res = await fetch(`/api/referral/validate?code=${encodeURIComponent(code)}`);
+                      const data = (await res.json()) as { valid: boolean; referrerName?: string };
+                      setReferralStatus(data);
+                    } catch {
+                      setReferralStatus(null);
+                    } finally {
+                      setReferralValidating(false);
+                    }
+                  }}
+                  className="flex-1 min-w-[160px] max-w-xs border border-gray-300 rounded-lg px-3 py-2.5 text-sm uppercase tracking-widest focus:outline-none focus:border-persal-blue font-mono"
+                />
+                {referralValidating && (
+                  <span className="self-center text-sm text-gray-500">Checking...</span>
+                )}
+                {!referralValidating && referralStatus?.valid && (
+                  <span className="self-center text-sm text-green-700 font-medium">
+                    ✓ Valid — referred by {referralStatus.referrerName}
+                  </span>
+                )}
+                {!referralValidating && referralStatus && !referralStatus.valid && referralCode.length >= 4 && (
+                  <span className="self-center text-sm text-red-600">Invalid code</span>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Debit Mandate */}
           <div className="p-6">

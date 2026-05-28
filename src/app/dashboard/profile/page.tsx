@@ -129,6 +129,9 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<DashboardProfile>(defaultDashboardProfile);
   const [loading, setLoading] = useState(true);
   const [points, setPoints] = useState(0);
+  const [referralCode, setReferralCode] = useState<string | null>(null);
+  const [referralDiscountPct, setReferralDiscountPct] = useState(0);
+  const [referralCopied, setReferralCopied] = useState(false);
   const [accountType, setAccountType] = useState("");
   const [branchCode, setBranchCode] = useState("");
 
@@ -178,7 +181,7 @@ export default function ProfilePage() {
           };
         };
         if (!mounted || !body.user) return;
-        const u = body.user;
+        const u = body.user as typeof body.user & { referralCode?: string | null; referralDiscountPct?: number };
         setProfile({
           fullName: u.fullName ?? "",
           email: u.email ?? "",
@@ -193,6 +196,8 @@ export default function ProfilePage() {
         setAccountType(u.accountType ?? "");
         setBranchCode(u.branchCode ?? "");
         setPoints(typeof u.points === "number" ? u.points : 0);
+        setReferralCode(u.referralCode ?? null);
+        setReferralDiscountPct(typeof u.referralDiscountPct === "number" ? u.referralDiscountPct : 0);
         // Employment
         setEmploymentStatus(u.employmentStatus ?? "Employed");
         setEmploymentGrossIncome(u.employmentGrossIncome ?? "");
@@ -413,6 +418,40 @@ export default function ProfilePage() {
           {activeSection === "profile" && (
             <div className="space-y-7">
               <PointsCard points={points} />
+
+              {/* Referral Code Card */}
+              <div className="rounded-2xl border border-gray-200 bg-white p-5 md:p-6 shadow-sm">
+                <p className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Your Referral Code</p>
+                <p className="text-sm text-gray-600 mb-4">
+                  Share this code with friends. When they use it on their first loan application, you earn a <strong>5% discount</strong> on your next loan.
+                </p>
+                {referralCode ? (
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="rounded-xl border-2 border-persal-blue bg-blue-50 px-6 py-3 text-2xl font-bold tracking-widest text-persal-blue select-all">
+                      {referralCode}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(referralCode).then(() => {
+                          setReferralCopied(true);
+                          setTimeout(() => setReferralCopied(false), 2500);
+                        });
+                      }}
+                      className="rounded-xl border border-persal-blue text-persal-blue font-semibold px-5 py-3 text-sm hover:bg-blue-50 transition"
+                    >
+                      {referralCopied ? "Copied!" : "Copy code"}
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-gray-400 text-sm">Your referral code is being generated...</p>
+                )}
+                {referralDiscountPct > 0 && (
+                  <div className="mt-4 rounded-xl bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800 font-medium">
+                    You have a <strong>{referralDiscountPct}% discount</strong> waiting on your next loan — earned from referrals!
+                  </div>
+                )}
+              </div>
 
               <ReadOnlyRow label="Full name" value={profile.fullName} />
               <ReadOnlyRow label="ID Number" value={profile.idNumber} />
