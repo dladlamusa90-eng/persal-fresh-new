@@ -48,6 +48,9 @@ export async function POST(req: Request) {
       };
       debitMandateAccepted?: boolean;
       faceVerificationToken?: string;
+      selfiePhoto?: { name?: string; type?: string; size?: number; dataUrl?: string };
+      guestIdFront?: { name?: string; type?: string; size?: number; dataUrl?: string };
+      guestIdBack?: { name?: string; type?: string; size?: number; dataUrl?: string };
     };
 
     const fullName = String(body.fullName ?? "").trim();
@@ -139,8 +142,8 @@ export async function POST(req: Request) {
       );
     }
 
-    if (![30, 60, 90].includes(termDays)) {
-      return NextResponse.json({ error: "Loan term must be 30, 60, or 90 days." }, { status: 400 });
+    if (!Number.isInteger(termDays) || termDays < 1 || termDays > 365) {
+      return NextResponse.json({ error: "Loan term must be between 1 and 365 days." }, { status: 400 });
     }
 
     if (!isSouthAfricanPhoneNumber(phone)) {

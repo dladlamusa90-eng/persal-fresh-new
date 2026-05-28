@@ -4,7 +4,8 @@ export const RETURNING_MAX_LOAN = 5000;
 export const MIN_DISPOSABLE_INCOME_FOR_LOAN = 1000;
 export const MAX_LOAN_DISPOSABLE_INCOME_RATIO = 0.25;
 
-export const ALLOWED_TERM_DAYS = [30, 60, 90] as const;
+export const MIN_TERM_DAYS = 1;
+export const MAX_TERM_DAYS = 365;
 
 export function getMaxLoanForUser(isReturningUser: boolean) {
   return isReturningUser ? RETURNING_MAX_LOAN : FIRST_TIME_MAX_LOAN;

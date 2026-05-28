@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import FaceIdGate from "@/app/components/FaceIdGate";
 import { calculateLoanCharges, getMaxLoanForUser, calculateLogicalMaxLoan, FIRST_TIME_MAX_LOAN, RETURNING_MAX_LOAN, MIN_DISPOSABLE_INCOME_FOR_LOAN, MAX_LOAN_DISPOSABLE_INCOME_RATIO } from "@/lib/loanPolicy";
 import { SOUTH_AFRICAN_BANK_NAMES, isSouthAfricanIdNumber } from "@/lib/validators/auth";
 import { BANK_BRANCH_CODES } from "@/lib/bankBranchCodes";
@@ -157,6 +158,7 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
   const [submitting, setSubmitting] = useState(false);
   const [calculated, setCalculated] = useState(false);
   const [maxLoan, setMaxLoan] = useState(0);
+  const [faceVerifying, setFaceVerifying] = useState(false);
 
 
   // Deterministic number formatting to avoid hydration mismatch
@@ -245,6 +247,70 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
     setTermDays(90); // default to 3 months
   }
 
+  async function doSubmitApplication() {
+    setFaceVerifying(false);
+    setSubmitting(true);
+    try {
+      // Save draft
+      await fetch("/api/loan-application-draft", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          data: {
+            requestedAmount: amount,
+            requestedTermDays: termDays,
+            requestedGrossSalary: grossSalary,
+            requestedDisposableIncome: disposableIncome,
+            bankName,
+            accountNumber,
+            accountType,
+            branchCode,
+            phone,
+            idNumber,
+            persalNumber,
+          },
+          documents,
+        }),
+      });
+      // Submit application
+      const response = await fetch("/api/loans/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount,
+          termDays,
+          grossSalary,
+          disposableIncome,
+          phone,
+          idNumber,
+          persalNumber,
+          bankName,
+          accountNumber,
+          accountType,
+          branchCode,
+          debitMandateAccepted,
+        }),
+      });
+      if (response.ok) {
+        if (onAfterSubmit) onAfterSubmit();
+        router.push("/dashboard/lending/application-status");
+        return;
+      }
+      let message = "Failed to submit application.";
+      try {
+        const body = (await response.json()) as { error?: string };
+        if (body.error) message = body.error;
+      } catch {
+        message = "Failed to submit application.";
+      }
+      setError(message);
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -274,88 +340,38 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
       if (!guestIdFront) { setError("Please upload the front of your ID Document (JPG or PNG)."); return; }
     }
 
+    if (isLoggedIn) {
+      // Show face verification before submitting
+      setFaceVerifying(true);
+      return;
+    }
+
+    // Guest flow: save draft and go to statement page
     setSubmitting(true);
     try {
-      if (isLoggedIn) {
-        // Save draft
-        await fetch("/api/loan-application-draft", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            data: {
-              requestedAmount: amount,
-              requestedTermDays: termDays,
-              requestedGrossSalary: grossSalary,
-              requestedDisposableIncome: disposableIncome,
-              bankName,
-              accountNumber,
-              accountType,
-              branchCode,
-              phone,
-              idNumber,
-              persalNumber,
-            },
-            documents,
-          }),
-        });
-        // Submit application
-        const response = await fetch("/api/loans/apply", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            amount,
-            termDays,
-            grossSalary,
-            disposableIncome,
-            phone,
-            idNumber,
-            persalNumber,
-            bankName,
-            accountNumber,
-            accountType,
-            branchCode,
-            debitMandateAccepted,
-          }),
-        });
-        if (response.ok) {
-          if (onAfterSubmit) onAfterSubmit();
-          router.push("/dashboard/lending/application-status");
-          return;
-        }
-        let message = "Failed to submit application.";
-        try {
-          const body = (await response.json()) as { error?: string };
-          if (body.error) message = body.error;
-        } catch {
-          message = "Failed to submit application.";
-        }
-        setError(message);
-      } else {
-        // Guest flow: save draft and go to statement page
-        const draft = {
-          fullName: fullName.trim(),
-          email: email.trim(),
-          phone: phone.trim(),
-          idNumber: idNumber.trim(),
-          persalNumber: persalNumber.trim(),
-          grossSalary,
-          disposableIncome,
-          amount,
-          termDays,
-          bankName,
-          accountNumber: accountNumber.trim(),
-          accountType,
-          branchCode: branchCode.trim(),
-          bankStatementDocument,
-          guestIdFront,
-          // guestIdBack removed
-          debitMandateAccepted,
-          createdAt: Date.now(),
-        };
-        sessionStorage.setItem("guestLoanApplyDraft", JSON.stringify(draft));
-        if (onAfterSubmit) onAfterSubmit();
-        router.push("/apply/statement");
-      }
+      const draft = {
+        fullName: fullName.trim(),
+        email: email.trim(),
+        phone: phone.trim(),
+        idNumber: idNumber.trim(),
+        persalNumber: persalNumber.trim(),
+        grossSalary,
+        disposableIncome,
+        amount,
+        termDays,
+        bankName,
+        accountNumber: accountNumber.trim(),
+        accountType,
+        branchCode: branchCode.trim(),
+        bankStatementDocument,
+        guestIdFront,
+        // guestIdBack removed
+        debitMandateAccepted,
+        createdAt: Date.now(),
+      };
+      sessionStorage.setItem("guestLoanApplyDraft", JSON.stringify(draft));
+      if (onAfterSubmit) onAfterSubmit();
+      router.push("/apply/statement");
     } catch {
       setError("Network error. Please try again.");
     } finally {
@@ -366,6 +382,31 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
   // --- UI ---
   return (
     <div className={isLoggedIn ? "max-w-2xl mx-auto py-2" : "min-h-screen bg-gray-50"}>
+
+      {/* Face Verification Overlay (logged-in flow) */}
+      {faceVerifying && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <div className="bg-persal-dark px-6 py-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-white font-bold text-lg">Face Verification Required</h2>
+                <p className="text-white/70 text-xs mt-0.5">Verify your identity before submitting your application.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFaceVerifying(false)}
+                className="text-white/60 hover:text-white text-2xl leading-none font-light ml-4"
+                aria-label="Cancel face verification"
+              >
+                ×
+              </button>
+            </div>
+            <div className="p-6">
+              <FaceIdGate onVerified={doSubmitApplication} alwaysCapture={true} />
+            </div>
+          </div>
+        </div>
+      )}
       {/* Header with logo and login button for guests */}
       {!isLoggedIn && (
         <>

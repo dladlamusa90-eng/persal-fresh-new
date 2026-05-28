@@ -5,7 +5,8 @@ import { authOptions } from "@/lib/nextAuth";
 import prisma from "@/lib/prisma";
 import { formatRand, sendSystemNotification } from "@/lib/systemNotifications";
 import {
-  ALLOWED_TERM_DAYS,
+  MIN_TERM_DAYS,
+  MAX_TERM_DAYS,
   FIRST_TIME_MAX_LOAN,
   MIN_LOAN_AMOUNT,
   RETURNING_MAX_LOAN,
@@ -135,8 +136,8 @@ export async function POST(req: Request) {
       }
     }
 
-    if (!ALLOWED_TERM_DAYS.includes(termDays as (typeof ALLOWED_TERM_DAYS)[number])) {
-      return NextResponse.json({ error: "Loan term must be 30, 60, or 90 days" }, { status: 400 });
+    if (!Number.isInteger(termDays) || termDays < MIN_TERM_DAYS || termDays > MAX_TERM_DAYS) {
+      return NextResponse.json({ error: `Loan term must be between ${MIN_TERM_DAYS} and ${MAX_TERM_DAYS} days.` }, { status: 400 });
     }
 
     type UserApplyRow = {

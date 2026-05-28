@@ -1,12 +1,7 @@
 import { createHmac } from "crypto";
 import { NextResponse } from "next/server";
 import { isSouthAfricanIdNumber, normalizeIdNumber } from "@/lib/validators/auth";
-
-type SmileVerifyResponse = {
-  success: boolean;
-  confidence: number;
-  raw: unknown;
-};
+import { submitToSmileId } from "@/lib/faceId";
 
 function getFaceSecret() {
   return process.env.FACE_VERIFICATION_SECRET || process.env.NEXTAUTH_SECRET || "";
@@ -25,51 +20,6 @@ function issueFaceVerificationToken(idNumber: string) {
   const base = Buffer.from(JSON.stringify(payload)).toString("base64url");
   const sig = createHmac("sha256", secret).update(base).digest("base64url");
   return `${base}.${sig}`;
-}
-
-async function verifySelfieWithSmile(params: {
-  idNumber: string;
-  selfieBase64: string;
-}): Promise<SmileVerifyResponse> {
-  const smileApiUrl = process.env.SMILE_API_URL;
-  const partnerId = process.env.SMILE_PARTNER_ID;
-  const apiKey = process.env.SMILE_API_KEY;
-
-  if (!smileApiUrl || !partnerId) {
-    throw new Error("Face verification provider is not configured.");
-  }
-
-  const payload = {
-    partner_id: partnerId,
-    job_type: "smart_selfie_authentication",
-    id_number: params.idNumber,
-    selfie_image: params.selfieBase64.replace(/^data:[a-z/]+;base64,/, ""),
-  };
-
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
-
-  if (apiKey) {
-    headers.Authorization = `Bearer ${apiKey}`;
-  }
-
-  const response = await fetch(smileApiUrl, {
-    method: "POST",
-    headers,
-    body: JSON.stringify(payload),
-  });
-
-  const raw = (await response.json().catch(() => ({}))) as Record<string, unknown>;
-  const confidence = Number(
-    raw.confidence_score ?? raw.confidence ?? (raw.result as Record<string, unknown> | undefined)?.confidence ?? 0
-  );
-
-  const success = Boolean(
-    raw.success ?? raw.verified ?? (raw.result as Record<string, unknown> | undefined)?.verified ?? false
-  );
-
-  return { success, confidence, raw };
 }
 
 export async function POST(req: Request) {
@@ -98,14 +48,40 @@ export async function POST(req: Request) {
       );
     }
 
-    const verification = await verifySelfieWithSmile({ idNumber, selfieBase64 });
-    const approved = verification.success === true && verification.confidence > 0.95;
+    const partnerId = process.env.SMILE_PARTNER_ID;
+    const apiKey = process.env.SMILE_API_KEY;
+    const callbackUrl = process.env.SMILE_CALLBACK_URL ?? "";
+    const env = (process.env.SMILE_ENV === "production" ? "production" : "sandbox") as "sandbox" | "production";
 
-    if (!approved) {
+    if (!partnerId || !apiKey) {
+      return NextResponse.json(
+        { error: "Face verification provider is not configured." },
+        { status: 503 }
+      );
+    }
+
+    // Use the ID number as the external user ID so repeat submissions
+    // authenticate against the already-registered face for this person.
+    const externalUserId = `guest-id-${idNumber}`;
+
+    const result = await submitToSmileId({
+      partnerId,
+      apiKey,
+      externalUserId,
+      jobType: 4, // SmartSelfie Registration – registers on first call, re-registers on repeat
+      selfieBase64,
+      callbackUrl,
+      env,
+    });
+
+    if (!result.approved) {
       return NextResponse.json(
         {
           verified: false,
-          reason: "Face verification failed against the submitted ID. Please try again.",
+          reason:
+            result.resultText && result.resultText !== "verification_pending"
+              ? result.resultText
+              : "Face verification failed. Please retake your selfie in good lighting.",
         },
         { status: 200 }
       );

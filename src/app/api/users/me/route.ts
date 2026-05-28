@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/nextAuth";
 import { getAuthCookieName, verifyAuthToken } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { hash, compare } from "@/lib/bcrypt";
 import {
   getBankAccountConstraintLabel,
   isValidBankAccountType,

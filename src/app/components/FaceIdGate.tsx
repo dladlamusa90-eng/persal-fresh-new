@@ -13,9 +13,11 @@ type Step = "checking" | "idle" | "camera" | "captured" | "submitting" | "verifi
 
 interface FaceIdGateProps {
   onVerified: () => void;
+  /** When true, always capture a fresh selfie even if the session is already verified */
+  alwaysCapture?: boolean;
 }
 
-export default function FaceIdGate({ onVerified }: FaceIdGateProps) {
+export default function FaceIdGate({ onVerified, alwaysCapture = false }: FaceIdGateProps) {
   const [step, setStep] = useState<Step>("checking");
   const [statusMessage, setStatusMessage] = useState("");
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
@@ -67,7 +69,9 @@ export default function FaceIdGate({ onVerified }: FaceIdGateProps) {
         }
 
         const data = (await res.json()) as FaceSession;
-        if (data.verified) {
+
+        // If already verified AND we don't need a fresh selfie, pass through immediately
+        if (data.verified && !alwaysCapture) {
           setStep("verified");
           onVerified();
           return;
@@ -95,7 +99,7 @@ export default function FaceIdGate({ onVerified }: FaceIdGateProps) {
       mounted = false;
       stopCamera();
     };
-  }, [onVerified, stopCamera]);
+  }, [onVerified, stopCamera, alwaysCapture]);
 
   const capture = useCallback(() => {
     const video = videoRef.current;

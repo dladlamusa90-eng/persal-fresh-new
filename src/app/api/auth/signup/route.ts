@@ -12,7 +12,7 @@ import {
   normalizeIdNumber,
   normalizePhoneNumber,
 } from "@/lib/validators/auth";
-import { buildFaceIdExternalUserId } from "@/lib/faceId";
+import { buildFaceIdExternalUserId, submitToSmileId } from "@/lib/faceId";
 
 function getRequestIp(req: NextRequest) {
   const forwardedFor = req.headers.get("x-forwarded-for");
@@ -32,7 +32,8 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await req.json();
-    const { fullName, email, password, phone, idNumber, persalNumber, bankName, accountNumber, address } = data;
+    const { fullName, email, password, phone, idNumber, persalNumber, bankName, accountNumber, address, registrationFacePhoto } = data;
+    const normalizedRegistrationFacePhoto = String(registrationFacePhoto ?? "").trim();
     const normalizedFullName = String(fullName ?? "").trim().replace(/\s+/g, " ");
     const normalizedAddress = String(address ?? "").trim();
 

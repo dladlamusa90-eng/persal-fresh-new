@@ -20,8 +20,8 @@ function ApplyContent() {
   useEffect(() => {
     fetch("/api/users/me")
       .then(r => r.json())
-      .then(data => setProfile(data?.user ?? {}))
-      .catch(() => setProfile({}));
+      .then(data => setProfile(data?.user ?? null))
+      .catch(() => setProfile(null));
   }, []);
 
   if (profile === null) return <section className="max-w-2xl mx-auto py-4" />;

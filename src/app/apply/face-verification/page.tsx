@@ -221,7 +221,7 @@ export default function ApplyFaceVerificationPage() {
 
   const currentStepIdx = STEP_INDEX[step] ?? 0;
   const showCamera = step === "camera" || step === "countdown" || step === "starting";
-  const showPreview = step === "captured" || step === "verifying" || step === "verified" || step === "error";
+  const showPreview = step === "captured" || step === "verifying" || step === "verified" || step === "submitting" || step === "error";
 
   const borderColor =
     step === "verified"  ? "#22c55e" :
