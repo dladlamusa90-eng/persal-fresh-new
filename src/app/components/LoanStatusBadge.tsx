@@ -132,8 +132,8 @@ export default function LoanStatusBadge() {
   }
 
   return (
-    <div className="px-4 md:px-8 py-4">
-      <div className="flex flex-col items-start gap-2 md:gap-3">
+    <div className="px-4 md:px-8 py-4 max-[480px]:py-2 max-[480px]:px-3">
+      <div className="flex flex-col items-start gap-2 md:gap-3 max-[480px]:flex-row max-[480px]:items-center max-[480px]:justify-between">
         <Link
           href={badgeView.href}
           className={`${badgeClassName} cursor-pointer hover:opacity-90 transition`}

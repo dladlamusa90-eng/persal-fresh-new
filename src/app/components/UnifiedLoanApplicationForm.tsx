@@ -591,18 +591,25 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
             <div className="space-y-6">
               <div>
                 <label className="block text-gray-700 text-sm mb-2" htmlFor="bankName">Bank</label>
-                <select
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-persal-blue bg-white"
-                  id="bankName"
-                  value={bankName}
-                  onChange={handleBankChange}
-                  required
-                >
-                  <option value="">Select your bank</option>
-                  {SOUTH_AFRICAN_BANK_NAMES.map(b => (
-                    <option key={b} value={b}>{b}</option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    className="w-full appearance-none border border-gray-300 rounded-lg px-3 py-2.5 pr-10 text-sm focus:outline-none focus:border-persal-blue bg-white"
+                    id="bankName"
+                    value={bankName}
+                    onChange={handleBankChange}
+                    required
+                  >
+                    <option value="">Select your bank</option>
+                    {SOUTH_AFRICAN_BANK_NAMES.map(b => (
+                      <option key={b} value={b}>{b}</option>
+                    ))}
+                  </select>
+                  <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+                    <svg className="h-4 w-4 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+                    </svg>
+                  </span>
+                </div>
                 {/* Show branch code clearly below for mobile users */}
                 {bankName && branchCode && (
                   <div className="mt-2 text-sm text-persal-dark font-semibold bg-gray-100 rounded px-2 py-1 w-full text-center">
@@ -626,16 +633,23 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
                 </div>
                 <div>
                   <label className="block text-gray-700 text-sm mb-2" htmlFor="accountType">Account Type</label>
-                  <select
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-persal-blue bg-white"
-                    id="accountType"
-                    value={accountType}
-                    onChange={e => setAccountType(e.target.value)}
-                  >
-                    <option value="CHEQUE">Cheque / Current</option>
-                    <option value="SAVINGS">Savings</option>
-                    <option value="TRANSMISSION">Transmission</option>
-                  </select>
+                  <div className="relative">
+                    <select
+                      className="w-full appearance-none border border-gray-300 rounded-lg px-3 py-2.5 pr-10 text-sm focus:outline-none focus:border-persal-blue bg-white"
+                      id="accountType"
+                      value={accountType}
+                      onChange={e => setAccountType(e.target.value)}
+                    >
+                      <option value="CHEQUE">Cheque / Current</option>
+                      <option value="SAVINGS">Savings</option>
+                      <option value="TRANSMISSION">Transmission</option>
+                    </select>
+                    <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+                      <svg className="h-4 w-4 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+                      </svg>
+                    </span>
+                  </div>
                 </div>
               </div>
               <div className="md:w-1/2">

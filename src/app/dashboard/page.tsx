@@ -202,10 +202,10 @@ function DashboardHomeInner() {
   }
 
   return (
-    <section className="max-w-6xl mx-auto px-2 md:px-4 -mt-6 md:-mt-10">
+    <section className="max-w-6xl mx-auto px-2 md:px-4 -mt-6 md:-mt-10 max-[480px]:mt-0">
       <div className="grid grid-cols-1 md:grid-cols-[190px_1fr] gap-6 md:gap-8">
-        <aside className="pt-2">
-          <nav className="space-y-3 text-[22px] md:text-base">
+        <aside className="pt-2 max-[480px]:hidden">
+          <nav className="space-y-3 md:text-base">
             <button
               type="button"
               onClick={() => setActiveMyLoanSection("summary")}
@@ -223,11 +223,38 @@ function DashboardHomeInner() {
           </nav>
         </aside>
 
-        <div className="pb-8">
-          <h1 className="text-4xl md:text-[42px] text-gray-800 font-normal mb-4">Hi {firstName || "there"}</h1>
+        <div className="pb-8 max-[480px]:pb-4">
 
-          <div className="mb-4">
-            <div className="w-full rounded-xl bg-gray-100 px-5 py-3 text-gray-700 text-lg md:text-base flex items-center justify-center gap-2">
+          {/* Mobile header — greeting + pill tabs */}
+          <div className="md:hidden mb-4">
+            <div className="mb-3">
+              <h1 className="text-[22px] font-bold text-gray-900 leading-tight">Hi {firstName || "there"}</h1>
+              <p className="mt-0.5 text-sm text-gray-500">Apply for up to <span className="font-semibold text-persal-blue">R 5,000</span></p>
+            </div>
+            <div className="flex bg-gray-100 rounded-xl p-1 gap-1">
+              <button
+                type="button"
+                onClick={() => setActiveMyLoanSection("summary")}
+                className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${activeMyLoanSection === "summary" ? "bg-white text-persal-blue shadow" : "text-gray-500"}`}
+              >
+                Loan Summary
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveMyLoanSection("documents")}
+                className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${activeMyLoanSection === "documents" ? "bg-white text-persal-blue shadow" : "text-gray-500"}`}
+              >
+                Documents
+              </button>
+            </div>
+          </div>
+
+          {/* Desktop heading */}
+          <h1 className="hidden md:block text-[42px] text-gray-800 font-normal mb-4">Hi {firstName || "there"}</h1>
+
+          {/* Desktop info bar */}
+          <div className="hidden md:block mb-4">
+            <div className="w-full rounded-xl bg-gray-100 px-5 py-3 text-gray-700 text-base flex items-center justify-center gap-2">
               <Lightbulb size={18} className="text-persal-blue" />
               <span>You can apply for up to <b>R 5000</b></span>
             </div>

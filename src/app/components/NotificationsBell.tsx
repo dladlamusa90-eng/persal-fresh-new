@@ -116,7 +116,16 @@ export default function NotificationsBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 z-50 mt-2 w-80 rounded-xl border border-slate-200 bg-white shadow-xl">
+        <>
+          {/* Mobile backdrop */}
+          <div
+            className="md:hidden fixed inset-0 z-40 bg-black/40"
+            onClick={() => setOpen(false)}
+          />
+        <div className="
+          md:absolute md:right-0 md:mt-2 md:w-80 md:static-pos
+          max-[767px]:fixed max-[767px]:top-1/2 max-[767px]:left-1/2 max-[767px]:-translate-x-1/2 max-[767px]:-translate-y-1/2 max-[767px]:w-[calc(100vw-32px)] max-[767px]:max-w-sm
+          z-50 rounded-xl border border-slate-200 bg-white shadow-xl">
           <div className="px-3 py-2 border-b border-slate-200 flex items-center justify-between gap-2">
             <p className="text-sm font-semibold text-slate-900">Notifications</p>
             <button
@@ -165,6 +174,7 @@ export default function NotificationsBell() {
             </Link>
           </div>
         </div>
+        </>
       )}
 
       {selectedNotification && (
