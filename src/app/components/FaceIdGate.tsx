@@ -1,230 +1,203 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 
 type FaceSession = {
   verified?: boolean;
-  enrolled?: boolean;
   status?: string | null;
   lastError?: string | null;
 };
 
-type Step = "checking" | "idle" | "camera" | "captured" | "submitting" | "verified" | "failed";
+type Step = "checking" | "idle" | "redirecting" | "polling" | "verified" | "failed";
 
 interface FaceIdGateProps {
   onVerified: () => void;
-  /** When true, always capture a fresh selfie even if the session is already verified */
+  /** When true, always run a fresh verification even if the session is already verified */
   alwaysCapture?: boolean;
 }
+
+const POLL_INTERVAL_MS = 3000;
+const MAX_POLL_ATTEMPTS = 20; // ~60 seconds total
 
 export default function FaceIdGate({ onVerified, alwaysCapture = false }: FaceIdGateProps) {
   const [step, setStep] = useState<Step>("checking");
   const [statusMessage, setStatusMessage] = useState("");
-  const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-
-  const stopCamera = useCallback(() => {
-    if (!streamRef.current) return;
-    for (const track of streamRef.current.getTracks()) {
-      track.stop();
-    }
-    streamRef.current = null;
-  }, []);
-
-  const startCamera = useCallback(async () => {
-    try {
-      stopCamera();
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user", width: { ideal: 720 }, height: { ideal: 720 } },
-        audio: false,
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-      setCapturedImage(null);
-      setStatusMessage("Align your face in the frame and capture.");
-      setStep("camera");
-    } catch {
-      setStatusMessage("Unable to access camera. Please allow camera permissions and try again.");
-      setStep("failed");
-    }
-  }, [stopCamera]);
 
   useEffect(() => {
     let mounted = true;
+    let pollTimer: ReturnType<typeof setTimeout> | null = null;
+    let pollCount = 0;
 
-    async function loadSession() {
+    async function pollDiditStatus(sessionId: string): Promise<void> {
+      if (!mounted) return;
+      try {
+        const res = await fetch(
+          `/api/didit/status?sessionId=${encodeURIComponent(sessionId)}`,
+          { cache: "no-store" }
+        );
+        if (!mounted) return;
+
+        if (res.ok) {
+          const data = (await res.json()) as { status: string; verified: boolean };
+          if (data.verified) {
+            sessionStorage.removeItem("didit_pending_session");
+            setStep("verified");
+            setStatusMessage("Identity verified successfully.");
+            onVerified();
+            return;
+          }
+          if (data.status === "Declined") {
+            sessionStorage.removeItem("didit_pending_session");
+            setStep("failed");
+            setStatusMessage("Your verification was declined. Please try again.");
+            return;
+          }
+        }
+      } catch {
+        // Network error — keep polling
+      }
+
+      pollCount++;
+      if (pollCount >= MAX_POLL_ATTEMPTS) {
+        sessionStorage.removeItem("didit_pending_session");
+        setStep("failed");
+        setStatusMessage("Verification is taking longer than expected. Please try again.");
+        return;
+      }
+      pollTimer = setTimeout(() => void pollDiditStatus(sessionId), POLL_INTERVAL_MS);
+    }
+
+    async function init() {
+      // If returning from Didit redirect, resume polling
+      const pendingSessionId = sessionStorage.getItem("didit_pending_session");
+      if (pendingSessionId) {
+        setStep("polling");
+        setStatusMessage("Checking your verification result…");
+        await pollDiditStatus(pendingSessionId);
+        return;
+      }
+
+      // Otherwise check the current DB status
       try {
         const res = await fetch("/api/faceid/session", { cache: "no-store" });
         if (!mounted) return;
 
         if (!res.ok) {
-          setStatusMessage("Could not check face verification status.");
+          setStatusMessage("Could not check verification status.");
           setStep("idle");
           return;
         }
 
         const data = (await res.json()) as FaceSession;
 
-        // If already verified AND we don't need a fresh selfie, pass through immediately
         if (data.verified && !alwaysCapture) {
           setStep("verified");
           onVerified();
           return;
         }
 
-        if (data.status === "ENROLLED") {
-          setStatusMessage("Face enrolled. Please complete a live verification selfie.");
-        } else if (data.lastError) {
-          setStatusMessage(`Previous check: ${data.lastError}`);
-        } else {
-          setStatusMessage("Face verification is required before continuing.");
+        if (data.status === "IN_REVIEW") {
+          setStatusMessage("Your verification is under review. We'll notify you once approved.");
+          setStep("idle");
+          return;
         }
 
+        if (data.status === "DECLINED") {
+          setStatusMessage("Your last verification was declined. Please try again.");
+        } else {
+          setStatusMessage("Identity verification is required before continuing.");
+        }
         setStep("idle");
       } catch {
         if (!mounted) return;
-        setStatusMessage("Could not check face verification status.");
+        setStatusMessage("Could not check verification status.");
         setStep("idle");
       }
     }
 
-    loadSession();
+    void init();
 
     return () => {
       mounted = false;
-      stopCamera();
+      if (pollTimer) clearTimeout(pollTimer);
     };
-  }, [onVerified, stopCamera, alwaysCapture]);
+  }, [onVerified, alwaysCapture]);
 
-  const capture = useCallback(() => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    if (!video || !canvas) return;
-
-    canvas.width = video.videoWidth || 720;
-    canvas.height = video.videoHeight || 720;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
-    setCapturedImage(dataUrl);
-    setStatusMessage("Selfie captured. Submit to verify.");
-    stopCamera();
-    setStep("captured");
-  }, [stopCamera]);
-
-  const submit = useCallback(async () => {
-    if (!capturedImage) return;
-    setStep("submitting");
-    setStatusMessage("Submitting selfie for verification...");
-
+  const startVerification = useCallback(async () => {
+    setStep("redirecting");
+    setStatusMessage("Opening verification portal…");
     try {
-      const response = await fetch("/api/faceid/submit", {
+      const callbackUrl = window.location.href;
+      const res = await fetch("/api/didit/create-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ selfieBase64: capturedImage }),
+        body: JSON.stringify({ callbackUrl }),
       });
 
-      const body = (await response.json().catch(() => ({}))) as {
-        verified?: boolean;
-        reason?: string;
+      const body = (await res.json().catch(() => ({}))) as {
+        url?: string;
+        sessionId?: string;
         error?: string;
       };
 
-      if (!response.ok) {
+      if (!res.ok || !body.url) {
         setStep("failed");
-        setStatusMessage(body.error || "Face verification failed. Please try again.");
+        setStatusMessage(body.error ?? "Could not start verification. Please try again.");
         return;
       }
 
-      if (body.verified) {
-        setStep("verified");
-        setStatusMessage("Face verification successful.");
-        onVerified();
-        return;
-      }
-
-      setStep("failed");
-      setStatusMessage(body.reason || "Verification not approved. Please capture again.");
+      // Store session ID so we can resume polling when the user returns
+      sessionStorage.setItem("didit_pending_session", body.sessionId ?? "");
+      window.location.href = body.url;
     } catch {
       setStep("failed");
-      setStatusMessage("Verification request failed. Please try again.");
+      setStatusMessage("Could not start verification. Please try again.");
     }
-  }, [capturedImage, onVerified]);
+  }, []);
+
+  const retry = useCallback(() => {
+    sessionStorage.removeItem("didit_pending_session");
+    setStep("idle");
+    setStatusMessage("Identity verification is required before continuing.");
+  }, []);
+
+  const isLoading = step === "checking" || step === "redirecting" || step === "polling";
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-5 md:p-6 shadow-sm">
-      <h2 className="text-xl font-semibold text-gray-900">Face Verification</h2>
-      <p className="mt-2 text-sm text-gray-600">{statusMessage || "Checking status..."}</p>
+      <h2 className="text-xl font-semibold text-gray-900">Identity Verification</h2>
+      <p className="mt-2 text-sm text-gray-600">
+        {statusMessage || "Checking verification status…"}
+      </p>
 
-      <div className="mt-4 rounded-xl bg-gray-100 p-3">
-        {(step === "camera" || step === "captured" || step === "submitting" || step === "failed") && (
-          <div className="flex flex-col items-center gap-3">
-            {capturedImage ? (
-              <img src={capturedImage} alt="Captured face" className="w-full max-w-sm rounded-lg border border-gray-300" />
-            ) : (
-              <video ref={videoRef} className="w-full max-w-sm rounded-lg border border-gray-300 bg-black" muted playsInline />
-            )}
-            <canvas ref={canvasRef} className="hidden" />
-          </div>
-        )}
-      </div>
+      {isLoading && (
+        <p className="mt-3 animate-pulse text-sm text-gray-400">
+          {step === "polling"
+            ? "Checking result…"
+            : step === "redirecting"
+              ? "Opening verification portal…"
+              : "Loading…"}
+        </p>
+      )}
 
       <div className="mt-5 flex flex-wrap gap-2">
         {(step === "idle" || step === "failed") && (
           <button
             type="button"
-            onClick={() => void startCamera()}
+            onClick={() => void startVerification()}
             className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700"
           >
-            Start Camera
+            Verify My Identity
           </button>
         )}
 
-        {step === "camera" && (
+        {step === "failed" && (
           <button
             type="button"
-            onClick={capture}
-            className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600"
-          >
-            Capture Selfie
-          </button>
-        )}
-
-        {(step === "captured" || step === "failed") && capturedImage && (
-          <button
-            type="button"
-            onClick={() => void startCamera()}
+            onClick={retry}
             className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
           >
-            Retake
-          </button>
-        )}
-
-        {step === "captured" && capturedImage && (
-          <button
-            type="button"
-            onClick={() => void submit()}
-            className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700"
-          >
-            Submit Verification
-          </button>
-        )}
-
-        {step === "submitting" && (
-          <button
-            type="button"
-            disabled
-            className="rounded-lg bg-gray-300 px-4 py-2 text-sm font-semibold text-gray-600"
-          >
-            Verifying...
+            Try Again
           </button>
         )}
       </div>
