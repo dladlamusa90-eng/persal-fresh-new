@@ -533,17 +533,20 @@ export default function Home() {
                     {error && <div className="mt-4 text-red-600 font-semibold text-sm">{error}</div>}
                   </div>
 
-                  <div className="bg-gray-200 px-4 md:px-6 py-6 md:py-7 grid grid-cols-1 md:grid-cols-4 gap-4 items-center mt-auto border-t border-gray-300/70 min-h-[132px]">
+                  <div className="bg-gray-200 px-4 md:px-6 py-4 md:py-7 grid grid-cols-3 md:grid-cols-4 gap-x-2 gap-y-3 md:gap-4 items-center mt-auto border-t border-gray-300/70">
                     <div className="flex flex-col items-center text-center">
-                      <div className="text-base md:text-lg text-persal-blue font-semibold leading-tight tracking-tight">R{monthlyRepayment.toFixed(2)}</div>
-                      <div className="text-xs text-gray-700 leading-tight mt-1 font-medium">Monthly repayment</div>
+                      <div className="text-sm md:text-lg text-persal-blue font-semibold leading-tight tracking-tight">R{monthlyRepayment.toFixed(2)}</div>
+                      <div className="text-[10px] md:text-xs text-gray-700 leading-tight mt-1 font-medium">Monthly</div>
                     </div>
                     <div className="flex flex-col items-center text-center">
-                      <div className="text-base md:text-lg text-gray-700 leading-tight tracking-tight">{repayDateLabelCompact}</div>
-                      <div className="text-xs text-gray-700 leading-tight mt-1 font-medium">Final repayment date</div>
+                      <div className="text-sm md:text-lg text-gray-700 leading-tight tracking-tight">{repayDateLabelCompact}</div>
+                      <div className="text-[10px] md:text-xs text-gray-700 leading-tight mt-1 font-medium">
+                        <span className="md:hidden">Due date</span>
+                        <span className="hidden md:inline">Final repayment date</span>
+                      </div>
                     </div>
                     <div className="flex flex-col items-center text-center">
-                      <div className="text-base md:text-lg text-gray-700 leading-tight tracking-tight inline-flex items-center gap-1">
+                      <div className="text-sm md:text-lg text-gray-700 leading-tight tracking-tight inline-flex items-center gap-1">
                         <span>R{totalCost.toFixed(2)}</span>
                         <button
                           type="button"
@@ -551,19 +554,19 @@ export default function Home() {
                           className="text-orange-500 hover:text-orange-600"
                           aria-label="Open interest and fees breakdown"
                         >
-                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <svg className="w-3.5 h-3.5 md:w-4 md:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <circle cx="12" cy="12" r="9" />
                             <line x1="12" y1="10" x2="12" y2="16" />
                             <circle cx="12" cy="7" r="1" fill="currentColor" stroke="none" />
                           </svg>
                         </button>
                       </div>
-                      <div className="text-xs text-gray-700 leading-tight mt-1 font-medium">Interest & Fees</div>
+                      <div className="text-[10px] md:text-xs text-gray-700 leading-tight mt-1 font-medium">Fees</div>
                     </div>
-                    <div className="text-center md:text-right">
+                    <div className="col-span-3 md:col-span-1 text-center md:text-right">
                       <Link
                         href={!error && desiredLoan >= 100 ? `/apply?loan=${desiredLoan}&termDays=${termDays}` : "#"}
-                        className={`inline-block px-4 py-2 rounded-lg font-semibold text-base transition text-center max-[480px]:w-full ${!error && desiredLoan >= 100 ? 'bg-orange-500 text-white hover:bg-orange-600 cursor-pointer' : 'bg-gray-300 text-gray-400 cursor-not-allowed pointer-events-none'}`}
+                        className={`inline-block px-4 py-2.5 rounded-lg font-semibold text-base transition text-center w-full md:w-auto ${!error && desiredLoan >= 100 ? 'bg-orange-500 text-white hover:bg-orange-600 cursor-pointer' : 'bg-gray-300 text-gray-400 cursor-not-allowed pointer-events-none'}`}
                       >
                         Apply Now
                       </Link>

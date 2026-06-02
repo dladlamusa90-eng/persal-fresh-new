@@ -315,21 +315,21 @@ function DashboardHomeInner() {
                     </div>
                   </div>
 
-                  <div className="mt-6 space-y-6">
+                  <div className="mt-6 space-y-6 max-[480px]:mt-4 max-[480px]:space-y-5">
                     <div>
-                      <div className="text-lg md:text-xl text-gray-700 mb-2">How much do you need?</div>
-                      <div className={`flex items-center gap-3 md:gap-4 transition-opacity duration-200 ${mounted ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
+                      <div className="text-lg md:text-xl text-gray-700 mb-2 max-[480px]:text-base">How much do you need?</div>
+                      <div className={`flex items-center gap-3 md:gap-4 max-[480px]:gap-2 transition-opacity duration-200 ${mounted ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
                         <button
                           type="button"
                           onClick={() => updateDesiredLoan(Math.max(100, desiredLoan - 100))}
-                          className="w-8 h-8 rounded-full border border-gray-300 bg-white text-persal-blue shadow-sm hover:bg-gray-100 transition flex items-center justify-center p-0"
+                          className="w-8 h-8 rounded-full border border-gray-300 bg-white text-persal-blue shadow-sm hover:bg-gray-100 transition flex items-center justify-center p-0 max-[480px]:w-7 max-[480px]:h-7"
                           aria-label="Decrease amount"
                         >
-                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                          <svg className="w-4 h-4 max-[480px]:w-3.5 max-[480px]:h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
                             <line x1="5" y1="12" x2="19" y2="12" />
                           </svg>
                         </button>
-                        <div className="relative flex-1 h-10">
+                        <div className="relative flex-1 h-10 max-[480px]:h-9">
                           <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-1.5 bg-gray-200 rounded-full" />
                           <div className="absolute left-0 top-1/2 -translate-y-1/2 h-1.5 bg-persal-blue rounded-full" style={{ width: `${amountPercent}%` }} />
                           <input
@@ -340,13 +340,15 @@ function DashboardHomeInner() {
                             step={100}
                             value={desiredLoan}
                             onChange={e => updateDesiredLoan(Number(e.target.value))}
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            onInput={e => updateDesiredLoan(Number((e.target as HTMLInputElement).value))}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer touch-pan-y"
+                            style={{ touchAction: "pan-y" }}
                           />
                           <div
-                            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white border border-gray-300 shadow-md flex items-center justify-center pointer-events-none"
+                            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white border border-gray-300 shadow-md flex items-center justify-center pointer-events-none max-[480px]:w-8 max-[480px]:h-8"
                             style={{ left: `${amountKnobPercent}%` }}
                           >
-                            <svg className="w-7 h-7 text-persal-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <svg className="w-7 h-7 text-persal-blue max-[480px]:w-5.5 max-[480px]:h-5.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                               <polyline points="10 8 6 12 10 16" />
                               <polyline points="14 8 18 12 14 16" />
                             </svg>
@@ -355,10 +357,10 @@ function DashboardHomeInner() {
                         <button
                           type="button"
                           onClick={() => updateDesiredLoan(Math.min(5000, desiredLoan + 100))}
-                          className="w-8 h-8 rounded-full border border-gray-300 bg-white text-persal-blue shadow-sm hover:bg-gray-100 transition flex items-center justify-center p-0"
+                          className="w-8 h-8 rounded-full border border-gray-300 bg-white text-persal-blue shadow-sm hover:bg-gray-100 transition flex items-center justify-center p-0 max-[480px]:w-7 max-[480px]:h-7"
                           aria-label="Increase amount"
                         >
-                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                          <svg className="w-4 h-4 max-[480px]:w-3.5 max-[480px]:h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
                             <line x1="12" y1="5" x2="12" y2="19" />
                             <line x1="5" y1="12" x2="19" y2="12" />
                           </svg>
@@ -451,17 +453,23 @@ function DashboardHomeInner() {
                   {error && <div className="mt-4 text-red-600 font-semibold text-sm">{error}</div>}
                 </div>
 
-                <div className="bg-gray-200 px-4 md:px-6 py-6 md:py-7 grid grid-cols-1 md:grid-cols-4 gap-4 items-center mt-auto border-t border-gray-300/70 min-h-[132px]">
+                <div className="bg-gray-200 px-4 md:px-6 py-4 md:py-7 grid grid-cols-3 md:grid-cols-4 gap-x-2 gap-y-3 md:gap-4 items-center mt-auto border-t border-gray-300/70 md:min-h-[132px]">
                   <div className="flex flex-col items-center text-center">
-                    <div className="text-base md:text-lg text-persal-blue font-semibold leading-tight tracking-tight">R{monthlyRepayment.toFixed(2)}</div>
-                    <div className="text-xs text-gray-700 leading-tight mt-1 font-medium">Monthly repayment</div>
+                    <div className="text-sm md:text-lg text-persal-blue font-semibold leading-tight tracking-tight">R{monthlyRepayment.toFixed(2)}</div>
+                    <div className="text-[10px] md:text-xs text-gray-700 leading-tight mt-1 font-medium">
+                      <span className="md:hidden">Monthly</span>
+                      <span className="hidden md:inline">Monthly repayment</span>
+                    </div>
                   </div>
                   <div className="flex flex-col items-center text-center">
-                    <div className="text-base md:text-lg text-gray-700 leading-tight tracking-tight">{repayDateLabelCompact}</div>
-                    <div className="text-xs text-gray-700 leading-tight mt-1 font-medium">Final repayment date</div>
+                    <div className="text-sm md:text-lg text-gray-700 leading-tight tracking-tight">{repayDateLabelCompact}</div>
+                    <div className="text-[10px] md:text-xs text-gray-700 leading-tight mt-1 font-medium">
+                      <span className="md:hidden">Due date</span>
+                      <span className="hidden md:inline">Final repayment date</span>
+                    </div>
                   </div>
                   <div className="flex flex-col items-center text-center">
-                    <div className="text-base md:text-lg text-gray-700 leading-tight tracking-tight inline-flex items-center gap-1">
+                    <div className="text-sm md:text-lg text-gray-700 leading-tight tracking-tight inline-flex items-center gap-1">
                       <span>R{totalCost.toFixed(2)}</span>
                       <button
                         type="button"
@@ -469,20 +477,23 @@ function DashboardHomeInner() {
                         className="text-orange-500 hover:text-orange-600"
                         aria-label="Open interest and fees breakdown"
                       >
-                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <svg className="w-3.5 h-3.5 md:w-4 md:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <circle cx="12" cy="12" r="9" />
                           <line x1="12" y1="10" x2="12" y2="16" />
                           <circle cx="12" cy="7" r="1" fill="currentColor" stroke="none" />
                         </svg>
                       </button>
                     </div>
-                    <div className="text-xs text-gray-700 leading-tight mt-1 font-medium">Interest & Fees</div>
+                    <div className="text-[10px] md:text-xs text-gray-700 leading-tight mt-1 font-medium">
+                      <span className="md:hidden">Fees</span>
+                      <span className="hidden md:inline">Interest & Fees</span>
+                    </div>
                   </div>
-                  <div className="text-center md:text-right">
+                  <div className="col-span-3 md:col-span-1 text-center md:text-right">
                     <Link
                       href={canApply ? applyNowHref : "#"}
                       onClick={handleApplyNowClick}
-                      className={`inline-block px-4 py-2 rounded-lg font-semibold text-base transition text-center ${canApply ? "bg-orange-500 text-white hover:bg-orange-600 cursor-pointer" : "bg-gray-300 text-gray-400 cursor-not-allowed pointer-events-none"}`}
+                      className={`inline-block px-4 py-2.5 rounded-lg font-semibold text-base transition text-center w-full md:w-auto ${canApply ? "bg-orange-500 text-white hover:bg-orange-600 cursor-pointer" : "bg-gray-300 text-gray-400 cursor-not-allowed pointer-events-none"}`}
                       title={hasActiveLoan ? "You have an active loan. Settle it before applying again." : undefined}
                     >
                       Apply Now
