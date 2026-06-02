@@ -1,8 +1,8 @@
 ﻿"use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import React, { useCallback, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import React, { Suspense, useCallback, useEffect, useState } from "react";
 
 const APPLY_DRAFT_KEY = "guestLoanApplyDraft";
 const DIDIT_SESSION_KEY = "didit_guest_session";
@@ -39,8 +39,9 @@ type Draft = {
 
 type Step = "loading" | "idle" | "redirecting" | "polling" | "verified" | "submitting" | "error";
 
-export default function ApplyFaceVerificationPage() {
+function ApplyFaceVerificationPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [draft, setDraft] = useState<Draft | null>(null);
   const [step, setStep] = useState<Step>("loading");
   const [statusText, setStatusText] = useState("");
@@ -142,13 +143,16 @@ export default function ApplyFaceVerificationPage() {
       return;
     }
     setDraft(parsedDraft);
-    const pendingSessionId = sessionStorage.getItem(DIDIT_SESSION_KEY);
+    // Prefer the verificationSessionId Didit appends to the callback URL; fall back to sessionStorage
+    const urlSessionId = searchParams.get("verificationSessionId");
+    const pendingSessionId = urlSessionId || sessionStorage.getItem(DIDIT_SESSION_KEY);
     if (pendingSessionId) {
+      sessionStorage.setItem(DIDIT_SESSION_KEY, pendingSessionId);
       void pollStatus(pendingSessionId);
     } else {
       setStep("idle");
     }
-  }, [router, pollStatus]);
+  }, [router, pollStatus, searchParams]);
 
   const startVerification = useCallback(async () => {
     if (!draft) return;
@@ -250,9 +254,8 @@ export default function ApplyFaceVerificationPage() {
           {step === "idle" && (
             <div className="w-full bg-white/10 rounded-2xl p-5 space-y-4 text-sm text-white/80">
               {[
-                { icon: "🪪", text: "Have your South African ID document ready — you'll need to scan both sides." },
                 { icon: "💡", text: "Find a well-lit area. Avoid sitting with a bright window behind you." },
-                { icon: "👁️", text: "You will take a quick liveness selfie on the next screen." },
+                { icon: "👁️", text: "You will take a quick liveness selfie on the next screen — no ID document needed." },
                 { icon: "🔒", text: "Your information is encrypted and processed securely." },
               ].map(({ icon, text }) => (
                 <div key={text} className="flex items-start gap-3">
@@ -300,5 +303,19 @@ export default function ApplyFaceVerificationPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#0d2240] flex items-center justify-center">
+          <div className="w-10 h-10 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <ApplyFaceVerificationPage />
+    </Suspense>
   );
 }

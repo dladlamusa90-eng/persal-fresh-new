@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { isSouthAfricanIdNumber, normalizeIdNumber } from "@/lib/validators/auth";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => ({}))) as { idNumber?: string };
   const idNumber = normalizeIdNumber(String(body.idNumber ?? "").trim());
 
@@ -16,6 +16,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Verification service not configured." }, { status: 503 });
   }
 
+  // Derive callback URL from the incoming request so it works on localhost, localtunnel, and production
+  const requestUrl = new URL(req.url);
+  const callbackUrl = `${requestUrl.protocol}//${requestUrl.host}/apply/face-verification`;
+
   const diditRes = await fetch("https://verification.didit.me/v3/session/", {
     method: "POST",
     headers: { "x-api-key": apiKey, "Content-Type": "application/json" },
@@ -23,6 +27,8 @@ export async function POST(req: Request) {
       workflow_id: workflowId,
       // vendor_data stores the SA ID number so we can issue the HMAC token on webhook/poll
       vendor_data: `guest-id-${idNumber}`,
+      callback: callbackUrl,
+      callback_method: "both",
     }),
   });
 
