@@ -254,8 +254,9 @@ function ApplyFaceVerificationPage() {
           {step === "idle" && (
             <div className="w-full bg-white/10 rounded-2xl p-5 space-y-4 text-sm text-white/80">
               {[
+                { icon: "🪪", text: "Have your South African ID document ready (green ID book or smart ID card)." },
                 { icon: "💡", text: "Find a well-lit area. Avoid sitting with a bright window behind you." },
-                { icon: "👁️", text: "You will take a quick liveness selfie on the next screen — no ID document needed." },
+                { icon: "🤳", text: "You will scan both sides of your ID, then take a quick liveness selfie." },
                 { icon: "🔒", text: "Your information is encrypted and processed securely." },
               ].map(({ icon, text }) => (
                 <div key={text} className="flex items-start gap-3">

@@ -1,5 +1,6 @@
 import { createHmac } from "crypto";
 import { NextResponse } from "next/server";
+import { isSouthAfricanIdNumber, normalizeIdNumber } from "@/lib/validators/auth";
 
 function issueFaceVerificationToken(idNumber: string): string {
   const secret = process.env.FACE_VERIFICATION_SECRET || process.env.NEXTAUTH_SECRET || "";
@@ -41,14 +42,28 @@ export async function GET(req: Request) {
   const data = (await diditRes.json()) as {
     status?: string;
     vendor_data?: string;
+    id_verifications?: Array<{
+      document_number?: string;
+      personal_number?: string;
+      status?: string;
+    }> | null;
   };
 
   const status = data.status ?? "In Progress";
 
   if (status === "Approved") {
-    // vendor_data is "guest-id-{idNumber}" — extract the ID number
-    const vendorData = data.vendor_data ?? "";
-    const idNumber = vendorData.startsWith("guest-id-") ? vendorData.slice("guest-id-".length) : "";
+    // Prefer the OCR-extracted document number (full KYC); fall back to vendor_data for liveness-only
+    let idNumber = "";
+    const idVerif = (data.id_verifications ?? []);
+    if (idVerif.length > 0) {
+      const raw = idVerif[0].document_number || idVerif[0].personal_number || "";
+      idNumber = normalizeIdNumber(raw.trim());
+    }
+    // Fall back to the vendor_data we stored at session creation
+    if (!idNumber || !isSouthAfricanIdNumber(idNumber)) {
+      const vendorData = data.vendor_data ?? "";
+      idNumber = vendorData.startsWith("guest-id-") ? vendorData.slice("guest-id-".length) : "";
+    }
 
     const secret = process.env.FACE_VERIFICATION_SECRET || process.env.NEXTAUTH_SECRET || "";
     if (!idNumber || !secret) {

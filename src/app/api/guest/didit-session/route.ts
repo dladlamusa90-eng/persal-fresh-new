@@ -25,10 +25,12 @@ export async function POST(req: NextRequest) {
     headers: { "x-api-key": apiKey, "Content-Type": "application/json" },
     body: JSON.stringify({
       workflow_id: workflowId,
-      // vendor_data stores the SA ID number so we can issue the HMAC token on webhook/poll
+      // vendor_data stores the SA ID number so we can fall back to it if OCR extraction fails
       vendor_data: `guest-id-${idNumber}`,
       callback: callbackUrl,
       callback_method: "both",
+      // Pre-fill expected country so Didit shows ZAF documents first
+      expected_details: { id_country: "ZAF" },
     }),
   });
 
