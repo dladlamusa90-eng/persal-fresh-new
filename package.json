@@ -27,6 +27,7 @@
     "smile-identity-core": "^3.1.0"
   },
   "devDependencies": {
+    "@netlify/plugin-nextjs": "^5.15.11",
     "@types/bcrypt": "^6.0.0",
     "@types/node": "^18.0.0",
     "@types/react": "^18.0.0",
