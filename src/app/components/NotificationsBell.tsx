@@ -43,6 +43,9 @@ export default function NotificationsBell() {
   }
 
   async function markAsRead(id: string) {
+    // Virtual notifications cannot be marked as read in the database
+    if (id.startsWith("virtual-")) return;
+
     try {
       const response = await fetch(`/api/users/notifications/${id}/read`, {
         method: "PATCH",
@@ -147,13 +150,26 @@ export default function NotificationsBell() {
                   key={item.id}
                   onClick={() => {
                     setOpen(false);
+                    if (item.id === "virtual-bank-unverified") {
+                      window.location.href = "/dashboard/profile?section=banking";
+                      return;
+                    }
                     openNotification(item);
                   }}
                   className={`w-full text-left px-3 py-3 border-b border-slate-100 hover:bg-slate-50 ${
                     item.readAt ? "bg-white" : "bg-amber-50/60"
                   }`}
                 >
-                  <p className="text-sm font-semibold text-slate-900">{item.title}</p>
+                  <p className="text-sm font-semibold text-slate-900 flex items-center gap-1.5">
+                    {item.id === "virtual-bank-unverified" && (
+                      <svg className="h-3.5 w-3.5 text-amber-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                        <line x1="12" y1="9" x2="12" y2="13" />
+                        <circle cx="12" cy="17" r="1" fill="currentColor" stroke="none" />
+                      </svg>
+                    )}
+                    {item.title}
+                  </p>
                   <p className="mt-1 text-xs text-slate-600 line-clamp-2">{item.body}</p>
                   <p className="mt-1 text-[11px] text-slate-400">
                     {new Date(item.createdAt).toLocaleString("en-ZA", {

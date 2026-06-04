@@ -85,6 +85,9 @@ export async function GET(req: NextRequest) {
         employmentNetIncome: true,
         incomeFrequency: true,
         salaryDay: true,
+        occupation: true,
+        employer: true,
+        department: true,
       } as any,
     });
 
@@ -103,7 +106,8 @@ export async function GET(req: NextRequest) {
     const referralData = referralRows[0] ?? { referralCode: null, referralDiscountPct: 0 };
 
     return NextResponse.json({ user: { ...user, ...referralData } }, { status: 200 });
-  } catch {
+  } catch (err) {
+    console.error("[GET /api/users/me]", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -169,7 +173,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     // Employment-only partial update
-    const employmentKeys = ["employmentStatus", "employmentGrossIncome", "employmentNetIncome", "incomeFrequency", "salaryDay"];
+    const employmentKeys = ["employmentStatus", "employmentGrossIncome", "employmentNetIncome", "incomeFrequency", "salaryDay", "occupation", "employer", "department"];
     if (employmentKeys.some(k => k in body) && Object.keys(body).every(k => employmentKeys.includes(k))) {
       const currentUser = await prisma.user.findUnique({
         where: identity.id ? { id: identity.id } : { email: String(identity.email ?? "") },
@@ -184,6 +188,9 @@ export async function PATCH(req: NextRequest) {
           employmentNetIncome: (body as any).employmentNetIncome ?? undefined,
           incomeFrequency: (body as any).incomeFrequency ?? undefined,
           salaryDay: (body as any).salaryDay ?? undefined,
+          occupation: (body as any).occupation ?? undefined,
+          employer: (body as any).employer ?? undefined,
+          department: (body as any).department !== undefined ? ((body as any).department || null) : undefined,
         },
       });
       return NextResponse.json({ message: "Employment details updated" }, { status: 200 });

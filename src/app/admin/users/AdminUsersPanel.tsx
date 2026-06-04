@@ -16,6 +16,9 @@ type AdminUserRow = {
   bankName: string | null;
   accountNumber: string | null;
   isBurned: boolean;
+  bankVerified: boolean;
+  faceIdEnrolled: boolean;
+  faceIdStatus: string | null;
   paidLoanCount: number;
   profitTotal: number;
   profit30Days: number;
@@ -300,6 +303,7 @@ export default function AdminUsersPanel({ users }: Props) {
             <th className="px-4 py-3 font-semibold">Persal Number</th>
             <th className="px-4 py-3 font-semibold">ID Number</th>
             <th className="px-4 py-3 font-semibold">Phone</th>
+            <th className="px-4 py-3 font-semibold">Verifications</th>
             <th className="px-4 py-3 font-semibold">Points</th>
             <th className="px-4 py-3 font-semibold">Paid Loans</th>
             <th className="px-4 py-3 font-semibold">User Profit</th>
@@ -312,7 +316,7 @@ export default function AdminUsersPanel({ users }: Props) {
         <tbody>
           {filteredUsers.length === 0 ? (
             <tr>
-              <td colSpan={13} className="px-4 py-6 text-center text-slate-500">
+              <td colSpan={14} className="px-4 py-6 text-center text-slate-500">
                 No matching users found.
               </td>
             </tr>
@@ -344,6 +348,42 @@ export default function AdminUsersPanel({ users }: Props) {
                 </td>
                 <td className="px-4 py-3 text-slate-700">{user.idNumber ?? "N/A"}</td>
                 <td className="px-4 py-3 text-slate-700">{user.phone ?? "N/A"}</td>
+                <td className="px-4 py-3">
+                  <div className="flex flex-col gap-1.5">
+                    {/* Identity verification */}
+                    {user.faceIdEnrolled || user.faceIdStatus === "ENROLLED" ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-teal-50 border border-teal-200 px-2 py-0.5 text-xs font-semibold text-teal-700">
+                        <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>
+                        Identity: Verified
+                      </span>
+                    ) : user.faceIdStatus === "DECLINED" || user.faceIdStatus === "FAILED" ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-red-50 border border-red-200 px-2 py-0.5 text-xs font-semibold text-red-700">
+                        <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                        Identity: Failed
+                      </span>
+                    ) : user.faceIdStatus === "IN_REVIEW" ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-yellow-50 border border-yellow-200 px-2 py-0.5 text-xs font-semibold text-yellow-700">
+                        <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9" /><line x1="12" y1="8" x2="12" y2="12" /><circle cx="12" cy="16" r="1" fill="currentColor" stroke="none" /></svg>
+                        Identity: In Review
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 border border-gray-200 px-2 py-0.5 text-xs font-semibold text-gray-500">
+                        Identity: Pending
+                      </span>
+                    )}
+                    {/* Bank verification */}
+                    {user.bankVerified ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-teal-50 border border-teal-200 px-2 py-0.5 text-xs font-semibold text-teal-700">
+                        <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>
+                        Bank: Verified
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 border border-gray-200 px-2 py-0.5 text-xs font-semibold text-gray-500">
+                        Bank: Unverified
+                      </span>
+                    )}
+                  </div>
+                </td>
                 <td className="px-4 py-3 text-slate-700">{user.points}</td>
                 <td className="px-4 py-3 text-slate-700">{user.paidLoanCount}</td>
                 <td className="px-4 py-3 text-green-700 font-semibold">

@@ -2,6 +2,18 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
+const POINTS_TIERS = [
+  { min: 0,    max: 99,   btn: "border-amber-700/40 bg-amber-50 hover:bg-amber-100/40",        icon: "bg-amber-100 text-amber-700" },
+  { min: 100,  max: 299,  btn: "border-slate-400/40 bg-slate-50 hover:bg-slate-100/40",        icon: "bg-slate-100 text-slate-600" },
+  { min: 300,  max: 699,  btn: "border-yellow-500/40 bg-yellow-50 hover:bg-yellow-100/40",     icon: "bg-yellow-100 text-yellow-600" },
+  { min: 700,  max: 999,  btn: "border-teal-400/40 bg-teal-50 hover:bg-teal-100/40",           icon: "bg-teal-100 text-teal-600" },
+  { min: 1000, max: Infinity, btn: "border-persal-blue/40 bg-blue-50 hover:bg-blue-100/40",   icon: "bg-blue-100 text-persal-blue" },
+] as const;
+
+function getTierClasses(points: number) {
+  return POINTS_TIERS.find((t) => points >= t.min && points <= t.max) ?? POINTS_TIERS[0];
+}
+
 type LoanStatus = "PENDING" | "APPROVED" | "REJECTED" | "PAID";
 
 type LatestLoan = {
@@ -148,9 +160,9 @@ export default function LoanStatusBadge() {
             <button
               type="button"
               onClick={togglePointsHistory}
-              className="inline-flex items-center gap-2 rounded-lg border border-amber-300 bg-white px-2.5 py-1.5 text-left hover:bg-amber-50/40 transition"
+              className={`inline-flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-left transition ${getTierClasses(userPoints ?? 0).btn}`}
             >
-              <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-amber-100 text-amber-700">
+              <span className={`inline-flex h-6 w-6 items-center justify-center rounded-md ${getTierClasses(userPoints ?? 0).icon}`}>
                 <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M8 21h8" />
                   <path d="M12 17v4" />

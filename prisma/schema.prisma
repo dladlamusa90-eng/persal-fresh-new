@@ -76,6 +76,9 @@ model User {
   employmentNetIncome   String?
   incomeFrequency       String?
   salaryDay             String?
+  occupation            String?
+  employer              String?
+  department            String?
   referralCode        String?   @unique
   referralDiscountPct Int       @default(0)
   usedReferralCode    String?

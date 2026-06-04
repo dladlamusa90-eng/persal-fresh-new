@@ -74,6 +74,7 @@ export default async function AdminUsersPage({ searchParams }: Props) {
           idNumber: true,
           bankName: true,
           accountNumber: true,
+          bankVerified: true,
           isBurned: true,
           isDeleted: true,
           createdAt: true,
@@ -106,6 +107,7 @@ export default async function AdminUsersPage({ searchParams }: Props) {
           idNumber: true,
           bankName: true,
           accountNumber: true,
+          bankVerified: true,
           isBurned: true,
           createdAt: true,
           loans: {
@@ -153,6 +155,7 @@ export default async function AdminUsersPage({ searchParams }: Props) {
       accountNumber: user.accountNumber,
       isBurned: user.isBurned,
       isDeleted: Boolean((user as any).isDeleted),
+      bankVerified: Boolean((user as any).bankVerified),
       paidLoanCount: paidLoans.length,
       profitTotal,
       profit30Days,
@@ -160,6 +163,26 @@ export default async function AdminUsersPage({ searchParams }: Props) {
       applicationStatus: (user as any).applicationStatus || null,
     };
   });
+
+  // Fetch identity verification status for all users in one raw query
+  const userIds = usersData.map((u) => u.id);
+  let identityStatuses: Record<string, { faceIdEnrolled: boolean; faceIdStatus: string | null }> = {};
+  try {
+    const rows = await prisma.$queryRaw<{ id: string; faceIdEnrolled: boolean; faceIdStatus: string | null }[]>`
+      SELECT id, "faceIdEnrolled", "faceIdStatus" FROM "User" WHERE id = ANY(${userIds})
+    `;
+    for (const row of rows) {
+      identityStatuses[row.id] = { faceIdEnrolled: Boolean(row.faceIdEnrolled), faceIdStatus: row.faceIdStatus };
+    }
+  } catch {
+    // Non-fatal: fields may not exist in older migrations
+  }
+
+  const usersWithVerification = usersData.map((u) => ({
+    ...u,
+    faceIdEnrolled: identityStatuses[u.id]?.faceIdEnrolled ?? false,
+    faceIdStatus: identityStatuses[u.id]?.faceIdStatus ?? null,
+  }));
 
   return (
     <section className="max-w-full mx-auto py-8 md:py-10 px-4 md:px-6">
@@ -201,7 +224,7 @@ export default async function AdminUsersPage({ searchParams }: Props) {
         </div>
       </div>
 
-      <AdminUsersPanel users={usersData} />
+      <AdminUsersPanel users={usersWithVerification} />
     </section>
   );
 }

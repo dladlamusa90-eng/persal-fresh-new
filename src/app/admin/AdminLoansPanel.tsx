@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { calculateLoanCharges } from "@/lib/loanPolicy";
 
 type LoanStatus = "PENDING" | "APPROVED" | "REJECTED" | "PAID";
 type LoanFilter = "ALL" | "PENDING" | "APPROVED" | "TRANSFERRED" | "REJECTED";
@@ -607,13 +608,14 @@ export default function AdminLoansPanel({ initialLoans, totalAdmins }: Props) {
               <th className="px-4 py-3 font-semibold">Term</th>
               <th className="px-4 py-3 font-semibold">Submitted</th>
               <th className="px-4 py-3 font-semibold">Status</th>
+              <th className="px-4 py-3 font-semibold">Balance Owed</th>
               <th className="px-4 py-3 font-semibold">Actions</th>
             </tr>
           </thead>
           <tbody>
             {filteredLoans.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-6 text-center text-slate-500">
+                <td colSpan={8} className="px-4 py-6 text-center text-slate-500">
                   No loans found.
                 </td>
               </tr>
@@ -643,6 +645,17 @@ export default function AdminLoansPanel({ initialLoans, totalAdmins }: Props) {
                       )}
                       {loan.status === "REJECTED" && loan.rejectionReason && (
                         <p className="text-xs text-red-600 mt-2">Reason: {loan.rejectionReason}</p>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {loan.status === "PAID" ? (
+                        <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-teal-50 text-teal-700 border border-teal-200">Settled</span>
+                      ) : loan.status === "APPROVED" && loan.disbursementSentAt ? (
+                        <span className="text-sm font-semibold text-slate-800">
+                          R {currencyFormatter.format(Math.round(calculateLoanCharges(loan.amount, loan.termDays).totalRepayable))}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">—</span>
                       )}
                     </td>
                     <td className="px-4 py-3">

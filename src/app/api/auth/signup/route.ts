@@ -46,7 +46,9 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await req.json();
-    const { fullName, email, password, phone, idNumber, persalNumber, bankName, accountNumber, address, registrationFacePhoto } = data;
+    const { fullName, email, password, phone, idNumber, persalNumber, bankName, accountNumber, accountType, branchCode, address, registrationFacePhoto } = data;
+    const normalizedAccountType = String(accountType ?? "").trim().toUpperCase();
+    const normalizedBranchCode = String(branchCode ?? "").trim();
     const normalizedRegistrationFacePhoto = String(registrationFacePhoto ?? "").trim();
     const normalizedFullName = String(fullName ?? "").trim().replace(/\s+/g, " ");
     const normalizedAddress = String(address ?? "").trim();
@@ -178,7 +180,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Back-fill referral code and face-registration fields safely.
+    // Back-fill referral code and bank type/branch fields safely.
     try {
       await prisma.$executeRaw`
         UPDATE "User"
@@ -187,6 +189,20 @@ export async function POST(req: NextRequest) {
       `;
     } catch {
       // Non-fatal
+    }
+
+    if (normalizedAccountType || normalizedBranchCode) {
+      try {
+        await prisma.$executeRaw`
+          UPDATE "User"
+          SET
+            "accountType" = CASE WHEN ${normalizedAccountType} <> '' THEN ${normalizedAccountType}::"AccountType" ELSE "accountType" END,
+            "branchCode" = CASE WHEN ${normalizedBranchCode} <> '' THEN ${normalizedBranchCode} ELSE "branchCode" END
+          WHERE id = ${user.id}
+        `;
+      } catch {
+        // Non-fatal: old schema may not have these columns
+      }
     }
 
     const externalUserId = buildFaceIdExternalUserId(user.id);

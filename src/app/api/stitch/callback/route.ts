@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
     return redirectWithError(req, "/dashboard/lending/bank-details", "invalid_session");
   }
 
-  const returnTo = pkce.returnTo ?? "/dashboard/lending/bank-details";
+  const returnTo = pkce.returnTo ?? "/dashboard/profile?section=banking";
 
   // Clear the PKCE cookie in all response paths from here
   const clearPkce = (res: NextResponse) => {
