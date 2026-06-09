@@ -411,15 +411,36 @@ function SignupPageContent() {
             </div>
 
             {/* Debit Order Mandate */}
-            <div className="mb-8 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
-              <h2 className="text-lg font-semibold text-gray-800 mb-2">Debit Order Mandate</h2>
-              <p className="text-sm text-gray-600 mb-4">
-                By accepting, you authorise Persal to debit your bank account for loan repayments on the agreed dates.
-                This mandate is only activated once your loan application is approved.
-              </p>
+            <div className="mb-8 rounded-xl border border-amber-200 bg-amber-50 px-5 py-5">
+              <h2 className="text-lg font-semibold text-gray-800 mb-3">Debit Order Mandate</h2>
+
+              <div className="space-y-3 text-sm text-gray-600 leading-relaxed mb-5">
+                <p>
+                  By signing this mandate, you (<strong>the Account Holder</strong>) authorise <strong>Persal Loans (Pty) Ltd</strong> to
+                  issue and deliver payment instructions to your bank for collection against your bank account on the due date of each
+                  loan repayment, or any later date as agreed.
+                </p>
+                <p>
+                  The amounts debited will be those due in terms of your approved loan agreement. Repayments will be collected monthly
+                  via the <strong>Persal payroll deduction system</strong> and/or via debit order against your nominated bank account.
+                </p>
+                <ul className="list-disc pl-5 space-y-1.5">
+                  <li>This mandate is governed by the <strong>National Credit Act 34 of 2005</strong>.</li>
+                  <li>You may cancel this mandate by giving <strong>written notice</strong> to Persal Loans at least <strong>7 business days</strong> before the next debit date, subject to your outstanding loan obligations.</li>
+                  <li>You confirm that the bank account nominated is in your name and that you are authorised to transact on it.</li>
+                  <li>This mandate <strong>only becomes active once your loan application is approved</strong> and a loan agreement is signed.</li>
+                  <li>Insufficient funds may result in bank charges and late payment fees as stipulated in your loan agreement.</li>
+                </ul>
+                <p className="text-xs text-gray-500">
+                  Persal Loans (Pty) Ltd is a registered credit provider under the National Credit Act. NCR Registration No. [NCR REG NO].
+                </p>
+              </div>
+
               <label className="flex items-start gap-3 cursor-pointer">
-                <input type="checkbox" checked={debitMandateAccepted} onChange={(e) => setDebitMandateAccepted(e.target.checked)} className="mt-1 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500" />
-                <span className="text-sm text-gray-700">I authorise Persal to debit my bank account for loan repayments as described above.</span>
+                <input type="checkbox" checked={debitMandateAccepted} onChange={(e) => setDebitMandateAccepted(e.target.checked)} className="mt-0.5 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500" />
+                <span className="text-sm font-medium text-gray-700">
+                  I have read and understood the Debit Order Mandate above. I authorise Persal Loans to deduct my loan repayments from my salary/bank account as described, once my loan is approved.
+                </span>
               </label>
             </div>
 
