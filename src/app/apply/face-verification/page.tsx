@@ -116,6 +116,17 @@ function ApplyFaceVerificationPage() {
         setStatusText(body.error || "Unable to submit your application. Please try again.");
         return;
       }
+      // Save a summary for the confirmation page before clearing the draft
+      try {
+        sessionStorage.setItem("loanSubmittedSummary", JSON.stringify({
+          amount: currentDraft.amount,
+          termDays: currentDraft.termDays,
+          bankName: currentDraft.bankName,
+          accountNumber: currentDraft.accountNumber,
+          accountType: currentDraft.accountType,
+          fullName: currentDraft.fullName,
+        }));
+      } catch {}
       sessionStorage.removeItem(APPLY_DRAFT_KEY);
       router.push(`/apply/submitted?ref=${body.applicationId ?? ""}&newUser=${body.isNewUser ? "1" : "0"}`);
     } catch {

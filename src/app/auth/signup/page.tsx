@@ -53,11 +53,11 @@ function SignupPageContent() {
   const [password, setPassword] = useState("");
   const [address, setAddress] = useState("");
 
-  // Step 2: Bank details
-  const [bankName, setBankName] = useState("Capitec");
-  const [accountNumber, setAccountNumber] = useState("");
-  const [accountType, setAccountType] = useState<AccountType>("SAVINGS");
-  const [branchCode, setBranchCode] = useState("");
+  // Step 2: Bank details (pre-filled from loan application draft)
+  const [bankName, setBankName] = useState<string>(loanDraft?.bankName || "Capitec");
+  const [accountNumber, setAccountNumber] = useState<string>(loanDraft?.accountNumber || "");
+  const [accountType, setAccountType] = useState<AccountType>(loanDraft?.accountType || "SAVINGS");
+  const [branchCode, setBranchCode] = useState<string>(loanDraft?.branchCode || "");
 
   // Wizard state
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);

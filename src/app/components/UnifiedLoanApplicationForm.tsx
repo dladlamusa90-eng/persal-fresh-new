@@ -7,6 +7,7 @@ import { calculateLoanCharges, getMaxLoanForUser, calculateLogicalMaxLoan, FIRST
 import { SOUTH_AFRICAN_BANK_NAMES, isSouthAfricanIdNumber } from "@/lib/validators/auth";
 import { BANK_BRANCH_CODES } from "@/lib/bankBranchCodes";
 // import { CAPITEC_BRANCHES } from "@/lib/capitecBranches";
+import PublicHeader from "@/app/components/PublicHeader";
 
 type UploadedDocument = {
   name: string;
@@ -76,15 +77,17 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
   const [accountNumber, setAccountNumber] = useState(user?.accountNumber || initialDraft?.accountNumber || "");
   const [accountType, setAccountType] = useState(user?.accountType || initialDraft?.accountType || "CHEQUE");
   const [branchCode, setBranchCode] = useState(user?.branchCode || initialDraft?.branchCode || "");
+  const [restoringFromStorage, setRestoringFromStorage] = useState(false);
 
   // --- EFFECTS ---
   useEffect(() => {
+    if (restoringFromStorage) return; // don't overwrite branch code during restore
     if (BANK_BRANCH_CODES[bankName]) {
       setBranchCode(BANK_BRANCH_CODES[bankName]);
     } else {
       setBranchCode("");
     }
-  }, [bankName]);
+  }, [bankName, restoringFromStorage]);
 
   // --- OTHER HOOKS ---
   const router = useRouter();
@@ -96,7 +99,6 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
   const applicationStatus = user?.applicationStatus ?? null;
 
   // (removed duplicate amount and termDays state declarations)
-
 
   // Auto-fill branch code when bank changes
   // No need for Capitec branch city, just use universal code
@@ -165,6 +167,48 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
   const [maxLoan, setMaxLoan] = useState(0);
   const [faceVerifying, setFaceVerifying] = useState(false);
 
+  // Restore guest form progress from sessionStorage on mount
+  useEffect(() => {
+    if (isLoggedIn) return;
+    try {
+      const saved = sessionStorage.getItem("applyFormProgress");
+      if (!saved) return;
+      const d = JSON.parse(saved);
+      setRestoringFromStorage(true);
+      if (d.fullName) setFullName(d.fullName);
+      if (d.email) setEmail(d.email);
+      if (d.phone) setPhone(d.phone);
+      if (d.idNumber) setIdNumber(d.idNumber);
+      if (d.persalNumber) setPersalNumber(d.persalNumber);
+      if (d.grossSalary) setGrossSalary(d.grossSalary);
+      if (d.disposableIncome) setDisposableIncome(d.disposableIncome);
+      if (d.bankName) setBankName(d.bankName);
+      if (d.accountNumber) setAccountNumber(d.accountNumber);
+      if (d.accountType) setAccountType(d.accountType);
+      if (d.branchCode) setBranchCode(d.branchCode);
+      if (d.amount) setAmount(d.amount);
+      if (d.termDays) setTermDays(d.termDays);
+      if (d.debitMandateAccepted) setDebitMandateAccepted(d.debitMandateAccepted);
+      if (d.referralCode) setReferralCode(d.referralCode);
+      if (d.bankStatementDocument) setBankStatementDocument(d.bankStatementDocument);
+      if (d.guestIdFront) setGuestIdFront(d.guestIdFront);
+      setRestoringFromStorage(false);
+    } catch {}
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Save guest form progress to sessionStorage whenever fields change
+  useEffect(() => {
+    if (isLoggedIn) return;
+    try {
+      sessionStorage.setItem("applyFormProgress", JSON.stringify({
+        fullName, email, phone, idNumber, persalNumber,
+        grossSalary, disposableIncome,
+        bankName, accountNumber, accountType, branchCode,
+        amount, termDays, debitMandateAccepted, referralCode,
+        bankStatementDocument, guestIdFront,
+      }));
+    } catch {}
+  }, [isLoggedIn, fullName, email, phone, idNumber, persalNumber, grossSalary, disposableIncome, bankName, accountNumber, accountType, branchCode, amount, termDays, debitMandateAccepted, referralCode, bankStatementDocument, guestIdFront]);
 
   // Deterministic number formatting to avoid hydration mismatch
   function formatWithCommas(value: number) {
@@ -328,6 +372,7 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
     if (!idNumber.trim()) { setError("Please enter your South African ID number."); return; }
     if (!isSouthAfricanIdNumber(idNumber)) { setError("Please enter a valid 13-digit South African ID number."); return; }
     if (!persalNumber.trim()) { setError("Please enter your Persal number."); return; }
+    if (persalNumber.replace(/\D/g, "").length !== 8) { setError("Persal number must be exactly 8 digits."); return; }
     if (grossSalary <= 0) { setError("Please enter your gross monthly salary."); return; }
     if (disposableIncome <= 0 || disposableIncome > grossSalary) { setError("Please enter a valid disposable income amount."); return; }
     if (!bankName) { setError("Please select your bank."); return; }
@@ -377,6 +422,7 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
         createdAt: Date.now(),
       };
       sessionStorage.setItem("guestLoanApplyDraft", JSON.stringify(draft));
+      sessionStorage.removeItem("applyFormProgress");
       if (onAfterSubmit) onAfterSubmit();
       router.push("/auth/signup?from=apply");
     } catch {
@@ -416,13 +462,9 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
       )}
       {/* Header with logo and login button for guests */}
       {!isLoggedIn && (
-        <>
-          {/* PublicHeader component */}
-          <div className="mb-4">
-            {/** Dynamically import to avoid SSR issues if any */}
-            {React.createElement(require("./PublicHeader").default)}
-          </div>
-        </>
+        <div className="mb-4">
+          <PublicHeader />
+        </div>
       )}
 
       <main className="max-w-2xl mx-auto px-4 py-4">
@@ -540,8 +582,9 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
                   id="persalNumber"
                   type="text"
                   inputMode="numeric"
+                  maxLength={8}
                   value={persalNumber}
-                  onChange={e => setPersalNumber(e.target.value)}
+                  onChange={e => setPersalNumber(e.target.value.replace(/\D/g, "").slice(0, 8))}
                   placeholder="Your Persal employee number"
                   required
                 />
@@ -652,9 +695,7 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
                   </div>
                 </div>
               </div>
-              <div className="md:w-1/2">
-                {/* Branch Code field removed as requested. Only display under Bank select remains. */}
-              </div>
+
             </div>
           </div>
 

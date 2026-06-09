@@ -17,3 +17,9 @@ body {
 input:focus, button:focus {
   outline: none;
 }
+
+@media print {
+  body { background: white; }
+  .print\:hidden { display: none !important; }
+  #print-statement { box-shadow: none !important; border: 1px solid #e5e7eb !important; }
+}

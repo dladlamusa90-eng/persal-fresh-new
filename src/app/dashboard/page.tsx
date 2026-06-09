@@ -6,22 +6,6 @@ import { Lightbulb } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { calculateLoanCharges } from "@/lib/loanPolicy";
 
-const REPAY_DAYS = [1, 15, 25, 30, 31] as const;
-
-function getRepayDate(today: Date, monthOffset: number, repayDay: number): Date {
-  const raw = today.getMonth() + monthOffset;
-  const year = today.getFullYear() + Math.floor(raw / 12);
-  const month = raw % 12;
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  return new Date(year, month, Math.min(repayDay, daysInMonth));
-}
-
-function ordinalLabel(n: number): string {
-  const v = n % 100;
-  const s = (v >= 11 && v <= 13) ? "th" : (["st", "nd", "rd"][n % 10 - 1] ?? "th");
-  return `${n}${s}`;
-}
-
 // Persal status helper
 function getPersalStatus(user) {
   if (!user?.persalNumber) return "missing";
@@ -35,11 +19,11 @@ function DashboardHomeInner() {
   const router = useRouter();
   const maxLoan = 5000;
   const LOAN_CALC_AMOUNT_KEY = "loanCalculatorAmount";
-  const LOAN_CALC_DAYS_KEY = "loanCalculatorRepayIdx";
-  const LOAN_CALC_MONTH_KEY = "loanCalculatorMonth";
+  const LOAN_CALC_DAYS_KEY = "loanCalculatorDays";
+  const DEBIT_DAYS = [1, 15, 25, 30, 31] as const;
   const [desiredLoan, setDesiredLoan] = useState(1500);
-  const [selectedRepayIdx, setSelectedRepayIdx] = useState(2);
-  const [selectedMonth, setSelectedMonth] = useState(1);
+  const [selectedDays, setSelectedDays] = useState(6);
+  const [debitDay, setDebitDay] = useState<number>(25);
   const [hasActiveLoan, setHasActiveLoan] = useState(false);
   const [hasPendingLoan, setHasPendingLoan] = useState(false);
   const [showPendingLoanModal, setShowPendingLoanModal] = useState(false);
@@ -68,10 +52,8 @@ function DashboardHomeInner() {
   useEffect(() => {
     const savedLoan = localStorage.getItem(LOAN_CALC_AMOUNT_KEY);
     if (savedLoan) { const v = parseInt(savedLoan, 10); if (!isNaN(v) && v >= 100 && v <= 5000) setDesiredLoan(v); }
-    const storedIdx = localStorage.getItem(LOAN_CALC_DAYS_KEY);
-    if (storedIdx) { const v = parseInt(storedIdx, 10); if (!isNaN(v) && v >= 0 && v <= 4) setSelectedRepayIdx(v); }
-    const storedMonth = localStorage.getItem(LOAN_CALC_MONTH_KEY);
-    if (storedMonth) { const v = parseInt(storedMonth, 10); if (!isNaN(v) && v >= 1 && v <= 3) setSelectedMonth(v); }
+    const storedDays = localStorage.getItem(LOAN_CALC_DAYS_KEY);
+    if (storedDays) { const v = parseInt(storedDays, 10); if (!isNaN(v) && v >= 6 && v <= 90) setSelectedDays(v); }
     setMounted(true);
 
     Promise.all([
@@ -144,21 +126,15 @@ function DashboardHomeInner() {
     localStorage.setItem(LOAN_CALC_AMOUNT_KEY, value.toString());
   }
 
-  function updateSelectedRepayIdx(idx: number) {
-    const clamped = Math.max(0, Math.min(4, idx));
-    setSelectedRepayIdx(clamped);
+  function updateSelectedDays(d: number) {
+    const clamped = Math.max(6, Math.min(90, d));
+    setSelectedDays(clamped);
     localStorage.setItem(LOAN_CALC_DAYS_KEY, clamped.toString());
   }
 
-  function updateSelectedMonth(m: number) {
-    const clamped = Math.max(1, Math.min(3, m));
-    setSelectedMonth(clamped);
-    localStorage.setItem(LOAN_CALC_MONTH_KEY, clamped.toString());
-  }
-
   const todayMidnight = (() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate()); })();
-  const repayDate = mounted ? getRepayDate(todayMidnight, selectedMonth, REPAY_DAYS[selectedRepayIdx]) : new Date();
-  const termDays = mounted ? Math.ceil((repayDate.getTime() - todayMidnight.getTime()) / 86400000) : 25;
+  const repayDate = mounted ? new Date(todayMidnight.getTime() + selectedDays * 86400000) : new Date();
+  const termDays = mounted ? selectedDays : 6;
   const {
     termMonths,
     interestMonth1,
@@ -174,7 +150,7 @@ function DashboardHomeInner() {
   const totalFees = initiationFee + serviceFee;
   const amountPercent = ((desiredLoan - 100) / (5000 - 100)) * 100;
   const amountKnobPercent = Math.min(97, Math.max(3, amountPercent));
-  const dayKnobPercent = Math.min(97, Math.max(3, (selectedRepayIdx / 4) * 100));
+  const dayKnobPercent = Math.min(97, Math.max(3, ((selectedDays - 6) / 84) * 100));
 
   const repayDateLabelCompact = mounted ? repayDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }).replace(/\s+/g, "") : "---";
   const repayDateDisplay = mounted ? (() => { const d = repayDate; return `${d.getDate()}/${d.toLocaleDateString("en-GB", { month: "short" })}/${d.getFullYear()}`; })() : "---";
@@ -460,10 +436,11 @@ function DashboardHomeInner() {
                       <div className="h-px bg-gray-300 mt-2" />
                     </div>
                     <div className="flex flex-col">
-                      <div className="text-base md:text-lg text-gray-700 mb-1 max-[480px]:text-sm">Debit Day</div>
+                      <div className="text-base md:text-lg text-gray-700 mb-1 max-[480px]:text-sm">Loan Term</div>
                       <div className="h-12 md:h-14 flex items-end max-[480px]:h-10">
                         <div className="inline-flex items-end gap-1.5 text-4xl md:text-5xl font-normal text-persal-blue leading-none max-[480px]:text-3xl">
-                          <span>{mounted ? ordinalLabel(REPAY_DAYS[selectedRepayIdx]) : "---"}</span>
+                          <span>{mounted ? selectedDays : "---"}</span>
+                          <span className="text-base md:text-xl mb-1 text-gray-500">{mounted ? "days" : ""}</span>
                         </div>
                       </div>
                       <div className="h-px bg-gray-300 mt-2" />
@@ -524,39 +501,47 @@ function DashboardHomeInner() {
                     </div>
 
                     <div>
-                      <div className="text-lg md:text-xl text-gray-700 mb-2 max-[480px]:text-base">Monthly Repayment Day</div>
+                      <div className="text-lg md:text-xl text-gray-700 mb-2 max-[480px]:text-base">Over how many days?</div>
                       <div className={`flex items-center gap-3 md:gap-4 max-[480px]:gap-2 transition-opacity duration-200 ${mounted ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
                         <button
                           type="button"
-                          onClick={() => updateSelectedRepayIdx(selectedRepayIdx - 1)}
-                          disabled={selectedRepayIdx === 0}
+                          onClick={() => updateSelectedDays(selectedDays - 1)}
+                          disabled={selectedDays === 6}
                           className="w-8 h-8 rounded-full border border-gray-300 bg-white text-persal-blue shadow-sm hover:bg-gray-100 transition flex items-center justify-center p-0 max-[480px]:w-7 max-[480px]:h-7 disabled:opacity-40 disabled:cursor-not-allowed"
-                          aria-label="Previous repay day"
+                          aria-label="Shorter term"
                         >
-                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                          <svg className="w-4 h-4 max-[480px]:w-3.5 max-[480px]:h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
                             <line x1="5" y1="12" x2="19" y2="12" />
                           </svg>
                         </button>
-                        <div className="relative flex-1 h-10">
-                          <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-1.5 bg-gray-200 rounded-full" />
-                          <div className="absolute left-0 top-1/2 -translate-y-1/2 h-1.5 bg-persal-blue rounded-full" style={{ width: `${(selectedRepayIdx / 4) * 100}%` }} />
+                        <div className="relative flex-1 h-10 max-[480px]:h-9">
+                          <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-2 flex gap-1.5">
+                            {([{ from: 6, to: 30 }, { from: 30, to: 60 }, { from: 60, to: 90 }]).map(({ from, to }) => {
+                              const fill = selectedDays <= from ? 0 : selectedDays >= to ? 100 : ((selectedDays - from) / (to - from)) * 100;
+                              return (
+                                <div key={from} className="flex-1 rounded-full overflow-hidden bg-gray-200 h-full">
+                                  <div className="h-full bg-persal-blue rounded-full transition-all duration-75" style={{ width: `${fill}%` }} />
+                                </div>
+                              );
+                            })}
+                          </div>
                           <input
                             id="termDays"
                             type="range"
-                            min={0}
-                            max={4}
+                            min={6}
+                            max={90}
                             step={1}
-                            value={selectedRepayIdx}
-                            onChange={e => updateSelectedRepayIdx(Number(e.target.value))}
-                            onInput={e => updateSelectedRepayIdx(Number((e.target as HTMLInputElement).value))}
+                            value={selectedDays}
+                            onChange={e => updateSelectedDays(Number(e.target.value))}
+                            onInput={e => updateSelectedDays(Number((e.target as HTMLInputElement).value))}
                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer touch-pan-y"
                             style={{ touchAction: "pan-y" }}
                           />
                           <div
-                            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white border border-gray-300 shadow-md flex items-center justify-center pointer-events-none"
+                            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white border border-gray-300 shadow-md flex items-center justify-center pointer-events-none max-[480px]:w-8 max-[480px]:h-8"
                             style={{ left: `${dayKnobPercent}%` }}
                           >
-                            <svg className="w-7 h-7 text-persal-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <svg className="w-7 h-7 text-persal-blue max-[480px]:w-5.5 max-[480px]:h-5.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                               <polyline points="10 8 6 12 10 16" />
                               <polyline points="14 8 18 12 14 16" />
                             </svg>
@@ -564,44 +549,38 @@ function DashboardHomeInner() {
                         </div>
                         <button
                           type="button"
-                          onClick={() => updateSelectedRepayIdx(selectedRepayIdx + 1)}
-                          disabled={selectedRepayIdx === 4}
+                          onClick={() => updateSelectedDays(selectedDays + 1)}
+                          disabled={selectedDays === 90}
                           className="w-8 h-8 rounded-full border border-gray-300 bg-white text-persal-blue shadow-sm hover:bg-gray-100 transition flex items-center justify-center p-0 max-[480px]:w-7 max-[480px]:h-7 disabled:opacity-40 disabled:cursor-not-allowed"
-                          aria-label="Next repay day"
+                          aria-label="Longer term"
                         >
-                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                          <svg className="w-4 h-4 max-[480px]:w-3.5 max-[480px]:h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
                             <line x1="12" y1="5" x2="12" y2="19" />
                             <line x1="5" y1="12" x2="19" y2="12" />
                           </svg>
                         </button>
                       </div>
-                      <div className="mt-1 flex items-center gap-3 md:gap-4" aria-hidden="true">
-                        <div className="w-8" />
-                        <div className="flex-1 grid grid-cols-5 text-[10px] md:text-[11px]">
-                          {REPAY_DAYS.map((day, i) => (
-                            <span key={day} className={`text-center ${i === selectedRepayIdx ? "text-persal-blue font-semibold" : "text-gray-500/50"}`}>{ordinalLabel(day)}</span>
-                          ))}
-                        </div>
-                        <div className="w-8" />
-                      </div>
-                      <div className="mt-6 flex items-center gap-2 max-[480px]:gap-1.5">
-                        {[1, 2, 3].map(m => (
-                          <button
-                            key={m}
-                            type="button"
-                            onClick={() => updateSelectedMonth(m)}
-                            className={`px-3 py-1.5 rounded-md border text-sm font-medium transition max-[480px]:text-xs max-[480px]:px-2.5 ${selectedMonth === m ? "bg-persal-blue text-white border-persal-blue" : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"}`}
-                          >
-                            {m} {m === 1 ? "Month" : "Months"}
-                          </button>
-                        ))}
-                        {mounted && <span className="text-sm text-gray-500 max-[480px]:text-xs ml-1">{repayDateDisplay}</span>}
-                      </div>
                       {mounted && (
                         <p className="mt-3 text-sm text-gray-600 max-[480px]:text-xs">
-                          Repayment on the <span className="font-semibold text-persal-blue">{ordinalLabel(REPAY_DAYS[selectedRepayIdx])}</span> of every month for the next <span className="font-semibold text-persal-blue">{selectedMonth} {selectedMonth === 1 ? "month" : "months"}</span>
+                          Term: <span className="font-semibold text-persal-blue">{selectedDays} days</span>{selectedDays >= 30 && <> (~{Math.floor(selectedDays / 30)} {Math.floor(selectedDays / 30) === 1 ? "month" : "months"})</>} &mdash; repay by <span className="font-semibold text-persal-blue">{repayDateDisplay}</span>
                         </p>
                       )}
+                    </div>
+
+                    <div>
+                      <div className="text-lg md:text-xl text-gray-700 mb-2 max-[480px]:text-base">Which day does Persal deduct?</div>
+                      <div className="flex items-center gap-2 flex-wrap max-[480px]:gap-1.5">
+                        {DEBIT_DAYS.map(d => (
+                          <button
+                            key={d}
+                            type="button"
+                            onClick={() => setDebitDay(d)}
+                            className={`px-4 py-2 rounded-xl border text-sm font-semibold transition max-[480px]:px-3 max-[480px]:text-xs ${debitDay === d ? "bg-persal-blue text-white border-persal-blue shadow" : "bg-white text-gray-700 border-gray-300 hover:border-persal-blue hover:text-persal-blue"}`}
+                          >
+                            {d === 1 ? "1st" : d === 31 ? "31st" : `${d}th`}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
