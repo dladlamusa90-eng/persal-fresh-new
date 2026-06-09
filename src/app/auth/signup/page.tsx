@@ -164,7 +164,7 @@ function SignupPageContent() {
 
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Unable to sign up. Please try again.");
+        setError(data.detail || data.error || "Unable to sign up. Please try again.");
         return;
       }
 
