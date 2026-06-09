@@ -68,24 +68,43 @@ function SignupPageContent() {
   const [showRequirementsPopup, setShowRequirementsPopup] = useState(searchParams.get("from") === "login");
   const router = useRouter();
 
-  // Restore wizard step after Didit / Stitch OAuth redirects
+  // Restore wizard step after Didit / Stitch OAuth redirects —
+  // but only if the user actually has an active session (i.e. completed step 1).
+  // Without this check, stale sessionStorage from a previous visit would skip straight to step 2/3.
   useEffect(() => {
     const savedStep = sessionStorage.getItem(SIGNUP_STEP_KEY);
     const stitchVerifiedParam = searchParams.get("stitch_verified");
     const stitchErrorParam = searchParams.get("stitch_error");
 
-    if (savedStep === "3") {
-      setStep(3);
-      if (stitchVerifiedParam === "true") {
-        setStitchVerified(true);
-        sessionStorage.setItem(SIGNUP_STITCH_KEY, "true");
-      } else if (stitchErrorParam) {
-        setStitchError(STITCH_ERROR_MESSAGES[stitchErrorParam] ?? "Bank verification failed. Please try again.");
-      } else if (sessionStorage.getItem(SIGNUP_STITCH_KEY) === "true") {
-        setStitchVerified(true);
-      }
-    } else if (savedStep === "2") {
-      setStep(2);
+    if (savedStep === "2" || savedStep === "3") {
+      // Verify an active session exists before restoring mid-flow
+      fetch("/api/auth/session")
+        .then((r) => r.json())
+        .then((session) => {
+          if (!session?.user) {
+            // No valid session — clear stale keys and start from step 1
+            sessionStorage.removeItem(SIGNUP_STEP_KEY);
+            sessionStorage.removeItem(SIGNUP_STITCH_KEY);
+            return;
+          }
+          if (savedStep === "3") {
+            setStep(3);
+            if (stitchVerifiedParam === "true") {
+              setStitchVerified(true);
+              sessionStorage.setItem(SIGNUP_STITCH_KEY, "true");
+            } else if (stitchErrorParam) {
+              setStitchError(STITCH_ERROR_MESSAGES[stitchErrorParam] ?? "Bank verification failed. Please try again.");
+            } else if (sessionStorage.getItem(SIGNUP_STITCH_KEY) === "true") {
+              setStitchVerified(true);
+            }
+          } else {
+            setStep(2);
+          }
+        })
+        .catch(() => {
+          sessionStorage.removeItem(SIGNUP_STEP_KEY);
+          sessionStorage.removeItem(SIGNUP_STITCH_KEY);
+        });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
