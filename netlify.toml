@@ -1,5 +1,4 @@
 [build]
-  base = "persal-fresh"
   command = "npm run build"
   publish = ".next"
 
