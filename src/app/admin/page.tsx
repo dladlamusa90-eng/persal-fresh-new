@@ -34,20 +34,26 @@ export default async function AdminPage() {
     redirect("/dashboard");
   }
 
-  const loansPromise = prisma.loan.findMany({
-      include: {
-        user: {
-          select: {
-            fullName: true,
-            persalNumber: true,
-            email: true,
+  const loansPromise = (async () => {
+    try {
+      return await prisma.loan.findMany({
+        include: {
+          user: {
+            select: {
+              fullName: true,
+              persalNumber: true,
+              email: true,
+            },
           },
         },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+    } catch {
+      return [];
+    }
+  })();
 
   const usersPromise = (async () => {
     try {
