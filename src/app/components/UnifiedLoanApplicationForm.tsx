@@ -378,7 +378,6 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
     if (!bankName) { setError("Please select your bank."); return; }
     if (!accountNumber.trim()) { setError("Please enter your account number."); return; }
     if (!branchCode.trim()) { setError("Please enter your branch code."); return; }
-    if (!debitMandateAccepted) { setError("You must accept the debit mandate to apply."); return; }
 
     // Document validation
     if (isLoggedIn) {
@@ -781,25 +780,6 @@ export default function UnifiedLoanApplicationForm({ user, initialDraft, onAfter
                 )}
               </div>
             </div>
-
-          {/* Debit Mandate */}
-          <div className="p-6">
-            <h2 className="text-base font-semibold text-persal-dark mb-3">Debit Mandate</h2>
-            <p className="text-gray-600 text-sm mb-4 leading-relaxed">
-              By accepting, you authorise Persal Loans to deduct <strong>{termMonths} monthly repayment{termMonths > 1 ? "s" : ""}</strong> of <strong>R{monthlyRepayment.toFixed(2)}</strong> from your salary via the Persal payroll system. Your final repayment is due on or around <strong>{repayDateLabel}</strong>. This mandate is governed by the National Credit Act and may be cancelled with written notice.
-            </p>
-            <label className="flex items-start gap-3 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                className="mt-0.5 w-4 h-4 accent-persal-blue"
-                checked={debitMandateAccepted}
-                onChange={e => setDebitMandateAccepted(e.target.checked)}
-              />
-              <span className="text-sm text-gray-700">
-                I authorise Persal Loans to deduct my loan repayment from my salary as described above.
-              </span>
-            </label>
-          </div>
 
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-red-700 text-sm font-medium">
