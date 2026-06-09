@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     body: JSON.stringify({
       workflow_id: workflowId,
       vendor_data: user.id,
-      ...(callbackUrl ? { callback: callbackUrl } : {}),
+      ...(callbackUrl ? { callback: callbackUrl, callback_method: "both" } : {}),
     }),
   });
 

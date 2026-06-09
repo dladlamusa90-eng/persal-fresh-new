@@ -28,6 +28,33 @@ export default function FaceIdGate({ onVerified, alwaysCapture = false }: FaceId
     let pollTimer: ReturnType<typeof setTimeout> | null = null;
     let pollCount = 0;
 
+    // Check if Didit redirected back with status in the URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const diditStatus = urlParams.get("status");
+    const diditSessionId = urlParams.get("verificationSessionId");
+
+    if (diditSessionId && diditStatus) {
+      // Clean the URL params immediately
+      const cleanUrl = window.location.pathname + window.location.hash;
+      window.history.replaceState({}, "", cleanUrl);
+
+      if (diditStatus === "Approved") {
+        sessionStorage.removeItem("didit_pending_session");
+        setStep("verified");
+        setStatusMessage("Identity verified successfully.");
+        onVerified();
+        return;
+      } else if (diditStatus === "Declined") {
+        sessionStorage.removeItem("didit_pending_session");
+        setStep("failed");
+        setStatusMessage("Your verification was declined. Please try again.");
+        return;
+      } else {
+        // In Review or other — fall through to normal polling
+        sessionStorage.setItem("didit_pending_session", diditSessionId);
+      }
+    }
+
     async function pollDiditStatus(sessionId: string): Promise<void> {
       if (!mounted) return;
       try {
