@@ -8,7 +8,7 @@ ALTER TABLE "User"
 CREATE UNIQUE INDEX IF NOT EXISTS "User_referralCode_key" ON "User"("referralCode");
 
 -- Backfill: generate a unique referral code for all existing users who don't have one
-DO \$\$
+DO $$
 DECLARE
   rec RECORD;
   candidate TEXT;
@@ -33,4 +33,4 @@ BEGIN
     END LOOP;
   END LOOP;
 END;
-\$\$;
+$$;
