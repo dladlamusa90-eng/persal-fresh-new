@@ -127,7 +127,7 @@ export default async function AdminUsersPage({ searchParams }: Props) {
       });
 
   const usersData = users.map((user) => {
-    const paidLoans = user.loans.filter((loan) => loan.status === "PAID");
+    const paidLoans = (user.loans ?? []).filter((loan) => loan.status === "PAID");
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const paidLoans30Days = paidLoans.filter((loan) => loan.createdAt >= thirtyDaysAgo);
