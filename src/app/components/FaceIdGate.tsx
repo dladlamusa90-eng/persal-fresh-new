@@ -17,7 +17,7 @@ interface FaceIdGateProps {
 }
 
 const POLL_INTERVAL_MS = 3000;
-const MAX_POLL_ATTEMPTS = 20; // ~60 seconds total
+const MAX_POLL_ATTEMPTS = 40; // ~120 seconds total
 
 export default function FaceIdGate({ onVerified, alwaysCapture = false }: FaceIdGateProps) {
   const [step, setStep] = useState<Step>("checking");
@@ -171,13 +171,27 @@ export default function FaceIdGate({ onVerified, alwaysCapture = false }: FaceId
       </p>
 
       {isLoading && (
-        <p className="mt-3 animate-pulse text-sm text-gray-400">
-          {step === "polling"
-            ? "Checking result…"
-            : step === "redirecting"
-              ? "Opening verification portal…"
-              : "Loading…"}
-        </p>
+        <>
+          <p className="mt-3 animate-pulse text-sm text-gray-400">
+            {step === "polling"
+              ? "Checking result…"
+              : step === "redirecting"
+                ? "Opening verification portal…"
+                : "Loading…"}
+          </p>
+          {step === "polling" && (
+            <button
+              type="button"
+              onClick={() => {
+                sessionStorage.removeItem("didit_pending_session");
+                onVerified();
+              }}
+              className="mt-4 text-xs text-gray-400 hover:text-gray-600 underline underline-offset-2"
+            >
+              I've completed verification — continue
+            </button>
+          )}
+        </>
       )}
 
       <div className="mt-5 flex flex-wrap gap-2">
