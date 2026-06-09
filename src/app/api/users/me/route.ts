@@ -57,39 +57,35 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: identity.id
-        ? { id: identity.id }
-        : { email: String(identity.email ?? "") },
-      select: {
-        id: true,
-        fullName: true,
-        email: true,
-        phone: true,
-        idNumber: true,
-        persalNumber: true,
-        bankName: true,
-        accountNumber: true,
-        accountType: true,
-        branchCode: true,
-        bankVerified: true,
-        profileImage: true,
-        address: true,
-        points: true,
-        role: true,
-        isBurned: true,
-        isDeleted: true,
-        applicationStatus: true,
-        employmentStatus: true,
-        employmentGrossIncome: true,
-        employmentNetIncome: true,
-        incomeFrequency: true,
-        salaryDay: true,
-        occupation: true,
-        employer: true,
-        department: true,
-      } as any,
-    });
+    const whereClause = identity.id
+      ? { id: identity.id }
+      : { email: String(identity.email ?? "") };
+
+    // Base fields that are always present
+    const baseSelect = {
+      id: true,
+      fullName: true,
+      email: true,
+      phone: true,
+      idNumber: true,
+      persalNumber: true,
+      bankName: true,
+      accountNumber: true,
+      accountType: true,
+      branchCode: true,
+      bankVerified: true,
+      profileImage: true,
+      address: true,
+      points: true,
+      role: true,
+      isBurned: true,
+      isDeleted: true,
+      applicationStatus: true,
+    };
+
+    // Employment fields added in a later migration — fetch via raw SQL to be
+    // tolerant of Prisma client/schema drift (avoids 500 when client is stale).
+    let user = await prisma.user.findUnique({ where: whereClause, select: baseSelect as any });
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -99,13 +95,30 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Fetch referral fields via raw query (Prisma client may be ahead/behind schema)
-    const referralRows = await prisma.$queryRaw<
-      { referralCode: string | null; referralDiscountPct: number }[]
-    >`SELECT "referralCode", "referralDiscountPct" FROM "User" WHERE id = ${(user as any).id}`;
-    const referralData = referralRows[0] ?? { referralCode: null, referralDiscountPct: 0 };
+    // Fetch employment + referral fields via raw SQL (tolerant of schema drift)
+    let extraData: Record<string, unknown> = { referralCode: null, referralDiscountPct: 0 };
+    try {
+      const rows = await prisma.$queryRaw<Record<string, unknown>[]>`
+        SELECT
+          "referralCode", "referralDiscountPct",
+          "employmentStatus", "employmentGrossIncome", "employmentNetIncome",
+          "incomeFrequency", "salaryDay", "occupation", "employer", "department"
+        FROM "User" WHERE id = ${(user as any).id}
+      `;
+      if (rows[0]) extraData = rows[0] as Record<string, unknown>;
+    } catch {
+      // Employment columns may not exist yet — fetch only referral fields
+      try {
+        const rows = await prisma.$queryRaw<{ referralCode: string | null; referralDiscountPct: number }[]>`
+          SELECT "referralCode", "referralDiscountPct" FROM "User" WHERE id = ${(user as any).id}
+        `;
+        if (rows[0]) extraData = rows[0];
+      } catch {
+        // Non-fatal
+      }
+    }
 
-    return NextResponse.json({ user: { ...user, ...referralData } }, { status: 200 });
+    return NextResponse.json({ user: { ...user, ...extraData } }, { status: 200 });
   } catch (err) {
     console.error("[GET /api/users/me]", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
