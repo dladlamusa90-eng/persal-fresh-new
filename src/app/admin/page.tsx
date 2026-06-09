@@ -88,37 +88,40 @@ export default async function AdminPage() {
         },
       });
     } catch (error) {
-      if (!isMissingIsDeletedColumn(error)) {
-        throw error;
-      }
-
-      return await prisma.user.findMany({
-        select: {
-          id: true,
-          fullName: true,
-          email: true,
-          role: true,
-          points: true,
-          persalNumber: true,
-          phone: true,
-          idNumber: true,
-          bankName: true,
-          accountNumber: true,
-          isBurned: true,
-          createdAt: true,
-          loans: {
+      if (isMissingIsDeletedColumn(error)) {
+        try {
+          return await prisma.user.findMany({
             select: {
-              amount: true,
-              termDays: true,
-              status: true,
+              id: true,
+              fullName: true,
+              email: true,
+              role: true,
+              points: true,
+              persalNumber: true,
+              phone: true,
+              idNumber: true,
+              bankName: true,
+              accountNumber: true,
+              isBurned: true,
               createdAt: true,
+              loans: {
+                select: {
+                  amount: true,
+                  termDays: true,
+                  status: true,
+                  createdAt: true,
+                },
+              },
             },
-          },
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
+            orderBy: {
+              createdAt: "desc",
+            },
+          });
+        } catch {
+          return [];
+        }
+      }
+      return [];
     }
   })();
 
