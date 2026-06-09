@@ -16,8 +16,8 @@ interface FaceIdGateProps {
   alwaysCapture?: boolean;
 }
 
-const POLL_INTERVAL_MS = 3000;
-const MAX_POLL_ATTEMPTS = 40; // ~120 seconds total
+const POLL_INTERVAL_MS = 2000;  // 2s between checks
+const MAX_POLL_ATTEMPTS = 60;   // ~120 seconds total
 
 export default function FaceIdGate({ onVerified, alwaysCapture = false }: FaceIdGateProps) {
   const [step, setStep] = useState<Step>("checking");
@@ -73,6 +73,21 @@ export default function FaceIdGate({ onVerified, alwaysCapture = false }: FaceId
       if (pendingSessionId) {
         setStep("polling");
         setStatusMessage("Checking your verification result…");
+        // First try the faceid session endpoint which checks DB status
+        // (Didit may have called our webhook already)
+        try {
+          const quickCheck = await fetch("/api/faceid/session", { cache: "no-store" });
+          if (mounted && quickCheck.ok) {
+            const qData = (await quickCheck.json()) as FaceSession;
+            if (qData.verified) {
+              sessionStorage.removeItem("didit_pending_session");
+              setStep("verified");
+              setStatusMessage("Identity verified successfully.");
+              onVerified();
+              return;
+            }
+          }
+        } catch { /* fall through to polling */ }
         await pollDiditStatus(pendingSessionId);
         return;
       }
@@ -180,16 +195,9 @@ export default function FaceIdGate({ onVerified, alwaysCapture = false }: FaceId
                 : "Loading…"}
           </p>
           {step === "polling" && (
-            <button
-              type="button"
-              onClick={() => {
-                sessionStorage.removeItem("didit_pending_session");
-                onVerified();
-              }}
-              className="mt-4 text-xs text-gray-400 hover:text-gray-600 underline underline-offset-2"
-            >
-              I've completed verification — continue
-            </button>
+            <p className="mt-3 animate-pulse text-sm text-teal-600 font-medium">
+              Verification complete — returning you to the application…
+            </p>
           )}
         </>
       )}

@@ -75,9 +75,17 @@ function SignupPageContent() {
     const savedStep = sessionStorage.getItem(SIGNUP_STEP_KEY);
     const stitchVerifiedParam = searchParams.get("stitch_verified");
     const stitchErrorParam = searchParams.get("stitch_error");
+    const returningFromDidit = Boolean(sessionStorage.getItem("didit_pending_session"));
 
     if (savedStep === "2" || savedStep === "3") {
-      // Verify an active session exists before restoring mid-flow
+      // If returning from Didit we know the user has a valid session — skip the async check
+      // to render FaceIdGate immediately so polling starts right away.
+      if (returningFromDidit && savedStep === "2") {
+        setStep(2);
+        return;
+      }
+
+      // Otherwise verify an active session exists before restoring mid-flow
       fetch("/api/auth/session")
         .then((r) => r.json())
         .then((session) => {
