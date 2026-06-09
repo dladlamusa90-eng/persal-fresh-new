@@ -8,7 +8,6 @@ import AppFooter from "@/app/components/AppFooter";
 import FaceIdGate from "@/app/components/FaceIdGate";
 import { SOUTH_AFRICAN_BANK_NAMES } from "@/lib/validators/auth";
 
-const SIGNUP_DRAFT_KEY = "signup-application-draft-v1";
 const SIGNUP_STEP_KEY = "signup_wizard_step";
 const SIGNUP_STITCH_KEY = "signup_stitch_done";
 
@@ -19,7 +18,8 @@ const accountTypeOptions = [
 ] as const;
 type AccountType = (typeof accountTypeOptions)[number]["value"];
 
-const stepLabels = ["Personal Info", "Bank Details", "Identity Verification", "Bank Verification"];
+// 3-step flow: Personal Info → Identity Verification → Bank Details & Verification
+const stepLabels = ["Personal Info", "Identity Verification", "Bank & Debit"];
 
 const STITCH_ERROR_MESSAGES: Record<string, string> = {
   session_expired: "Verification session expired. Please try again.",
@@ -60,7 +60,7 @@ function SignupPageContent() {
   const [branchCode, setBranchCode] = useState<string>(loanDraft?.branchCode || "");
 
   // Wizard state
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [stitchVerified, setStitchVerified] = useState(false);
@@ -74,8 +74,8 @@ function SignupPageContent() {
     const stitchVerifiedParam = searchParams.get("stitch_verified");
     const stitchErrorParam = searchParams.get("stitch_error");
 
-    if (savedStep === "4") {
-      setStep(4);
+    if (savedStep === "3") {
+      setStep(3);
       if (stitchVerifiedParam === "true") {
         setStitchVerified(true);
         sessionStorage.setItem(SIGNUP_STITCH_KEY, "true");
@@ -84,8 +84,8 @@ function SignupPageContent() {
       } else if (sessionStorage.getItem(SIGNUP_STITCH_KEY) === "true") {
         setStitchVerified(true);
       }
-    } else if (savedStep === "3") {
-      setStep(3);
+    } else if (savedStep === "2") {
+      setStep(2);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -101,9 +101,10 @@ function SignupPageContent() {
     return withSingleLeadingPlus.slice(0, 10);
   }
 
-  // Step 1 → Step 2: validate personal info
-  function handleStep1Next(e: React.FormEvent) {
+  // Step 1: validate + create account + auto-login → step 2
+  async function handleStep1Submit(e: React.FormEvent) {
     e.preventDefault();
+    if (submitting) return;
     if (!firstName.trim() || !surname.trim() || !idNumber.trim() || !persalNumber.trim() || !phone.trim() || !email.trim() || !password.trim() || !address.trim()) {
       setError("Please complete all required fields.");
       return;
@@ -123,27 +124,8 @@ function SignupPageContent() {
       return;
     }
     setError("");
-    setStep(2);
-  }
-
-  // Step 2 → Step 3: create account + auto-login
-  async function handleStep2Submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (submitting) return;
-    if (!accountNumber.trim()) {
-      setError("Please enter your bank account number.");
-      return;
-    }
-    if (!branchCode.trim()) {
-      setError("Please enter your branch code.");
-      return;
-    }
-    setError("");
     setSubmitting(true);
     try {
-      const sanitizedId = idNumber.replace(/\D/g, "");
-      const normalizedPhone = phone.replace(/[\s()-]/g, "");
-
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -155,35 +137,24 @@ function SignupPageContent() {
           email: email.trim().toLowerCase(),
           password,
           address: address.trim(),
-          bankName,
-          accountNumber: accountNumber.trim(),
-          accountType,
-          branchCode: branchCode.trim(),
         }),
       });
-
       const data = await res.json();
       if (!res.ok) {
         setError(data.detail || data.error || "Unable to sign up. Please try again.");
         return;
       }
-
-      // Auto-login to get a session for identity verification
       const loginResult = await signIn("credentials", {
         email: email.trim().toLowerCase(),
         password,
         redirect: false,
       });
-
       if (!loginResult || loginResult.error) {
-        // Account created but login failed — fall back to manual login
         router.push("/auth/login?from=signup");
         return;
       }
-
-      // Proceed to identity verification
-      sessionStorage.setItem(SIGNUP_STEP_KEY, "3");
-      setStep(3);
+      sessionStorage.setItem(SIGNUP_STEP_KEY, "2");
+      setStep(2);
     } catch {
       setError("Unable to continue. Please try again.");
     } finally {
@@ -191,20 +162,65 @@ function SignupPageContent() {
     }
   }
 
-  // Step 3 complete: identity verified via Didit
+  // Debit mandate state
+  const [debitMandateAccepted, setDebitMandateAccepted] = useState(false);
+
+  // Step 2 complete: identity verified via Didit → step 3
   const handleIdentityVerified = useCallback(() => {
-    sessionStorage.setItem(SIGNUP_STEP_KEY, "4");
-    setStep(4);
+    sessionStorage.setItem(SIGNUP_STEP_KEY, "3");
+    setStep(3);
   }, []);
 
-  // Step 4 complete (bank verified or user proceeds)
-  function handleFinish() {
-    sessionStorage.removeItem(SIGNUP_STEP_KEY);
-    sessionStorage.removeItem(SIGNUP_STITCH_KEY);
-    if (fromApply) {
-      router.push("/apply/statement");
-    } else {
-      router.push("/dashboard");
+  // Step 3: save bank details + submit loan (if fromApply) → login screen
+  async function handleStep3Submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (submitting) return;
+    if (!accountNumber.trim()) { setError("Please enter your bank account number."); return; }
+    if (!branchCode.trim()) { setError("Please enter your branch code."); return; }
+    if (!debitMandateAccepted) { setError("Please accept the Debit Order Mandate to continue."); return; }
+    setError("");
+    setSubmitting(true);
+    try {
+      const patchRes = await fetch("/api/users/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bankName, accountNumber: accountNumber.trim(), accountType, branchCode: branchCode.trim() }),
+      });
+      if (!patchRes.ok) {
+        const d = await patchRes.json().catch(() => ({}));
+        setError((d as any).error || "Could not save bank details. Please try again.");
+        setSubmitting(false);
+        return;
+      }
+      if (fromApply) {
+        const draft = (() => { try { return JSON.parse(sessionStorage.getItem("guestLoanApplyDraft") ?? "null"); } catch { return null; } })();
+        if (draft) {
+          const loanRes = await fetch("/api/loans/apply", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              amount: draft.amount,
+              termDays: draft.termDays,
+              grossSalary: draft.grossSalary,
+              disposableIncome: draft.disposableIncome,
+              bankName,
+              accountNumber: accountNumber.trim(),
+              accountType,
+              branchCode: branchCode.trim(),
+              debitMandateAccepted: true,
+              bankStatementDocument: draft.bankStatementDocument ?? null,
+            }),
+          });
+          if (loanRes.ok) sessionStorage.removeItem("guestLoanApplyDraft");
+        }
+      }
+      sessionStorage.removeItem(SIGNUP_STEP_KEY);
+      sessionStorage.removeItem(SIGNUP_STITCH_KEY);
+      router.push("/auth/login?signup=complete");
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -235,7 +251,7 @@ function SignupPageContent() {
             <div className="w-full max-w-5xl mx-auto mb-6">
               <div className="flex items-start gap-1.5">
                 {stepLabels.map((label, i) => {
-                  const n = (i + 1) as 1 | 2 | 3 | 4;
+                  const n = (i + 1) as 1 | 2 | 3;
                   const isDone = step > n;
                   const isActive = step === n;
                   return (
@@ -246,12 +262,12 @@ function SignupPageContent() {
                   );
                 })}
               </div>
-              <p className="md:hidden text-center text-sm font-medium text-gray-600 mt-2">Step {step} of 4: {stepLabels[step - 1]}</p>
+              <p className="md:hidden text-center text-sm font-medium text-gray-600 mt-2">Step {step} of 3: {stepLabels[step - 1]}</p>
             </div>
 
           {/* ── STEP 1: Personal Information ── */}
           {step === 1 && (
-          <form onSubmit={handleStep1Next} className="w-full max-w-5xl mx-auto bg-white/70 backdrop-blur-sm border border-gray-200 rounded-3xl p-5 md:p-8 shadow-sm">
+          <form onSubmit={handleStep1Submit} className="w-full max-w-5xl mx-auto bg-white/70 backdrop-blur-sm border border-gray-200 rounded-3xl p-5 md:p-8 shadow-sm">
             <h1 className="text-2xl md:text-3xl text-gray-800 font-medium mb-7">Personal Information</h1>
 
             <div className="space-y-7">
@@ -300,26 +316,37 @@ function SignupPageContent() {
               <p className="text-gray-700 text-base md:text-lg">
                 Already have an account? <Link href={loginHref} className="text-teal-600 hover:underline">LogIn</Link>
               </p>
-              <button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl px-7 py-2.5 text-lg md:text-xl min-w-[200px] md:min-w-[230px] transition">
-                Next: Bank Details
+              <button type="submit" disabled={submitting} className="bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white font-semibold rounded-xl px-7 py-2.5 text-lg md:text-xl min-w-[200px] md:min-w-[230px] transition">
+                {submitting ? "Creating Account…" : "Next: Verify Identity"}
               </button>
             </div>
             {error && <div className="mt-5 text-sm font-medium text-red-600">{error}</div>}
           </form>
           )}
 
-          {/* ── STEP 2: Bank Details ── */}
+          {/* ── STEP 2: Identity Verification ── */}
           {step === 2 && (
-          <form onSubmit={handleStep2Submit} className="w-full max-w-5xl mx-auto bg-white/70 backdrop-blur-sm border border-gray-200 rounded-3xl p-5 md:p-8 shadow-sm">
-            <h1 className="text-2xl md:text-3xl text-gray-800 font-medium mb-2">Bank Details</h1>
-            <p className="mb-7 text-sm text-gray-600 flex items-center gap-2">
-              <span className="text-teal-500 inline-flex" aria-hidden="true">
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9" /><line x1="12" y1="10" x2="12" y2="16" /><circle cx="12" cy="7" r="1" fill="currentColor" stroke="none" /></svg>
-              </span>
-              Please enter the bank account that your salary is paid into.
+          <div className="w-full max-w-5xl mx-auto bg-white/70 backdrop-blur-sm border border-gray-200 rounded-3xl p-5 md:p-8 shadow-sm">
+            <h1 className="text-2xl md:text-3xl text-gray-800 font-medium mb-2">Identity Verification</h1>
+            <p className="mb-2 text-sm text-gray-600">
+              Please verify your identity using your South African ID document. Make sure the document you present matches the ID number you entered:
             </p>
+            <div className="mb-6 inline-flex items-center gap-2 rounded-lg bg-teal-50 border border-teal-200 px-4 py-2">
+              <span className="text-xs text-teal-700 font-medium">Your ID:</span>
+              <span className="text-sm font-bold text-teal-900 tracking-widest">{idNumber.replace(/\D/g, "")}</span>
+            </div>
+            <FaceIdGate onVerified={handleIdentityVerified} />
+          </div>
+          )}
 
-            <div className="space-y-7">
+          {/* ── STEP 3: Bank Details + Verification + Debit Mandate ── */}
+          {step === 3 && (
+          <form onSubmit={handleStep3Submit} className="w-full max-w-5xl mx-auto bg-white/70 backdrop-blur-sm border border-gray-200 rounded-3xl p-5 md:p-8 shadow-sm">
+            <h1 className="text-2xl md:text-3xl text-gray-800 font-medium mb-2">Bank Details &amp; Verification</h1>
+            <p className="mb-7 text-sm text-gray-600">Enter your salary bank account, optionally verify it with Stitch, and accept the debit order mandate.</p>
+
+            {/* Bank Details */}
+            <div className="space-y-6 mb-8">
               <div className={rowCls}>
                 <label htmlFor="bank-name" className={labelCls}>Bank Name</label>
                 <div className="relative">
@@ -329,12 +356,10 @@ function SignupPageContent() {
                   <svg className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9" /></svg>
                 </div>
               </div>
-
               <div className={rowCls}>
                 <label htmlFor="account-number" className={labelCls}>Account Number</label>
                 <input id="account-number" type="text" inputMode="numeric" value={accountNumber} onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, ""))} placeholder="Account number" className={inputCls} />
               </div>
-
               <div className={rowCls}>
                 <label htmlFor="account-type" className={labelCls}>Account Type</label>
                 <div className="relative">
@@ -344,93 +369,67 @@ function SignupPageContent() {
                   <svg className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9" /></svg>
                 </div>
               </div>
-
               <div className={rowCls}>
                 <label htmlFor="branch-code" className={labelCls}>Branch Code</label>
                 <input id="branch-code" type="text" inputMode="numeric" value={branchCode} onChange={(e) => setBranchCode(e.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="6-digit branch code" className={inputCls} />
               </div>
             </div>
 
-            <div className="mt-8 flex items-center justify-between gap-4">
-              <button type="button" onClick={() => { setError(""); setStep(1); }} className="rounded-xl border border-gray-300 bg-white px-5 py-2.5 text-base font-semibold text-gray-700 hover:bg-gray-50 transition">
-                Back
-              </button>
-              <button type="submit" disabled={submitting} className="bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white font-semibold rounded-xl px-7 py-2.5 text-lg md:text-xl min-w-[200px] md:min-w-[230px] transition">
-                {submitting ? "Creating Account…" : "Create Account"}
+            {/* Stitch Bank Verification */}
+            <div className="mb-8">
+              <h2 className="text-lg font-semibold text-gray-800 mb-3">Bank Verification</h2>
+              {stitchVerified ? (
+                <div className="rounded-xl border border-teal-200 bg-teal-50 px-5 py-4 flex items-center gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-teal-100">
+                    <svg className="h-5 w-5 text-teal-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>
+                  </span>
+                  <div>
+                    <p className="text-sm font-semibold text-teal-800">Bank account verified</p>
+                    <p className="text-xs text-teal-700 mt-0.5">Your bank account was confirmed via Stitch.</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-gray-200 bg-gray-50 px-5 py-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800">Verify your bank account instantly</p>
+                      <p className="text-xs text-gray-500 mt-0.5">Use Stitch to securely link and confirm your bank account.</p>
+                    </div>
+                    <a
+                      href={`/api/stitch/link?returnTo=${encodeURIComponent("/auth/signup")}`}
+                      onClick={() => sessionStorage.setItem(SIGNUP_STEP_KEY, "3")}
+                      className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-persal-blue px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-persal-dark"
+                    >
+                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+                      Verify with Stitch
+                    </a>
+                  </div>
+                  {stitchError && <p className="mt-3 text-xs text-red-600">{stitchError}</p>}
+                  <p className="mt-3 text-xs text-gray-400">Bank verification is optional but recommended.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Debit Order Mandate */}
+            <div className="mb-8 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
+              <h2 className="text-lg font-semibold text-gray-800 mb-2">Debit Order Mandate</h2>
+              <p className="text-sm text-gray-600 mb-4">
+                By accepting, you authorise Persal to debit your bank account for loan repayments on the agreed dates.
+                This mandate is only activated once your loan application is approved.
+              </p>
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" checked={debitMandateAccepted} onChange={(e) => setDebitMandateAccepted(e.target.checked)} className="mt-1 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500" />
+                <span className="text-sm text-gray-700">I authorise Persal to debit my bank account for loan repayments as described above.</span>
+              </label>
+            </div>
+
+            <div className="flex items-center justify-end gap-4">
+              <button type="submit" disabled={submitting} className="bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white font-semibold rounded-xl px-7 py-2.5 text-lg md:text-xl min-w-[200px] transition">
+                {submitting ? "Submitting…" : fromApply ? "Submit Loan Application" : "Complete Sign Up"}
               </button>
             </div>
             {error && <div className="mt-5 text-sm font-medium text-red-600">{error}</div>}
           </form>
-          )}
-
-          {/* ── STEP 3: Identity Verification ── */}
-          {step === 3 && (
-          <div className="w-full max-w-5xl mx-auto bg-white/70 backdrop-blur-sm border border-gray-200 rounded-3xl p-5 md:p-8 shadow-sm">
-            <h1 className="text-2xl md:text-3xl text-gray-800 font-medium mb-2">Identity Verification</h1>
-            <p className="mb-6 text-sm text-gray-600">
-              Please verify your identity to complete your registration. You will be redirected to our secure verification partner and then returned here.
-            </p>
-            <FaceIdGate onVerified={handleIdentityVerified} />
-          </div>
-          )}
-
-          {/* ── STEP 4: Bank Verification via Stitch ── */}
-          {step === 4 && (
-          <div className="w-full max-w-5xl mx-auto bg-white/70 backdrop-blur-sm border border-gray-200 rounded-3xl p-5 md:p-8 shadow-sm">
-            <h1 className="text-2xl md:text-3xl text-gray-800 font-medium mb-2">Bank Verification</h1>
-            <p className="mb-6 text-sm text-gray-600">
-              Verify your bank account using Stitch to confirm your details. This step is required before you can apply for a loan.
-            </p>
-
-            {stitchVerified ? (
-              <div className="rounded-xl border border-teal-200 bg-teal-50 px-5 py-4 flex items-center gap-3 mb-6">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-teal-100">
-                  <svg className="h-5 w-5 text-teal-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>
-                </span>
-                <div>
-                  <p className="text-sm font-semibold text-teal-800">Bank account verified</p>
-                  <p className="text-xs text-teal-700 mt-0.5">Your bank account was confirmed via Stitch.</p>
-                </div>
-              </div>
-            ) : (
-              <div className="rounded-xl border border-gray-200 bg-gray-50 px-5 py-4 mb-6">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-gray-800">Verify your bank account instantly</p>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      Use Stitch to securely link and confirm your bank account details — no manual entry needed.
-                    </p>
-                  </div>
-                  <a
-                    href={`/api/stitch/link?returnTo=${encodeURIComponent("/auth/signup")}`}
-                    className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-persal-blue px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-persal-dark"
-                  >
-                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
-                    Verify with Stitch
-                  </a>
-                </div>
-                {stitchError && <p className="mt-3 text-xs text-red-600">{stitchError}</p>}
-              </div>
-            )}
-
-            <div className="flex items-center justify-between gap-4">
-              {!stitchVerified && (
-                <button type="button" onClick={handleFinish} className="text-sm text-gray-500 hover:text-gray-700 underline underline-offset-2">
-                  Skip for now
-                </button>
-              )}
-              {stitchVerified && (
-                <span />
-              )}
-              <button
-                type="button"
-                onClick={handleFinish}
-                className="bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl px-7 py-2.5 text-lg md:text-xl min-w-[180px] transition"
-              >
-                Go to Dashboard
-              </button>
-            </div>
-          </div>
           )}
 
           </div>

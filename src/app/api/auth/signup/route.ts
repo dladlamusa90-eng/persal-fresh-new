@@ -191,6 +191,15 @@ export async function POST(req: NextRequest) {
       // Non-fatal
     }
 
+    // New users are auto-approved — admins only approve loan applications, not memberships.
+    try {
+      await prisma.$executeRaw`
+        UPDATE "User" SET "applicationStatus" = 'APPROVED' WHERE id = ${user.id}
+      `;
+    } catch {
+      // Non-fatal: if field doesn't exist in this DB state, skip
+    }
+
     if (normalizedAccountType || normalizedBranchCode) {
       try {
         await prisma.$executeRaw`

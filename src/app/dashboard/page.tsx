@@ -6,14 +6,7 @@ import { Lightbulb } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { calculateLoanCharges } from "@/lib/loanPolicy";
 
-// Persal status helper
-function getPersalStatus(user) {
-  if (!user?.persalNumber) return "missing";
-  if (user?.applicationStatus === "REJECTED") return "rejected";
-  if (user?.applicationStatus === "PENDING") return "pending";
-  if (user?.applicationStatus === "APPROVED") return "approved";
-  return "unknown";
-}
+// Persal status helper (kept for legacy compatibility — approval is auto-granted)
 
 function DashboardHomeInner() {
   const router = useRouter();
@@ -83,14 +76,11 @@ function DashboardHomeInner() {
       .finally(() => {});
   }, []);
 
-  const persalStatus = getPersalStatus(user);
-
   const canApply =
     !hasActiveLoan &&
     !error &&
     desiredLoan >= 100 &&
     desiredLoan <= maxLoan &&
-    persalStatus === "approved" &&
     bankVerified === true;
 
   async function handlePersalSubmit(e) {
@@ -107,7 +97,7 @@ function DashboardHomeInner() {
       if (!res.ok) {
         setPersalError(data.error || "Unable to submit Persal number.");
       } else {
-        setUser((u) => ({ ...u, persalNumber: persalInput, applicationStatus: "PENDING" }));
+        setUser((u) => ({ ...u, persalNumber: persalInput }));
       }
     } catch {
       setPersalError("Network error. Please try again.");

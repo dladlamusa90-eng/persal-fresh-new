@@ -332,19 +332,6 @@ export default function AdminUsersPanel({ users }: Props) {
                 </td>
                 <td className="px-4 py-3 text-slate-700">
                   {user.persalNumber ?? "N/A"}
-                  {user.persalNumber && (
-                    <span className={`ml-2 px-2 py-0.5 rounded text-xs font-semibold ${
-                      user.applicationStatus === "APPROVED"
-                        ? "bg-green-100 text-green-700"
-                        : user.applicationStatus === "PENDING"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : user.applicationStatus === "REJECTED"
-                        ? "bg-red-100 text-red-700"
-                        : "bg-gray-100 text-gray-600"
-                    }`}>
-                      {user.applicationStatus || "UNKNOWN"}
-                    </span>
-                  )}
                 </td>
                 <td className="px-4 py-3 text-slate-700">{user.idNumber ?? "N/A"}</td>
                 <td className="px-4 py-3 text-slate-700">{user.phone ?? "N/A"}</td>
